@@ -5,6 +5,7 @@
 <use name=root>
 <use name=rootcintex>
 <use name=AnalysisDataFormats/TopObjects>
+<use name=TopQuarkAnalysis/TopTools>
 <flags EDM_PLUGIN=1>
 <export>
    <lib name=UserCodeSanityChecker>
@@ -15,4 +16,5 @@
    <use name=root>
    <use name=rootcintex>
    <use name=AnalysisDataFormats/TopObjects>
+   <use name=TopQuarkAnalysis/TopTools>
 </export>
