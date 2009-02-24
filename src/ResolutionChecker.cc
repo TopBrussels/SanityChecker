@@ -17,7 +17,6 @@
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 
 #include "AnalysisDataFormats/TopObjects/interface/TtGenEvent.h"
-#include "TopQuarkAnalysis/TopTools/interface/JetPartonMatching.h"
 
 #include "DataFormats/PatCandidates/interface/Muon.h"
 #include "DataFormats/PatCandidates/interface/Jet.h"
@@ -62,7 +61,6 @@ class ResolutionChecker : public edm::EDAnalyzer {
   		TF1 *fResEtaBin[10][20];
   		TH1F *hResPtEtaBin[10][20][20];
   		TH1F *hResEtaBin[10][20];
-  		TH1F *hEtaBins;
       TTree* tResVar;
 };
 
@@ -86,11 +84,7 @@ ResolutionChecker::ResolutionChecker(const edm::ParameterSet& iConfig)
     etabinVals_	= iConfig.getParameter< std::vector<double> > 	("etabinValues");
   }
   pTbinVals_	= iConfig.getParameter< std::vector<double> > 	("pTbinValues");
-  if(objectType_ == "met" || objectType_ == "electron" || objectType_ == "muon" || objectType_ == "tau") minDR_	= iConfig.getParameter< double > ("minMatchingDR");
-  if(objectType_ == "lJets" || objectType_ == "bJets") matchingAlgo_ = iConfig.getParameter<int>("matchingAlgo");
-  if(objectType_ == "lJets" || objectType_ == "bJets") useMaxDist_ = iConfig.getParameter<bool>("useMaxDist");
-  if(objectType_ == "lJets" || objectType_ == "bJets") useDeltaR_ = iConfig.getParameter<bool>("useDeltaR");
-  if(objectType_ == "lJets" || objectType_ == "bJets") maxDist_ = iConfig.getParameter<double>("maxDist");
+  minDR_	= iConfig.getParameter< double > ("minMatchingDR");
 
 	nrFilled = 0;
 
@@ -99,7 +93,7 @@ ResolutionChecker::ResolutionChecker(const edm::ParameterSet& iConfig)
 
 ResolutionChecker::~ResolutionChecker()
 {
-//  std::cout<<"nr. of "<<objectType_<<" filled: "<<nrFilled<<std::endl;
+  std::cout<<"nr. of "<<objectType_<<" filled: "<<nrFilled<<std::endl;
 }
 
 
@@ -122,8 +116,6 @@ ResolutionChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
    iEvent.getByLabel ("genEvt",genEvt);
 
    if(genEvt->particles().size()<10) return;
-   if(!genEvt->isSemiLeptonic(genEvt->kMuon)) throw cms::Exception("NotFound") <<"Not a semi-muonic event..."<<std::endl;
-   //if(!genEvt->isSemiLeptonic()) throw cms::Exception("NotFound") <<"Not a semi-lep event..."<<std::endl;
 
    if(objectType_ == "electron"){ 
      Handle<std::vector<pat::Electron> >  electrons; //to calculate the ResolutionChecker for the electrons, i used the TopElectron instead of the AOD information
@@ -149,37 +141,28 @@ ResolutionChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
        }
      }
    }
-   else if(objectType_ == "lJets" || objectType_ == "bJets"){
-     Handle<std::vector<pat::Jet> > jetHandle;
-     iEvent.getByLabel(labelName_,jetHandle);
-     const std::vector<pat::Jet> & jets = *jetHandle;
-     //Handle<std::vector<pat::Jet> > jets;
-     //iEvent.getByLabel(labelName_,jets);
-
-     // Matching index : Hadronic Q  = 0, Hadronic Q' = 1, Hadronic b  = 2, Leptonic b  = 3;
-     std::vector<const reco::Candidate *> quarks;
-     quarks.push_back(genEvt->hadronicDecayQuark());
-     quarks.push_back(genEvt->hadronicDecayQuarkBar());
-     quarks.push_back(genEvt->hadronicDecayB());
-     quarks.push_back(genEvt->leptonicDecayB());
-		 if(jets.size()>=4) { 
-        JetPartonMatching *GenMatch = new JetPartonMatching(quarks, jets, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
-       if(objectType_ == "lJets" ){ 
-			   for(unsigned int i=0; i<2; i++){
-   	     	 Int_t Idx = GenMatch->getMatchForParton(i,0);
-	         if(Idx<0) continue;
-					 p4gen.push_back(new reco::Particle(quarks[i]->charge(),quarks[i]->p4(),quarks[i]->vertex()));
-	         p4rec.push_back(new reco::Particle((pat::Jet)jets[Idx]));
-				 }
-       }else{
-			   for(unsigned int i=2; i<4; i++){
-   	     	 Int_t Idx = GenMatch->getMatchForParton(i,0);
-	         if(Idx<0) continue;
-			     p4gen.push_back(new reco::Particle(quarks[i]->charge(),quarks[i]->p4(),quarks[i]->vertex()));
-	         p4rec.push_back(new reco::Particle((pat::Jet)jets[Idx]));
-				 }
-			 
-			 }
+   else if(objectType_ == "lJets" || objectType_ == "bJets" ){
+     Handle<std::vector<pat::Jet> > jets;
+     iEvent.getByLabel(labelName_,jets);
+		 if(jets->size()>=4) { 
+       for(unsigned int j = 0; j<4; j++){      
+         for(size_t p=0; p<genEvt->particles().size(); p++){
+           if( (abs(genEvt->particles()[p].pdgId()) < 5) && (ROOT::Math::VectorUtil::DeltaR(genEvt->particles()[p].p4(), (*jets)[j].p4())< minDR_) ){
+	          // std::cout <<"genEvt->particles()[p].status() "<<genEvt->particles()[p].status() << std::endl;
+						// const reco::Candidate *mom = genEvt->particles()[p].mother();
+						// std::cout <<"id mother particle "<<mom->pdgId()<< " status mother particle "<< mom->status()<< std::endl;
+	     			 p4gen.push_back(new reco::Particle(genEvt->particles()[p]));
+	     			 p4rec.push_back(new reco::Particle((pat::Jet)(*jets)[j]));
+	   			 }
+					 else if( (abs(genEvt->particles()[p].pdgId()) == 5) && (ROOT::Math::VectorUtil::DeltaR(genEvt->particles()[p].p4(), (*jets)[j].p4())< minDR_) ) {
+	          // std::cout <<"genEvt->particles()[p].status() "<<genEvt->particles()[p].status() << std::endl;
+						// const reco::Candidate *mom = genEvt->particles()[p].mother();
+						// std::cout <<"id mother particle "<<mom->pdgId()<< " status mother particle "<< mom->status()<< std::endl;
+						 p4gen.push_back(new reco::Particle(genEvt->particles()[p]));
+	     			 p4rec.push_back(new reco::Particle((pat::Jet)(*jets)[j]));
+	   			 }
+	 			 }
+       }
      }
    }
    else if(objectType_ == "met"){
@@ -351,8 +334,6 @@ ResolutionChecker::beginJob(const edm::EventSetup&)
       fResEtaBin[ro][etab] = fs->make<TF1>("F_"+obsName2,resObsVsPtFit[ro],pTbinVals_[0],pTbinVals_[pTbinVals_.size()-1]);
     }
   }
-  hEtaBins = fs->make<TH1F>("hEtaBins","hEtaBins",etanrbins,etabins);
-
 	tResVar = fs->make< TTree >("tResVar","Resolution tree");
 
   delete [] etabins; 
@@ -363,6 +344,7 @@ ResolutionChecker::beginJob(const edm::EventSetup&)
 // ------------ method called once each job just after ending the event loop  ------------
 void 
 ResolutionChecker::endJob() {
+  TString  	  resObsName2[8] 	= {"a","b","c","d","theta","phi","et","eta"};
   Int_t ro=0;
   Double_t pt=0.;
   Double_t eta=0.;
@@ -419,8 +401,41 @@ ResolutionChecker::endJob() {
   if(objectType_ == "electron" && nrFilled == 0) edm::LogError  ("SummaryError") << "No plots filled for electrons \n";    
   if(objectType_ == "tau" && nrFilled == 0) edm::LogError  ("SummaryError") << "No plots filled for taus \n";    
   if(objectType_ == "met" && nrFilled == 0) edm::LogError  ("SummaryError") << "No plots filled for met \n";    
-  if(nrFilled != 0) edm::LogInfo   ("MainResults") << "nr. of "<<objectType_<<" filled: "<<nrFilled <<"\n";  
 
+  if(nrFilled != 0) {
+		edm::LogInfo   ("MainResults") <<"\n\n\n" <<"nr. of "<<objectType_<<" filled: "<<nrFilled <<"\n";  
+  	for(ro=0; ro<8; ro++) {
+    	edm::LogInfo   ("MainResults") << "Resolutions on " << resObsName2[ro] << "\n\n";
+			for(int etab=0; etab<etanrbins; etab++) {	
+  			if(nrFilled != 0 && ro != 6) {
+					edm::LogInfo   ("MainResults") << "if(fabs(eta)<"<<etabinVals_[etab+1] <<") res = " << 
+					fResEtaBin[ro][etab]->GetParameter(0) << "+" << fResEtaBin[ro][etab]->GetParameter(1) 
+					<< "*exp(-(" <<fResEtaBin[ro][etab]->GetParameter(2) << "*pt));" <<"\n";  
+				}else if(nrFilled != 0 && ro == 6){
+					edm::LogInfo   ("MainResults") << "if(fabs(eta)<"<<etabinVals_[etab+1] <<") res = " << 
+					fResEtaBin[ro][etab]->GetParameter(0) << "+" << fResEtaBin[ro][etab]->GetParameter(1) 
+					<< "*pt;" <<"\n";  					
+				}
+			}
+		}
+	}
+  if(nrFilled != 0) {
+		std::cout<<std::endl<<std::endl<<std::endl <<"nr. of "<<objectType_<<" filled: "<<nrFilled <<std::endl<<std::endl;  
+  	for(ro=0; ro<8; ro++) {
+    	std::cout << "Resolutions on " << resObsName2[ro] << std::endl;
+			for(int etab=0; etab<etanrbins; etab++) {	
+  			if(nrFilled != 0 && ro != 6) {
+					std::cout << "if(fabs(eta)<"<<etabinVals_[etab+1] <<") res = " << 
+					fResEtaBin[ro][etab]->GetParameter(0) << "+" << fResEtaBin[ro][etab]->GetParameter(1) 
+					<< "*exp(-(" <<fResEtaBin[ro][etab]->GetParameter(2) << "*pt));" <<std::endl;  
+				}else if(nrFilled != 0 && ro == 6){
+					std::cout << "if(fabs(eta)<"<<etabinVals_[etab+1] <<") res = " << 
+					fResEtaBin[ro][etab]->GetParameter(0) << "+" << fResEtaBin[ro][etab]->GetParameter(1) 
+					<< "*pt;" <<std::endl;  					
+				}
+			}
+		}
+	}		
 }
 
 //define this as a plug-in
