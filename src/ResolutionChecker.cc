@@ -64,13 +64,6 @@ class ResolutionChecker : public edm::EDAnalyzer {
       TTree* tResVar;
 };
 
-//
-// constants, enums and typedefs
-//
-
-//
-// static data member definitions
-//
 
 //
 // constructors and destructor
@@ -141,7 +134,7 @@ ResolutionChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
        }
      }
    }
-   else if(objectType_ == "lJets" || objectType_ == "bJets" ){
+   else if(objectType_ == "lJets" ){
      Handle<std::vector<pat::Jet> > jets;
      iEvent.getByLabel(labelName_,jets);
 		 if(jets->size()>=4) { 
@@ -154,7 +147,17 @@ ResolutionChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 	     			 p4gen.push_back(new reco::Particle(genEvt->particles()[p]));
 	     			 p4rec.push_back(new reco::Particle((pat::Jet)(*jets)[j]));
 	   			 }
-					 else if( (abs(genEvt->particles()[p].pdgId()) == 5) && (ROOT::Math::VectorUtil::DeltaR(genEvt->particles()[p].p4(), (*jets)[j].p4())< minDR_) ) {
+	 			 }
+	 		 }
+	 	 }
+	 }
+	 else if(objectType_ == "bJets" ){
+     Handle<std::vector<pat::Jet> > jets;
+     iEvent.getByLabel(labelName_,jets);
+		 if(jets->size()>=4) { 
+       for(unsigned int j = 0; j<4; j++){      
+         for(size_t p=0; p<genEvt->particles().size(); p++){
+					 if( (abs(genEvt->particles()[p].pdgId()) == 5) && (ROOT::Math::VectorUtil::DeltaR(genEvt->particles()[p].p4(), (*jets)[j].p4())< minDR_) ) {
 	          // std::cout <<"genEvt->particles()[p].status() "<<genEvt->particles()[p].status() << std::endl;
 						// const reco::Candidate *mom = genEvt->particles()[p].mother();
 						// std::cout <<"id mother particle "<<mom->pdgId()<< " status mother particle "<< mom->status()<< std::endl;
