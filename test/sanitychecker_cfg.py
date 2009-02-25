@@ -27,7 +27,11 @@ process.source = cms.Source("PoolSource",
     )
 )
 
+## std sequence to produce the ttGenEvt
+process.load("TopQuarkAnalysis.TopEventProducers.sequences.ttGenEvent_cff")
+
 process.load("TopBrussels.SanityChecker.TtGenEventChecker_cfi")
+process.load("TopBrussels.SanityChecker.ResolutionChecker_cfi")
 
 
 process.TFileService = cms.Service("TFileService",
@@ -35,4 +39,4 @@ process.TFileService = cms.Service("TFileService",
 	)
 	
 
-process.p = cms.Path(process.TtGenEventChecker)
+process.p = cms.Path(process.makeGenEvt*(process.TtGenEventChecker+process.Resolutions_lJets + process.Resolutions_bJets))
