@@ -1,6 +1,6 @@
 import FWCore.ParameterSet.Config as cms
   
-process = cms.Process("Demo")
+process = cms.Process("SanityCheck")
 
 #Message Logger
 
@@ -27,11 +27,12 @@ process.source = cms.Source("PoolSource",
     )
 )
 
-process.demo = cms.EDAnalyzer('DummyChecker',genEventCollectionName=cms.InputTag('genEvt'))
+process.load("TopBrussels.SanityChecker.TtGenEventChecker_cfi")
+
 
 process.TFileService = cms.Service("TFileService",
         fileName = cms.string('SanityChecker.root')
 	)
 	
 
-process.p = cms.Path(process.demo)
+process.p = cms.Path(process.TtGenEventChecker)
