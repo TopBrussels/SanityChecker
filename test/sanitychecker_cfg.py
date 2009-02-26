@@ -19,11 +19,14 @@ process.MessageLogger = cms.Service("MessageLogger",
 )
 
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
+#process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1000) )
 
 process.source = cms.Source("PoolSource",
     # replace 'myfile.root' with the source file you want to use
     fileNames = cms.untracked.vstring(
-        'file:myfile.root'
+        #'file:myfile.root'
+     "dcap://maite.iihe.ac.be/pnfs/iihe/cms/store/user/pvmulder/CMSSW223/Common/PATLayer1/Ttjets-madgraph/PATLayer1_nocuts_100.root"
+
     )
 )
 
@@ -32,6 +35,7 @@ process.load("TopQuarkAnalysis.TopEventProducers.sequences.ttGenEvent_cff")
 
 process.load("TopBrussels.SanityChecker.TtGenEventChecker_cfi")
 process.load("TopBrussels.SanityChecker.ResolutionChecker_cfi")
+process.load("TopBrussels.SanityChecker.KinematicsChecker_cfi")
 
 
 process.TFileService = cms.Service("TFileService",
@@ -39,4 +43,4 @@ process.TFileService = cms.Service("TFileService",
 	)
 	
 
-process.p = cms.Path(process.makeGenEvt*(process.TtGenEventChecker+process.Resolutions_lJets + process.Resolutions_bJets))
+process.p = cms.Path(process.makeGenEvt * (process.TtGenEventChecker + process.Resolutions_lJets + process.Resolutions_bJets + process.kinematics))
