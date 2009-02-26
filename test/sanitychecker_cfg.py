@@ -19,14 +19,12 @@ process.MessageLogger = cms.Service("MessageLogger",
 )
 
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
-#process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1000) )
+
 
 process.source = cms.Source("PoolSource",
     # replace 'myfile.root' with the source file you want to use
     fileNames = cms.untracked.vstring(
-        #'file:myfile.root'
-     "dcap://maite.iihe.ac.be/pnfs/iihe/cms/store/user/pvmulder/CMSSW223/Common/PATLayer1/Ttjets-madgraph/PATLayer1_nocuts_100.root"
-
+        'file:myfile.root'
     )
 )
 
