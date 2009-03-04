@@ -13,7 +13,7 @@
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: DummyChecker.cc,v 1.1 2009/02/19 11:59:06 echabert Exp $
+// $Id: JetMetChecker.cc,v 1.1 2009/03/03 17:35:02 villella Exp $
 //
 //
 
@@ -70,6 +70,7 @@ class JetMetChecker : public edm::EDAnalyzer {
   std::map<std::string,TH1D*> TH1Dcontainer_; // simple map to contain all TH1D.
   std::map<std::string,TH1F*> TH1Fcontainer_; // simple map to contain all TH1F.
   std::map<std::string,TH2F*> TH2Fcontainer_; // simple map to contain all TH2F.
+  std::map<std::string,TH1D*> TH1DcontainerForbTagging_[5]; // simple map to contain all TH1D.
 };
 
 //
@@ -186,7 +187,94 @@ JetMetChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        }
      }//close for vertex
    }
-
+   
+   Handle<TtGenEvent> genEvt;
+   iEvent.getByLabel ("genEvt",genEvt);
+  
+   //Check if branch is available  
+   if (!genEvt.isValid()){
+     edm::LogWarning  ("NoGenEvtFound") << "My warning message - NoGenEvtFound";
+   }
+   
+ 
+   for(unsigned int i=0;i<5;i++){
+     for(std::vector<pat::Jet>::const_iterator iJet = jets->begin(); iJet != jets->end(); ++iJet) {
+       
+       TH1DcontainerForbTagging_[0]["trackCountingHighPurBJetTags"]->Fill(iJet->bDiscriminator("trackCountingHighPurBJetTags"));
+       TH1DcontainerForbTagging_[0]["trackCountingHighEffBJetTags"]->Fill(iJet->bDiscriminator("trackCountingHighEffBJetTags"));
+       TH1DcontainerForbTagging_[0]["softMuonNoIPBJetTags"]->Fill(iJet->bDiscriminator("softMuonNoIPBJetTags"));
+       TH1DcontainerForbTagging_[0]["softMuonBJetTags"]->Fill(iJet->bDiscriminator("softMuonBJetTags"));
+       TH1DcontainerForbTagging_[0]["softElectronBJetTags"]->Fill(iJet->bDiscriminator("softElectronBJetTags"));
+       TH1DcontainerForbTagging_[0]["simpleSecondaryVertexBJetTags"]->Fill(iJet->bDiscriminator("simpleSecondaryVertexBJetTags"));
+       TH1DcontainerForbTagging_[0]["jetProbabilityBJetTags"]->Fill(iJet->bDiscriminator("jetProbabilityBJetTags"));
+       TH1DcontainerForbTagging_[0]["jetBProbabilityBJetTags"]->Fill(iJet->bDiscriminator("jetBProbabilityBJetTags"));
+       TH1DcontainerForbTagging_[0]["impactParameterMVABJetTags"]->Fill(iJet->bDiscriminator("impactParameterMVABJetTags"));
+       TH1DcontainerForbTagging_[0]["combinedSecondaryVertexMVABJetTags"]->Fill(iJet->bDiscriminator("combinedSecondaryVertexMVABJetTags"));
+       TH1DcontainerForbTagging_[0]["combinedSecondaryVertexBJetTags"]->Fill(iJet->bDiscriminator("combinedSecondaryVertexBJetTags"));
+        
+       if (genEvt.isValid()){
+	 //std::cout << "iJet->partonFlavour() : " << iJet->partonFlavour() << std::endl;
+	 if(fabs(iJet->partonFlavour())==5){
+	   TH1DcontainerForbTagging_[1]["trackCountingHighPurBJetTags"]->Fill(iJet->bDiscriminator("trackCountingHighPurBJetTags"));
+	   TH1DcontainerForbTagging_[1]["trackCountingHighEffBJetTags"]->Fill(iJet->bDiscriminator("trackCountingHighEffBJetTags"));
+	   TH1DcontainerForbTagging_[1]["softMuonNoIPBJetTags"]->Fill(iJet->bDiscriminator("softMuonNoIPBJetTags"));
+	   TH1DcontainerForbTagging_[1]["softMuonBJetTags"]->Fill(iJet->bDiscriminator("softMuonBJetTags"));
+	   TH1DcontainerForbTagging_[1]["softElectronBJetTags"]->Fill(iJet->bDiscriminator("softElectronBJetTags"));
+	   TH1DcontainerForbTagging_[1]["simpleSecondaryVertexBJetTags"]->Fill(iJet->bDiscriminator("simpleSecondaryVertexBJetTags"));
+	   TH1DcontainerForbTagging_[1]["jetProbabilityBJetTags"]->Fill(iJet->bDiscriminator("jetProbabilityBJetTags"));
+	   TH1DcontainerForbTagging_[1]["jetBProbabilityBJetTags"]->Fill(iJet->bDiscriminator("jetBProbabilityBJetTags"));
+	   TH1DcontainerForbTagging_[1]["impactParameterMVABJetTags"]->Fill(iJet->bDiscriminator("impactParameterMVABJetTags"));
+	   TH1DcontainerForbTagging_[1]["combinedSecondaryVertexMVABJetTags"]->Fill(iJet->bDiscriminator("combinedSecondaryVertexMVABJetTags"));
+	   TH1DcontainerForbTagging_[1]["combinedSecondaryVertexBJetTags"]->Fill(iJet->bDiscriminator("combinedSecondaryVertexBJetTags"));
+	 }
+	 if(fabs(iJet->partonFlavour())==4){
+	   TH1DcontainerForbTagging_[2]["trackCountingHighPurBJetTags"]->Fill(iJet->bDiscriminator("trackCountingHighPurBJetTags"));
+	   TH1DcontainerForbTagging_[2]["trackCountingHighEffBJetTags"]->Fill(iJet->bDiscriminator("trackCountingHighEffBJetTags"));
+	   TH1DcontainerForbTagging_[2]["softMuonNoIPBJetTags"]->Fill(iJet->bDiscriminator("softMuonNoIPBJetTags"));
+	   TH1DcontainerForbTagging_[2]["softMuonBJetTags"]->Fill(iJet->bDiscriminator("softMuonBJetTags"));
+	   TH1DcontainerForbTagging_[2]["softElectronBJetTags"]->Fill(iJet->bDiscriminator("softElectronBJetTags"));
+	   TH1DcontainerForbTagging_[2]["simpleSecondaryVertexBJetTags"]->Fill(iJet->bDiscriminator("simpleSecondaryVertexBJetTags"));
+	   TH1DcontainerForbTagging_[2]["jetProbabilityBJetTags"]->Fill(iJet->bDiscriminator("jetProbabilityBJetTags"));
+	   TH1DcontainerForbTagging_[2]["jetBProbabilityBJetTags"]->Fill(iJet->bDiscriminator("jetBProbabilityBJetTags"));
+	   TH1DcontainerForbTagging_[2]["impactParameterMVABJetTags"]->Fill(iJet->bDiscriminator("impactParameterMVABJetTags"));
+	   TH1DcontainerForbTagging_[2]["combinedSecondaryVertexMVABJetTags"]->Fill(iJet->bDiscriminator("combinedSecondaryVertexMVABJetTags"));
+	   TH1DcontainerForbTagging_[2]["combinedSecondaryVertexBJetTags"]->Fill(iJet->bDiscriminator("combinedSecondaryVertexBJetTags"));
+	 }
+	 if(fabs(iJet->partonFlavour())==21){
+	   TH1DcontainerForbTagging_[3]["trackCountingHighPurBJetTags"]->Fill(iJet->bDiscriminator("trackCountingHighPurBJetTags"));
+	   TH1DcontainerForbTagging_[3]["trackCountingHighEffBJetTags"]->Fill(iJet->bDiscriminator("trackCountingHighEffBJetTags"));
+	   TH1DcontainerForbTagging_[3]["softMuonNoIPBJetTags"]->Fill(iJet->bDiscriminator("softMuonNoIPBJetTags"));
+	   TH1DcontainerForbTagging_[3]["softMuonBJetTags"]->Fill(iJet->bDiscriminator("softMuonBJetTags"));
+	   TH1DcontainerForbTagging_[3]["softElectronBJetTags"]->Fill(iJet->bDiscriminator("softElectronBJetTags"));
+	   TH1DcontainerForbTagging_[3]["simpleSecondaryVertexBJetTags"]->Fill(iJet->bDiscriminator("simpleSecondaryVertexBJetTags"));
+	   TH1DcontainerForbTagging_[3]["jetProbabilityBJetTags"]->Fill(iJet->bDiscriminator("jetProbabilityBJetTags"));
+	   TH1DcontainerForbTagging_[3]["jetBProbabilityBJetTags"]->Fill(iJet->bDiscriminator("jetBProbabilityBJetTags"));
+	   TH1DcontainerForbTagging_[3]["impactParameterMVABJetTags"]->Fill(iJet->bDiscriminator("impactParameterMVABJetTags"));
+	   TH1DcontainerForbTagging_[3]["combinedSecondaryVertexMVABJetTags"]->Fill(iJet->bDiscriminator("combinedSecondaryVertexMVABJetTags"));
+	   TH1DcontainerForbTagging_[3]["combinedSecondaryVertexBJetTags"]->Fill(iJet->bDiscriminator("combinedSecondaryVertexBJetTags"));
+	 } 
+	 if(fabs(iJet->partonFlavour())==1||fabs(iJet->partonFlavour())==2||fabs(iJet->partonFlavour())==3){
+	   TH1DcontainerForbTagging_[4]["trackCountingHighPurBJetTags"]->Fill(iJet->bDiscriminator("trackCountingHighPurBJetTags"));
+	   TH1DcontainerForbTagging_[4]["trackCountingHighEffBJetTags"]->Fill(iJet->bDiscriminator("trackCountingHighEffBJetTags"));
+	   TH1DcontainerForbTagging_[4]["softMuonNoIPBJetTags"]->Fill(iJet->bDiscriminator("softMuonNoIPBJetTags"));
+	   TH1DcontainerForbTagging_[4]["softMuonBJetTags"]->Fill(iJet->bDiscriminator("softMuonBJetTags"));
+	   TH1DcontainerForbTagging_[4]["softElectronBJetTags"]->Fill(iJet->bDiscriminator("softElectronBJetTags"));
+	   TH1DcontainerForbTagging_[4]["simpleSecondaryVertexBJetTags"]->Fill(iJet->bDiscriminator("simpleSecondaryVertexBJetTags"));
+	   TH1DcontainerForbTagging_[4]["jetProbabilityBJetTags"]->Fill(iJet->bDiscriminator("jetProbabilityBJetTags"));
+	   TH1DcontainerForbTagging_[4]["jetBProbabilityBJetTags"]->Fill(iJet->bDiscriminator("jetBProbabilityBJetTags"));
+	   TH1DcontainerForbTagging_[4]["impactParameterMVABJetTags"]->Fill(iJet->bDiscriminator("impactParameterMVABJetTags"));
+	   TH1DcontainerForbTagging_[4]["combinedSecondaryVertexMVABJetTags"]->Fill(iJet->bDiscriminator("combinedSecondaryVertexMVABJetTags"));
+	   TH1DcontainerForbTagging_[4]["combinedSecondaryVertexBJetTags"]->Fill(iJet->bDiscriminator("combinedSecondaryVertexBJetTags"));
+	 }
+	 if(fabs(iJet->partonFlavour())!=1&&fabs(iJet->partonFlavour())!=2&&fabs(iJet->partonFlavour())!=3&&fabs(iJet->partonFlavour())!=4&&fabs(iJet->partonFlavour())!=5&&fabs(iJet->partonFlavour())!=21){//std::cout << "partonflavour is not a udscb or g" << std::endl;
+	 }
+       }
+       /*for(int j = 0;j<iJet->getPairDiscri().size();j++ ){
+	 std::cout << "Available b-tag discriminators : " <<  iJet->getPairDiscri()[j].first << std::endl;
+	 }*/
+     }
+   }
+   
    //   TH1Dcontainer_["njets"]->Fill(1);
    //   TH1Dcontainer_["njetsInSubDir"]->Fill(2);
    // TH1Dcontainer_["njetsInSubSubDir"]->Fill(3);
@@ -229,6 +317,28 @@ JetMetChecker::beginJob(const edm::EventSetup&)
   TH1Dcontainer_["JetTrkPt"] = subDir.make<TH1D>("JetTrkPt" ,"jet tracks Pt ",50,0, 100);
   TH1Dcontainer_["JetVtrTrkSize"] = subDir.make<TH1D>("JetVtrTrkSize" ,"Number of tracks associated to Primary vertex ",10,0, 10);
   TH1Dcontainer_["JetVrtTrkPt"] = subDir.make<TH1D>("JetVrtTrkPt" ,"track associated to primavy vertex Pt ",50,0, 100);
+ 
+  std::string ObjectNames[5] = {"Inclusive","bOnly","cOnly","gOnly","lOnly"};
+  
+  std::vector< TFileDirectory > subDirsbTagging;
+  for(unsigned int i=0;i<5;i++) subDirsbTagging.push_back(fs->mkdir( ObjectNames[i] ));
+  
+  //for more on b-tagging validation: http://nippon.fnal.gov:8888/lpc1/cmsroc/yumiceva/validation/ 
+  for(unsigned int i=0;i<5;i++){
+    TH1DcontainerForbTagging_[i]["trackCountingHighPurBJetTags"] = subDirsbTagging[i].make<TH1D>("trackCountingHighPurBJetTags" ,"distribution of trackCountingHighPurBJetTags",50,-10, 30);
+    TH1DcontainerForbTagging_[i]["trackCountingHighEffBJetTags"] = subDirsbTagging[i].make<TH1D>("trackCountingHighEffBJetTags" ,"distribution of trackCountingHighEffBJetTags",50,-10, 30);
+    TH1DcontainerForbTagging_[i]["softMuonNoIPBJetTags"] = subDirsbTagging[i].make<TH1D>("softMuonNoIPBJetTags" ,"distribution of softMuonNoIPBJetTags",50,0, 1);
+    TH1DcontainerForbTagging_[i]["softMuonBJetTags"] = subDirsbTagging[i].make<TH1D>("softMuonBJetTags" ,"distribution of softMuonBJetTags",50,0, 1);
+    TH1DcontainerForbTagging_[i]["softElectronBJetTags"] = subDirsbTagging[i].make<TH1D>("softElectronBJetTags" ,"distribution of softElectronBJetTags",50,0,1);
+    TH1DcontainerForbTagging_[i]["simpleSecondaryVertexBJetTags"] = subDirsbTagging[i].make<TH1D>("simpleSecondaryVertexBJetTags" ,"distribution of simpleSecondaryVertexBJetTags",50,0,8);
+    TH1DcontainerForbTagging_[i]["jetProbabilityBJetTags"] = subDirsbTagging[i].make<TH1D>("jetProbabilityBJetTags" ,"distribution of jetProbabilityBJetTags",50,0,2.5);
+    TH1DcontainerForbTagging_[i]["jetBProbabilityBJetTags"] = subDirsbTagging[i].make<TH1D>("jetBProbabilityBJetTags" ,"distribution of jetBProbabilityBJetTags",50,0,8);
+    TH1DcontainerForbTagging_[i]["impactParameterMVABJetTags"] = subDirsbTagging[i].make<TH1D>("impactParameterMVABJetTags" ,"distribution of impactParameterMVABJetTags",50,0,1);
+    TH1DcontainerForbTagging_[i]["combinedSecondaryVertexMVABJetTags"] = subDirsbTagging[i].make<TH1D>("combinedSecondaryVertexMVABJetTags" ,"distribution of combinedSecondaryVertexMVABJetTags",50,0,1);
+    TH1DcontainerForbTagging_[i]["combinedSecondaryVertexBJetTags"] = subDirsbTagging[i].make<TH1D>("combinedSecondaryVertexBJetTags" ,"distribution of combinedSecondaryVertexBJetTags",50,0,1);
+  }
+ 
+
   // TH1Dcontainer_["njetsInSubDir"] = subDir.make<TH1D>("njets-2" ,"jet multiplicity for jets with E_{T} > 30 GeV",20,0,20);//wrote in subdirectory
   // TH1Dcontainer_["njetsInSubSubDir"] = subsubDir.make<TH1D>("njets-3" ,"jet multiplicity for jets with E_{T} > 30 GeV",20,0,20);//wrote in subsubdirectory
   //TH1F
