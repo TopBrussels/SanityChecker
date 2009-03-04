@@ -39,6 +39,7 @@ process.load("TopQuarkAnalysis.TopEventProducers.sequences.ttGenEvent_cff")
 process.load("TopBrussels.SanityChecker.TtGenEventChecker_cfi")
 process.load("TopBrussels.SanityChecker.ResolutionChecker_cfi")
 process.load("TopBrussels.SanityChecker.KinematicsChecker_cfi")
+process.load("TopBrussels.SanityChecker.JetMetChecker_cfi")
 
 
 process.TFileService = cms.Service("TFileService",
