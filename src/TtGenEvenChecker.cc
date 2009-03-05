@@ -13,7 +13,7 @@
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: TtGenEventChecker.cc,v 1.1 2009/02/19 11:59:06 echabert Exp $
+// $Id: TtGenEvenChecker.cc,v 1.1 2009/02/25 10:44:43 echabert Exp $
 //
 //
 
@@ -36,11 +36,15 @@
 //needed for MessageLogger
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 
+#include "DataFormats/Candidate/interface/Particle.h"
+#include "DataFormats/Math/interface/Vector3D.h"
+
 
 #include "AnalysisDataFormats/TopObjects/interface/TtGenEvent.h"
 
 #include "TDirectory.h"
 #include "TH1D.h"
+#include "TH2D.h"
 #include "TH1F.h"
 #include "TH2F.h"
 
@@ -103,6 +107,7 @@ private:
   //Histograms are booked in the beginJob() method
   std::map < std::string, TDirectory * > TDirectorycontainer_;	// simple map to contain all TDirectory.
   std::map < std::string, TH1D * > TH1Dcontainer_;		// simple map to contain all TH1D.
+  std::map < std::string, TH2D * > TH2Dcontainer_;		// simple map to contain all TH2D.
   std::map < std::string, TH1F * > TH1Fcontainer_;		// simple map to contain all TH1F.
   std::map < std::string, TH2F * > TH2Fcontainer_;		// simple map to contain all TH2F.
 };
@@ -571,6 +576,56 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
   if (genEvt.hadronicDecayQuark ())  TH1Fcontainer_["DeltaPQuarksS3S4"]->Fill (q4.P () - q3.P ());
   if (genEvt.hadronicDecayQuarkBar ())  TH1Fcontainer_["DeltaPQuarksS3S4"]->Fill (qBar4.P () - qBar3.P ());
 
+
+  ///////////////////////////////////////////////// 
+  // Spin Correlations                           //
+  ///////////////////////////////////////////////// 
+
+  //Helicity basis
+// build CM sytems
+    reco::Particle::LorentzVector topsZMF(genEvt.top()->p4()+genEvt.topBar()->p4());
+
+  // boost particle 4-vectors to tt ZMF
+    if(genEvt.leptonicDecayTop() && genEvt.hadronicDecayTop() && genEvt.singleLepton() && genEvt.hadronicDecayB() && genEvt.hadronicDecayQuark()&& genEvt.hadronicDecayQuarkBar() ){
+  reco::Particle::LorentzVector tLeptonicZMF(ROOT::Math::VectorUtil::boost(genEvt.leptonicDecayTop()->p4(), topsZMF.BoostToCM()));
+  reco::Particle::LorentzVector tHadronicZMF(ROOT::Math::VectorUtil::boost(genEvt.hadronicDecayTop()->p4(), topsZMF.BoostToCM()));
+  reco::Particle::LorentzVector lLeptonicZMF(ROOT::Math::VectorUtil::boost(genEvt.singleLepton()->p4(), topsZMF.BoostToCM()));
+  reco::Particle::LorentzVector bHadronicZMF(ROOT::Math::VectorUtil::boost(genEvt.hadronicDecayB()->p4(), topsZMF.BoostToCM()));
+  reco::Particle::LorentzVector q1HadronicZMF(ROOT::Math::VectorUtil::boost(genEvt.hadronicDecayQuark()->p4(), topsZMF.BoostToCM()));
+  reco::Particle::LorentzVector q2HadronicZMF(ROOT::Math::VectorUtil::boost(genEvt.hadronicDecayQuarkBar()->p4(), topsZMF.BoostToCM()));
+
+  //--------------------------------------------------------------------------------
+  // build spin basis unit vectors
+    reco::Particle::Vector leptHelZMF(tLeptonicZMF.Vect().Unit()),
+                         hadrHelZMF(tHadronicZMF.Vect().Unit()); // = -leptHelZMF
+  reco::Particle::Vector q1HadZMF(q1HadronicZMF.Vect().Unit());
+  reco::Particle::Vector q2HadZMF(q2HadronicZMF.Vect().Unit());
+  reco::Particle::Vector qHadZMF(q1HadronicZMF.energy() < q2HadronicZMF.energy() ? // only lower energy quark used
+                                               q1HadZMF :
+                                               q2HadZMF);
+
+  // boost 4-vectors to t(bar) rest frames
+  reco::Particle::LorentzVector lLeptonicTRest(ROOT::Math::VectorUtil::boost(lLeptonicZMF, tLeptonicZMF.BoostToCM()));
+  reco::Particle::LorentzVector bHadronicTRest(ROOT::Math::VectorUtil::boost(bHadronicZMF, tHadronicZMF.BoostToCM()));
+  reco::Particle::LorentzVector q1HadronicTRest(ROOT::Math::VectorUtil::boost(q1HadronicZMF, tHadronicZMF.BoostToCM()));
+  reco::Particle::LorentzVector q2HadronicTRest(ROOT::Math::VectorUtil::boost(q2HadronicZMF, tHadronicZMF.BoostToCM()));
+  reco::Particle::LorentzVector qHadronicTRest(q1HadronicTRest.energy() < q2HadronicTRest.energy() ? // only lower energy quark used
+                                               q1HadronicTRest :
+                                               q2HadronicTRest);
+
+  // extract particle directions in t(bar) rest frames
+  reco::Particle::Vector lDirectionTRest(lLeptonicTRest.Vect().Unit());
+  reco::Particle::Vector bDirectionTRest(bHadronicTRest.Vect().Unit());
+  reco::Particle::Vector q1DirectionTRest(q1HadronicTRest.Vect().Unit());
+  reco::Particle::Vector q2DirectionTRest(q2HadronicTRest.Vect().Unit());
+  reco::Particle::Vector qDirectionTRest(qHadronicTRest.Vect().Unit());
+
+  TH1Dcontainer_["cosThetaTLHel"]->Fill (leptHelZMF.Dot(lDirectionTRest));
+  TH1Dcontainer_["cosThetaTBHel"]->Fill (hadrHelZMF.Dot(bDirectionTRest));
+  TH1Dcontainer_["cosThetaTQHel"]->Fill (hadrHelZMF.Dot(qDirectionTRest));
+  TH2Dcontainer_["hCosTQCosTLHel"]->Fill ( hadrHelZMF.Dot(qDirectionTRest),leptHelZMF.Dot(lDirectionTRest) );
+  TH2Dcontainer_["hCosTQCosTBHel"]->Fill ( hadrHelZMF.Dot(qDirectionTRest),hadrHelZMF.Dot(bDirectionTRest) );
+    }// close if 
   }
 
 
@@ -589,6 +644,7 @@ TtGenEventChecker::beginJob (const edm::EventSetup &)
   TFileDirectory subDirNof = fs->mkdir ("Multiplicity");
   TFileDirectory subDirRad = fs->mkdir ("Radiation");
   TFileDirectory subDirComp = fs->mkdir ("Comp");
+  TFileDirectory subDirSpinCorr = fs->mkdir ("SpinCorr");
 
   //define the histograms booked
 
@@ -696,6 +752,15 @@ TtGenEventChecker::beginJob (const edm::EventSetup &)
   TH1Fcontainer_["DeltaRWsS3S4"] = subDirComp.make < TH1F > ("DeltaRWsS3S4", "#Delta(R) Ws S3S4", 100, 0, 1);
   TH1Fcontainer_["DeltaRTopsS3S4"] = subDirComp.make < TH1F > ("DeltaRTopsS3S4", "#Delta(R) Tops S3S4", 100, 0, 1);
 
+  //Spin Correlations
+  TH1Dcontainer_["cosThetaTLHel"] = subDirSpinCorr.make < TH1D > ("cosThetaTLHel", "Pseudo-angle between t-quark and lepton", 10, -1, 1);
+  TH1Dcontainer_["cosThetaTBHel"] = subDirSpinCorr.make < TH1D > ("cosThetaTBHel", "Pseudo-angle between t-quark and b-quark", 10, -1, 1);
+  TH1Dcontainer_["cosThetaTQHel"] = subDirSpinCorr.make < TH1D > ("cosThetaTQHel", "Pseudo-angle between t-quark and low-energy quark", 10, -1, 1);
+  TH2Dcontainer_["hCosTQCosTLHel"] = subDirSpinCorr.make < TH2D > ("hCosTQCosTLHel", "Double differential distribution: t-quark and lepton/low-energy quark", 10, -1, 1, 10, -1, 1);
+  TH2Dcontainer_["hCosTQCosTBHel"] = subDirSpinCorr.make < TH2D > ("hCosTQCosTBHel", "Double differential distribution: t-quark and b/low-energy quark", 10, -1, 1, 10, -1, 1);
+
+  
+ 
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
