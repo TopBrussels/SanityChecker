@@ -182,6 +182,7 @@ MuonChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   	histocontainer_[MatchedMuon+"MuonVetoEm"]  ->Fill(muon_iter->ecalIsoDeposit()->candEnergy());
   	histocontainer_[MatchedMuon+"MuonVetoHad"] ->Fill(muon_iter->hcalIsoDeposit()->candEnergy());
 
+	histocontainer_[MatchedMuon+"MuonCharge"] ->Fill(muon_iter->charge());
    }
 
    edm::LogWarning  ("NoDataFound") << "My warning message - NoDataFound"; // or  edm::LogPrint    (not formated)
@@ -200,7 +201,7 @@ MuonChecker::beginJob(const edm::EventSetup&)
   histocontainer_["GlobalMuonSiliconFitPt"]	 	    =fs->make<TH1D>("GlobalMuonSiliconFitPt","Silicon fit transverse momentum (global muons)",400,0,400);
   histocontainer_["GlobalMuonGlobalTrackPt"]        	    =fs->make<TH1D>("GlobalMuonPt","global muons transverse momentum",400,0,400);
   histocontainer_["GlobalMuonGlobalTrackChi2"]              =fs->make<TH1D>("GlobalMuonGlobalTrackChi2","global muons Chi^2 ",400,0,400);
-  histocontainer_["GlobalMuonGlobalTrackD0"]                =fs->make<TH1D>("GlobalMuonGlobalTrackD0","global muon impact parameter (with p_{T}>20GeV/c,|#eta|<2.4)",400,-0.4,0.4);
+  histocontainer_["GlobalMuonGlobalTrackD0"]                =fs->make<TH1D>("GlobalMuonGlobalTrackD0","global muon impact parameter",400,-0.4,0.4);
   histocontainer_["GlobalMuonNbOfValidHits"]		    =fs->make<TH1D>("GlobalMuonNbOfValidHits","Number of valid hits in silicon fit for track muons",400,0,200);
   histocontainer_["GlobalMuonNbOfLostHits"]		    =fs->make<TH1D>("GlobalMuonNbOfLostHits","Number of lost hits in silicon fit for track muons",400,0,200);
   histocontainer_["MuonCaloCompatibility"]                  =fs->make<TH1D>("CaloCompatibility","Value of the LR measuring the probability that the muon is calo-compatible",100,0,1);
@@ -211,11 +212,12 @@ MuonChecker::beginJob(const edm::EventSetup&)
   histocontainer_["MuonRelIso"] 			    =fs->make<TH1D>("MuonRelIso","Relative isolation the muon",100,0,1);
   histocontainer_["MuonVetoEm"] 			    =fs->make<TH1D>("MuonVetoEm","Veto electromagnetic energy deposit in a cone of 0.07",200,0,20);
   histocontainer_["MuonVetoHad"]			    =fs->make<TH1D>("MuonVetoHad","Veto hadronic energy deposit in a cone of 0.1",200,0,20);
+  histocontainer_["MuonCharge"]			   	    =fs->make<TH1D>("MuonCharge","Charge of the muon",4,-2,2);
   histocontainer_["TopMuonMatch_SiliconFitPt"]		    =fs->make<TH1D>("TopMuonMatch_SiliconFitPt","silicon fit transverse momentum (global muons) matching the muon from the top decay",400,0,400);
   histocontainer_["TopMuonMatch_GlobalMuonSiliconFitPt"]    =fs->make<TH1D>("TopMuonMatch_GlobalMuonSiliconFitPt","Silicon fit transverse momentum (global muons) matching the muon from the top decay",400,0,400);
   histocontainer_["TopMuonMatch_GlobalMuonGlobalTrackPt"]   =fs->make<TH1D>("TopMuonMatch_GlobalMuonGlobalTrackPt","muon global track pt (muon matching the gen muon from top decay, with p_{T}>20GeV/c,|#eta|<2.4)",400,0,400);
-  histocontainer_["TopMuonMatch_GlobalMuonGlobalTrackChi2"] =fs->make<TH1D>("TopMuonMatch_GlobalMuonGlobalTrackChi2","muon global track #chi^{2} (muon matching the gen muon from top decay, with p_{T}>20GeV/c,|#eta|<2.4)",400,0,400);
-  histocontainer_["TopMuonMatch_GlobalMuonGlobalTrackD0"]   =fs->make<TH1D>("TopMuonMatch_GlobalMuonGlobalTrackD0","muon global track impact parameter (muon matching the gen muon from top decay, with p_{T}>20GeV/c,|#eta|<2.4)",400,-0.4,0.4);
+  histocontainer_["TopMuonMatch_GlobalMuonGlobalTrackChi2"] =fs->make<TH1D>("TopMuonMatch_GlobalMuonGlobalTrackChi2","muon global track #chi^{2} (muon matching the gen muon from top decay)",400,0,400);
+  histocontainer_["TopMuonMatch_GlobalMuonGlobalTrackD0"]   =fs->make<TH1D>("TopMuonMatch_GlobalMuonGlobalTrackD0","muon global track impact parameter (muon matching the gen muon from top decay)",400,-0.4,0.4);
   histocontainer_["TopMuonMatch_GlobalMuonNbOfValidHits"]   =fs->make<TH1D>("TopMuonMatch_GlobalMuonNbOfValidHits","Number of valid hits in silicon fit for global muons (muon matching the gen muon from top decay",400,0,200);
   histocontainer_["TopMuonMatch_GlobalMuonNbOfLostHits"]    =fs->make<TH1D>("TopMuonMatch_GlobalMuonNbOfLostHits","Number of lost hits in silicon fit for global muons (muon matching the gen muon from top decay",400,0,200);
   histocontainer_["TopMuonMatch_MuonCaloCompatibility"]     =fs->make<TH1D>("TopMuonMatch_MuonCaloCompatibility","Value of the LR measuring the probability that the muon is calo-compatible with a MIP (muon matching the gen muon from top decay), ",100,0,1);
@@ -226,6 +228,7 @@ MuonChecker::beginJob(const edm::EventSetup&)
   histocontainer_["TopMuonMatch_MuonRelIso"]		    =fs->make<TH1D>("TopMuonMatch_MuonRelIso","Relative isolation the muon",100,0,1);
   histocontainer_["TopMuonMatch_MuonVetoEm"]		    =fs->make<TH1D>("TopMuonMatch_MuonVetoEm","Veto electromagnetic energy deposit in a cone of 0.07",200,0,20);
   histocontainer_["TopMuonMatch_MuonVetoHad"]		    =fs->make<TH1D>("TopMuonMatch_MuonVetoHad","Veto hadronic energy deposit in a cone of 0.1",200,0,20);
+  histocontainer_["TopMuonMatch_MuonCharge"]		    =fs->make<TH1D>("TopMuonMatch_MuonCharge","Charge of the muon matching the gen muon from top decay",4,-2,2);
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
