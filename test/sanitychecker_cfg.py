@@ -41,11 +41,11 @@ process.load("TopBrussels.SanityChecker.ResolutionChecker_cfi")
 process.load("TopBrussels.SanityChecker.KinematicsChecker_cfi")
 process.load("TopBrussels.SanityChecker.JetMetChecker_cfi")
 process.load("TopBrussels.SanityChecker.TruthRecoChecker_cfi")
-
+process.load("TopBrussels.SanityChecker.MuonChecker_cfi")
 
 process.TFileService = cms.Service("TFileService",
         fileName = cms.string('SanityChecker.root')
 	)
 	
 
-process.p = cms.Path(process.makeGenEvt * (process.TtGenEventChecker + process.Resolutions_lJets + process.Resolutions_bJets + process.kinematics + process.jetmet + (process.ttDecaySelection * process.TruthReco)))
+process.p = cms.Path(process.makeGenEvt * (process.TtGenEventChecker + process.Resolutions_lJets + process.Resolutions_bJets + process.kinematics + process.jetmet + process.muonchecker + (process.ttDecaySelection * process.TruthReco)))
