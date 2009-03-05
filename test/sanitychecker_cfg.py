@@ -40,6 +40,7 @@ process.load("TopBrussels.SanityChecker.TtGenEventChecker_cfi")
 process.load("TopBrussels.SanityChecker.ResolutionChecker_cfi")
 process.load("TopBrussels.SanityChecker.KinematicsChecker_cfi")
 process.load("TopBrussels.SanityChecker.JetMetChecker_cfi")
+process.load("TopBrussels.SanityChecker.TruthRecoChecker_cfi")
 
 
 process.TFileService = cms.Service("TFileService",
@@ -47,4 +48,4 @@ process.TFileService = cms.Service("TFileService",
 	)
 	
 
-process.p = cms.Path(process.makeGenEvt * (process.TtGenEventChecker + process.Resolutions_lJets + process.Resolutions_bJets + process.kinematics + process.jetmet))
+process.p = cms.Path(process.makeGenEvt * (process.TtGenEventChecker + process.Resolutions_lJets + process.Resolutions_bJets + process.kinematics + process.jetmet + (process.ttDecaySelection * process.TruthReco)))
