@@ -24,14 +24,16 @@ process.MessageLogger = cms.Service("MessageLogger",
                                          decayChain = cms.untracked.PSet(limit = cms.untracked.int32(0)))
 )
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
+process.load("TopBrussels.SanityChecker.PATLayer1_Ttjets_MG_NoSel_input_cfi")
 
-process.source = cms.Source("PoolSource",
-    # replace 'myfile.root' with the source file you want to use
-    fileNames = cms.untracked.vstring(
-        #'file:myfile.root'
-    )
-)
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) )
+
+#process.source = cms.Source("PoolSource",
+#    # replace 'myfile.root' with the source file you want to use
+#    fileNames = cms.untracked.vstring(
+#        #'file:myfile.root'
+#    )
+#)
 
 ## std sequence to produce the ttGenEvt
 process.load("TopQuarkAnalysis.TopEventProducers.sequences.ttGenEvent_cff")
@@ -40,6 +42,7 @@ process.load("TopBrussels.SanityChecker.TtGenEventChecker_cfi")
 process.load("TopBrussels.SanityChecker.ResolutionChecker_cfi")
 process.load("TopBrussels.SanityChecker.KinematicsChecker_cfi")
 process.load("TopBrussels.SanityChecker.JetMetChecker_cfi")
+process.load("TopQuarkAnalysis.TopEventProducers.producers.TtDecaySelection_cfi")
 process.load("TopBrussels.SanityChecker.TruthRecoChecker_cfi")
 process.load("TopBrussels.SanityChecker.MuonChecker_cfi")
 
