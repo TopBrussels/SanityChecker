@@ -75,6 +75,23 @@ class MuonChecker : public edm::EDAnalyzer {
 // static data member definitions
 //
 
+   const int NbOfMuonId = 13;
+   const char *MuonID[NbOfMuonId] = {
+   "All",                             // dummy options - always true
+   "AllGlobalMuons",                  // checks isGlobalMuon flag
+   "AllStandAloneMuons", 	      // checks isStandAloneMuon flag
+   "AllTrackerMuons",		      // checks isTrackerMuon flag
+   "TrackerMuonArbitrated",	      // resolve ambiguity of sharing segments
+   "AllArbitrated",		      // all muons with the tracker muon arbitrated
+   "GlobalMuonPromptTight",	      // global muons with tighter fit requirements
+   "TMLastStationLoose", 	      // penetration depth loose selector
+   "TMLastStationTight", 	      // penetration depth tight selector
+   "TM2DCompatibilityLoose",	      // likelihood based loose selector
+   "TM2DCompatibilityTight",	      // likelihood based tight selector
+   "TMLastStationOptimizedLowPtLoose",// combination of TMLastStation and TMOneStation
+   "TMLastStationOptimizedLowPtTight" // combination of TMLastStation and TMOneStation
+   };
+
 //
 // constructors and destructor
 //
@@ -107,8 +124,8 @@ MuonChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    //Check if branch is available  
    if (!muonHandle.isValid())
    {
-     edm::LogWarning  ("NoMuonsFound") << "My warning message - NoMuonsFound";
-     throw cms::Exception("ProductNotFound") <<"MUON collection not found"<<std::endl;
+     edm::LogWarning  ("NoDataFound") << "--- NoMuonsFound ---";
+     throw cms::Exception("ProductNotFound") <<"Muon collection not found"<<std::endl;
    }
    const std::vector<pat::Muon> & muons = *muonHandle;
 
@@ -118,7 +135,8 @@ MuonChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    //Check if branch is available  
    if (!genEvtHandle.isValid())
    {
-     edm::LogWarning  ("NoGenEvtFound") << "My warning message - NoGenEvtFound";
+     edm::LogWarning  ("NoDataFound") << "--- NoGenEvtFound ---";
+     throw cms::Exception("ProductNotFound") <<"Gen event not found"<<std::endl;
    }
    const TtGenEvent & genEvt = *genEvtHandle;
 
@@ -126,27 +144,19 @@ MuonChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    OverlapChecker MyChecker;
    std::string MatchedMuon = "";
 
-   int NbOfMuonId = 13;
-   char **MuonID    = new char* [NbOfMuonId];
-   MuonID[0] = new char[100]; MuonID[0] = "All";                              // dummy options - always true
-   MuonID[1] = new char[100]; MuonID[1] = "AllGlobalMuons";                   // checks isGlobalMuon flag
-   MuonID[2] = new char[100]; MuonID[2] = "AllStandAloneMuons"; 	      // checks isStandAloneMuon flag
-   MuonID[3] = new char[100]; MuonID[3] = "AllTrackerMuons";		      // checks isTrackerMuon flag
-   MuonID[4] = new char[100]; MuonID[4] = "TrackerMuonArbitrated";	      // resolve ambiguity of sharing segments
-   MuonID[5] = new char[100]; MuonID[5] = "AllArbitrated";		      // all muons with the tracker muon arbitrated
-   MuonID[6] = new char[100]; MuonID[6] = "GlobalMuonPromptTight";	      // global muons with tighter fit requirements
-   MuonID[7] = new char[100]; MuonID[7] = "TMLastStationLoose"; 	      // penetration depth loose selector
-   MuonID[8] = new char[100]; MuonID[8] = "TMLastStationTight"; 	      // penetration depth tight selector
-   MuonID[9] = new char[100]; MuonID[9] = "TM2DCompatibilityLoose";	      // likelihood based loose selector
-   MuonID[10]= new char[100]; MuonID[10]= "TM2DCompatibilityTight";	      // likelihood based tight selector
-   MuonID[11]= new char[100]; MuonID[11]= "TMLastStationOptimizedLowPtLoose"; // combination of TMLastStation and TMOneStation
-   MuonID[12]= new char[100]; MuonID[12]= "TMLastStationOptimizedLowPtTight";  // combination of TMLastStation and TMOneStation
-
    for(std::vector<pat::Muon>::const_iterator muon_iter = muons.begin(); muon_iter!=muons.end(); ++muon_iter)
    {
 	//if(muon_iter->genLepton() != 0 && muon_iter->genLepton()->numberOfMothers() != 0) histocontainer_["GenMuonMotherPid"]->Fill(muon_iter->genLepton()->mother(0)->pdgId());
-	if(muon_iter->genLepton() == 0 || !genEvtHandle.isValid()) GenLeplMatch = false;
-	else if( genEvt.isSemiLeptonic(genEvt.kMuon) )             GenLeplMatch	= MyChecker(*muon_iter->genLepton(),*genEvt.singleLepton());
+	if(muon_iter->genLepton() == 0)
+	{
+		edm::LogWarning ("LinkBroken") << "--- NoGenMuonEvtFound ---";
+		GenLeplMatch = false;
+	}
+	else if( genEvt.isSemiLeptonic(genEvt.kMuon) )
+	{
+		GenLeplMatch	= MyChecker(*muon_iter->genLepton(),*genEvt.singleLepton());
+	}
+	else    GenLeplMatch = false;
 
 	(GenLeplMatch ? MatchedMuon = "TopMuonMatch_" : MatchedMuon = "");
 
@@ -157,17 +167,17 @@ MuonChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 	if(muon_iter->isGlobalMuon())
 	{
-		histocontainer_[MatchedMuon+"GlobalMuonNbOfValidHits"]  ->Fill(muon_iter->innerTrack()->numberOfValidHits());
-		histocontainer_[MatchedMuon+"GlobalMuonNbOfLostHits"]   ->Fill(muon_iter->innerTrack()->numberOfLostHits());
-		histocontainer_[MatchedMuon+"GlobalMuonSiliconFitPt"]	->Fill(muon_iter->innerTrack()->pt());
+		histocontainer_[MatchedMuon+"GlobalMuonInnerTrackNbOfValidHits"]  ->Fill(muon_iter->innerTrack()->numberOfValidHits());
+		histocontainer_[MatchedMuon+"GlobalMuonInnerTrackNbOfLostHits"]   ->Fill(muon_iter->innerTrack()->numberOfLostHits());
+		histocontainer_[MatchedMuon+"GlobalMuonInnerTrackPt"]   	  ->Fill(muon_iter->innerTrack()->pt());
 
-		histocontainer_[MatchedMuon+"GlobalMuonNbOfValidHits"]  ->Fill(muon_iter->outerTrack()->numberOfValidHits());
-		histocontainer_[MatchedMuon+"GlobalMuonNbOfLostHits"]   ->Fill(muon_iter->outerTrack()->numberOfLostHits());
-		histocontainer_[MatchedMuon+"GlobalMuonSiliconFitPt"]	->Fill(muon_iter->outerTrack()->pt());
+		histocontainer_[MatchedMuon+"GlobalMuonOuterTrackNbOfValidHits"]  ->Fill(muon_iter->outerTrack()->numberOfValidHits());
+		histocontainer_[MatchedMuon+"GlobalMuonOuterTrackNbOfLostHits"]   ->Fill(muon_iter->outerTrack()->numberOfLostHits());
+		histocontainer_[MatchedMuon+"GlobalMuonOuterTrackPt"]    	  ->Fill(muon_iter->outerTrack()->pt());
 
-		histocontainer_[MatchedMuon+"GlobalMuonGlobalTrackPt"]	->Fill(muon_iter->globalTrack()->pt());
-		histocontainer_[MatchedMuon+"GlobalMuonGlobalTrackD0"]	->Fill(muon_iter->globalTrack()->d0());
-		histocontainer_[MatchedMuon+"GlobalMuonGlobalTrackChi2"]->Fill(muon_iter->globalTrack()->chi2());
+		histocontainer_[MatchedMuon+"GlobalMuonGlobalTrackPt"]		  ->Fill(muon_iter->globalTrack()->pt());
+		histocontainer_[MatchedMuon+"GlobalMuonGlobalTrackD0"]		  ->Fill(muon_iter->globalTrack()->d0());
+		histocontainer_[MatchedMuon+"GlobalMuonGlobalTrackChi2"]	  ->Fill(muon_iter->globalTrack()->normalizedChi2());
 	}
 	
 	histocontainer_[MatchedMuon+"MuonCaloCompatibility"] ->Fill(muon_iter->caloCompatibility());
@@ -185,8 +195,8 @@ MuonChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	histocontainer_[MatchedMuon+"MuonCharge"] ->Fill(muon_iter->charge());
    }
 
-   edm::LogWarning  ("NoDataFound") << "My warning message - NoDataFound"; // or  edm::LogPrint    (not formated)
-   edm::LogWarning  ("LinkBroken") << "My warning message - LinkBroken"; // or  edm::LogPrint    (not formated)
+   //edm::LogWarning  ("NoDataFound") << "My warning message - NoDataFound"; // or  edm::LogPrint    (not formated)
+   //edm::LogWarning  ("LinkBroken") << "My warning message - LinkBroken"; // or  edm::LogPrint    (not formated)
 }
 
 
@@ -198,12 +208,22 @@ MuonChecker::beginJob(const edm::EventSetup&)
   if (!fs) throw edm::Exception(edm::errors::Configuration, "TFileService missing from configuration!");
 
   histocontainer_["GenMuonMotherPid"]      		    =fs->make<TH1D>("GenMuonMotherPid","Mother PDG Id of generated muon matching the leading reconstructed muon",1000,0,1000);
-  histocontainer_["GlobalMuonSiliconFitPt"]	 	    =fs->make<TH1D>("GlobalMuonSiliconFitPt","Silicon fit transverse momentum (global muons)",400,0,400);
-  histocontainer_["GlobalMuonGlobalTrackPt"]        	    =fs->make<TH1D>("GlobalMuonPt","global muons transverse momentum",400,0,400);
-  histocontainer_["GlobalMuonGlobalTrackChi2"]              =fs->make<TH1D>("GlobalMuonGlobalTrackChi2","global muons Chi^2 ",400,0,400);
-  histocontainer_["GlobalMuonGlobalTrackD0"]                =fs->make<TH1D>("GlobalMuonGlobalTrackD0","global muon impact parameter",400,-0.4,0.4);
-  histocontainer_["GlobalMuonNbOfValidHits"]		    =fs->make<TH1D>("GlobalMuonNbOfValidHits","Number of valid hits in silicon fit for track muons",400,0,200);
-  histocontainer_["GlobalMuonNbOfLostHits"]		    =fs->make<TH1D>("GlobalMuonNbOfLostHits","Number of lost hits in silicon fit for track muons",400,0,200);
+  histocontainer_["MuonId"]      		            =fs->make<TH1D>("MuonId","Muon identification algorithms",13,0,13);histocontainer_["MuonId"]->LabelsDeflate("X");
+  ///////////////////////////////////////////////////////////////////////////////
+  // for all global muons (except the one from the semi-muonic top quark decay) :
+
+  histocontainer_["GlobalMuonInnerTrackNbOfValidHits"]      =fs->make<TH1D>("GlobalMuonInnerTrackNbOfValidHits","Number of valid hits in silicon fit for global muons",400,0,20);
+  histocontainer_["GlobalMuonInnerTrackNbOfLostHits"]	    =fs->make<TH1D>("GlobalMuonInnerTrackNbOfLostHits","Number of lost hits in silicon fit for global muons",400,0,20);
+  histocontainer_["GlobalMuonInnerTrackPt"]	            =fs->make<TH1D>("GlobalMuonInnerTrackPt","Inner track transverse momentum for global muons",400,0,400);
+
+  histocontainer_["GlobalMuonOuterTrackNbOfValidHits"]      =fs->make<TH1D>("GlobalMuonOuterTrackNbOfValidHits","Number of valid hits in silicon fit for global muons",400,0,20);
+  histocontainer_["GlobalMuonOuterTrackNbOfLostHits"]       =fs->make<TH1D>("GlobalMuonOuterTrackNbOfLostHits","Number of lost hits in silicon fit for global muons",400,0,20);
+  histocontainer_["GlobalMuonOuterTrackPt"]		    =fs->make<TH1D>("GlobalMuonOuterTrackPt","Outer track transverse momentum for global muons",400,0,400);
+
+  histocontainer_["GlobalMuonGlobalTrackPt"]                =fs->make<TH1D>("GlobalMuonGlobalTrackPt","Global track transverse momentum for global muons",400,0,400);
+  histocontainer_["GlobalMuonGlobalTrackD0"]    	    =fs->make<TH1D>("GlobalMuonGlobalTrackD0","Global track impact parameter for global muons",400,-0.4,0.4);
+  histocontainer_["GlobalMuonGlobalTrackChi2"] 		    =fs->make<TH1D>("GlobalMuonGlobalTrackChi2","Global track normalized #chi^{2} ",400,0,20);
+  
   histocontainer_["MuonCaloCompatibility"]                  =fs->make<TH1D>("CaloCompatibility","Value of the LR measuring the probability that the muon is calo-compatible",100,0,1);
   histocontainer_["MuonSegmCompatibility"]                  =fs->make<TH1D>("SegmCompatibility","Value of the LR measuring the probability that the muon is segment-compatible",100,0,1);
   histocontainer_["MuonIsoR03SumPt"]   		            =fs->make<TH1D>("MuonIsoR03SumPt","Sum of the track transverse momenta in a cone of 0.3 around the muon",200,0,20);
@@ -213,22 +233,31 @@ MuonChecker::beginJob(const edm::EventSetup&)
   histocontainer_["MuonVetoEm"] 			    =fs->make<TH1D>("MuonVetoEm","Veto electromagnetic energy deposit in a cone of 0.07",200,0,20);
   histocontainer_["MuonVetoHad"]			    =fs->make<TH1D>("MuonVetoHad","Veto hadronic energy deposit in a cone of 0.1",200,0,20);
   histocontainer_["MuonCharge"]			   	    =fs->make<TH1D>("MuonCharge","Charge of the muon",4,-2,2);
-  histocontainer_["TopMuonMatch_SiliconFitPt"]		    =fs->make<TH1D>("TopMuonMatch_SiliconFitPt","silicon fit transverse momentum (global muons) matching the muon from the top decay",400,0,400);
-  histocontainer_["TopMuonMatch_GlobalMuonSiliconFitPt"]    =fs->make<TH1D>("TopMuonMatch_GlobalMuonSiliconFitPt","Silicon fit transverse momentum (global muons) matching the muon from the top decay",400,0,400);
-  histocontainer_["TopMuonMatch_GlobalMuonGlobalTrackPt"]   =fs->make<TH1D>("TopMuonMatch_GlobalMuonGlobalTrackPt","muon global track pt (muon matching the gen muon from top decay, with p_{T}>20GeV/c,|#eta|<2.4)",400,0,400);
-  histocontainer_["TopMuonMatch_GlobalMuonGlobalTrackChi2"] =fs->make<TH1D>("TopMuonMatch_GlobalMuonGlobalTrackChi2","muon global track #chi^{2} (muon matching the gen muon from top decay)",400,0,400);
-  histocontainer_["TopMuonMatch_GlobalMuonGlobalTrackD0"]   =fs->make<TH1D>("TopMuonMatch_GlobalMuonGlobalTrackD0","muon global track impact parameter (muon matching the gen muon from top decay)",400,-0.4,0.4);
-  histocontainer_["TopMuonMatch_GlobalMuonNbOfValidHits"]   =fs->make<TH1D>("TopMuonMatch_GlobalMuonNbOfValidHits","Number of valid hits in silicon fit for global muons (muon matching the gen muon from top decay",400,0,200);
-  histocontainer_["TopMuonMatch_GlobalMuonNbOfLostHits"]    =fs->make<TH1D>("TopMuonMatch_GlobalMuonNbOfLostHits","Number of lost hits in silicon fit for global muons (muon matching the gen muon from top decay",400,0,200);
-  histocontainer_["TopMuonMatch_MuonCaloCompatibility"]     =fs->make<TH1D>("TopMuonMatch_MuonCaloCompatibility","Value of the LR measuring the probability that the muon is calo-compatible with a MIP (muon matching the gen muon from top decay), ",100,0,1);
-  histocontainer_["TopMuonMatch_MuonSegmCompatibility"]     =fs->make<TH1D>("TopMuonMatch_MuonSegmCompatibility","Value of the LR measuring the probability that the muon is segment-compatible with a MIP (muon matching the gen muon from top decay), ",100,0,1);
-  histocontainer_["TopMuonMatch_MuonIsoR03SumPt"]	    =fs->make<TH1D>("TopMuonMatch_MuonIsoR03SumPt","Sum of the track transverse momenta in a cone of 0.3 around the muon",200,0,20);
-  histocontainer_["TopMuonMatch_MuonIsoR03emEt"]	    =fs->make<TH1D>("TopMuonMatch_MuonIsoR03emEt","Sum of the electromagnetic transverse energy in a cone of 0.3 around the muon",200,0,20);
-  histocontainer_["TopMuonMatch_MuonIsoR03hadEt"]	    =fs->make<TH1D>("TopMuonMatch_MuonIsoR03hadEt","Sum of the hadronic transverse energy in a cone of 0.3 around the muon",200,0,20);
-  histocontainer_["TopMuonMatch_MuonRelIso"]		    =fs->make<TH1D>("TopMuonMatch_MuonRelIso","Relative isolation the muon",100,0,1);
-  histocontainer_["TopMuonMatch_MuonVetoEm"]		    =fs->make<TH1D>("TopMuonMatch_MuonVetoEm","Veto electromagnetic energy deposit in a cone of 0.07",200,0,20);
-  histocontainer_["TopMuonMatch_MuonVetoHad"]		    =fs->make<TH1D>("TopMuonMatch_MuonVetoHad","Veto hadronic energy deposit in a cone of 0.1",200,0,20);
-  histocontainer_["TopMuonMatch_MuonCharge"]		    =fs->make<TH1D>("TopMuonMatch_MuonCharge","Charge of the muon matching the gen muon from top decay",4,-2,2);
+  
+  ///////////////////////////////////////////////////////////////////////////////////////
+  // for the global muon that matches the muon coming from the top quark leptonic decay : 
+
+  histocontainer_["TopMuonMatch_GlobalMuonInnerTrackNbOfValidHits"] =fs->make<TH1D>("TopMuonMatch_GlobalMuonInnerTrackNbOfValidHits","Number of valid hits in silicon fit for global muons",400,0,20);
+  histocontainer_["TopMuonMatch_GlobalMuonInnerTrackNbOfLostHits"]  =fs->make<TH1D>("TopMuonMatch_GlobalMuonInnerTrackNbOfLostHits","Number of lost hits in silicon fit for global muons",400,0,20);
+  histocontainer_["TopMuonMatch_GlobalMuonInnerTrackPt"]	    =fs->make<TH1D>("TopMuonMatch_GlobalMuonInnerTrackPt","Inner track transverse momentum for global muons",400,0,400);
+
+  histocontainer_["TopMuonMatch_GlobalMuonOuterTrackNbOfValidHits"] =fs->make<TH1D>("TopMuonMatch_GlobalMuonOuterTrackNbOfValidHits","Number of valid hits in silicon fit for global muons",400,0,20);
+  histocontainer_["TopMuonMatch_GlobalMuonOuterTrackNbOfLostHits"]  =fs->make<TH1D>("TopMuonMatch_GlobalMuonOuterTrackNbOfLostHits","Number of lost hits in silicon fit for global muons",400,0,20);
+  histocontainer_["TopMuonMatch_GlobalMuonOuterTrackPt"]	    =fs->make<TH1D>("TopMuonMatch_GlobalMuonOuterTrackPt","Outer track transverse momentum for global muons",400,0,400);
+
+  histocontainer_["TopMuonMatch_GlobalMuonGlobalTrackPt"]           =fs->make<TH1D>("TopMuonMatch_GlobalMuonGlobalTrackPt","Global track transverse momentum for global muons",400,0,400);
+  histocontainer_["TopMuonMatch_GlobalMuonGlobalTrackD0"]    	    =fs->make<TH1D>("TopMuonMatch_GlobalMuonGlobalTrackD0","Global track impact parameter for global muons",400,-0.4,0.4);
+  histocontainer_["TopMuonMatch_GlobalMuonGlobalTrackChi2"] 	    =fs->make<TH1D>("TopMuonMatch_GlobalMuonGlobalTrackChi2","Global track normalized #chi^{2} ",400,0,20);
+
+  histocontainer_["TopMuonMatch_MuonCaloCompatibility"]    	    =fs->make<TH1D>("TopMuonMatch_MuonCaloCompatibility","Value of the LR measuring the probability that the muon is calo-compatible with a MIP (muon matching the gen muon from top decay), ",100,0,1);
+  histocontainer_["TopMuonMatch_MuonSegmCompatibility"]             =fs->make<TH1D>("TopMuonMatch_MuonSegmCompatibility","Value of the LR measuring the probability that the muon is segment-compatible with a MIP (muon matching the gen muon from top decay), ",100,0,1);
+  histocontainer_["TopMuonMatch_MuonIsoR03SumPt"]	            =fs->make<TH1D>("TopMuonMatch_MuonIsoR03SumPt","Sum of the track transverse momenta in a cone of 0.3 around the muon",200,0,20);
+  histocontainer_["TopMuonMatch_MuonIsoR03emEt"]	            =fs->make<TH1D>("TopMuonMatch_MuonIsoR03emEt","Sum of the electromagnetic transverse energy in a cone of 0.3 around the muon",200,0,20);
+  histocontainer_["TopMuonMatch_MuonIsoR03hadEt"]	            =fs->make<TH1D>("TopMuonMatch_MuonIsoR03hadEt","Sum of the hadronic transverse energy in a cone of 0.3 around the muon",200,0,20);
+  histocontainer_["TopMuonMatch_MuonRelIso"]		            =fs->make<TH1D>("TopMuonMatch_MuonRelIso","Relative isolation the muon",100,0,1);
+  histocontainer_["TopMuonMatch_MuonVetoEm"]		            =fs->make<TH1D>("TopMuonMatch_MuonVetoEm","Veto electromagnetic energy deposit in a cone of 0.07",200,0,20);
+  histocontainer_["TopMuonMatch_MuonVetoHad"]		            =fs->make<TH1D>("TopMuonMatch_MuonVetoHad","Veto hadronic energy deposit in a cone of 0.1",200,0,20);
+  histocontainer_["TopMuonMatch_MuonCharge"]		            =fs->make<TH1D>("TopMuonMatch_MuonCharge","Charge of the muon matching the gen muon from top decay",4,-2,2);
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
