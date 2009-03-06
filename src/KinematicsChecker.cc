@@ -13,7 +13,7 @@
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: DummyChecker.cc,v 1.1 2009/02/19 11:59:06 echabert Exp $
+// $Id: KinematicsChecker.cc,v 1.1 2009/02/26 12:33:07 jmmaes Exp $
 //
 //
 
@@ -71,8 +71,9 @@ class KinematicsChecker : public edm::EDAnalyzer {
       std::map<std::string,TH1F*> TH1Fcontainer_; // simple map to contain all TH1F.
       std::map<std::string,TH2F*> TH2Fcontainer_; // simple map to contain all TH2F.
 
- 
- 
+  std::vector< double > jetsAcceptance_, muonsAcceptance_;
+  std::vector< double > nJetsAcceptance, nMuonsAcceptance;
+  
    
 };
 
@@ -91,14 +92,15 @@ KinematicsChecker::KinematicsChecker(const edm::ParameterSet& iConfig)
 
 {
    //now do what ever initialization is needed
-  jets_          =   iConfig.getParameter<edm::InputTag>( "jetsName" );
-  muons_         =   iConfig.getParameter<edm::InputTag>( "muonsName" );
-  mets_          =   iConfig.getParameter<edm::InputTag>( "metsName" );
-  matchingAlgo_  =   iConfig.getParameter<int>( "matchingAlgo" );
-  useMaxDist_    =   iConfig.getParameter<bool>( "useMaxDist" );
-  useDeltaR_     =   iConfig.getParameter<bool>( "useDeltaR" );
-  maxDist_       =   iConfig.getParameter<double>( "maxDist" );
-
+  jets_             =   iConfig.getParameter<edm::InputTag>( "jetsName" );
+  muons_            =   iConfig.getParameter<edm::InputTag>( "muonsName" );
+  mets_             =   iConfig.getParameter<edm::InputTag>( "metsName" );
+  matchingAlgo_     =   iConfig.getParameter<int>( "matchingAlgo" );
+  useMaxDist_       =   iConfig.getParameter<bool>( "useMaxDist" );
+  useDeltaR_        =   iConfig.getParameter<bool>( "useDeltaR" );
+  maxDist_          =   iConfig.getParameter<double>( "maxDist" );
+  jetsAcceptance_   =  iConfig.getParameter< std::vector< double > >( "jetsAcceptance" );
+  muonsAcceptance_  =  iConfig.getParameter< std::vector< double > >( "muonsAcceptance" );
 }
 
 
@@ -171,7 +173,19 @@ KinematicsChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
      for(unsigned int j=0;j<ObjectP4s[i].size();j++) TH1Dcontainer_[i]["theta"]->Fill(ObjectP4s[i][j].Theta());
      for(unsigned int j=0;j<ObjectP4s[i].size();j++) TH1Dcontainer_[i]["phi"]->Fill(ObjectP4s[i][j].Phi());
    }
-    
+   
+   //Check acceptance
+   if(ObjectP4s[0].size()>3){
+     
+     if(ObjectP4s[0][0].Pt()<jetsAcceptance_[1]||ObjectP4s[0][1].Pt()<jetsAcceptance_[1]||ObjectP4s[0][2].Pt()<jetsAcceptance_[1]||ObjectP4s[0][3].Pt()<jetsAcceptance_[1]) nJetsAcceptance[1]++;
+     if(fabs(ObjectP4s[0][0].Eta())>jetsAcceptance_[0]||fabs(ObjectP4s[0][1].Eta())>jetsAcceptance_[0]||fabs(ObjectP4s[0][2].Eta())>jetsAcceptance_[0]||fabs(ObjectP4s[0][3].Eta())>jetsAcceptance_[0]) nJetsAcceptance[0]++;
+   }
+
+   if(ObjectP4s[1].size()>0){ 
+     if(ObjectP4s[1][0].Pt()<muonsAcceptance_[1]) nMuonsAcceptance[1]++;
+     if(fabs(ObjectP4s[1][0].Eta())>muonsAcceptance_[0]) nMuonsAcceptance[0]++;
+   }
+     
    for(unsigned int i=0;i<3;i++){
      ObjectP4s[i].clear();
    }
@@ -216,6 +230,7 @@ KinematicsChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
      }
    }
 
+ 
 
     //tree levels of message
    //no endl needed 
@@ -255,7 +270,11 @@ KinematicsChecker::beginJob(const edm::EventSetup&)
     TH1Dcontainer_[i]["theta"] = subDirs[i].make<TH1D>("theta" ,"theta",50,0,3.2);
     TH1Dcontainer_[i]["phi"] = subDirs[i].make<TH1D>("phi" ,"phi",50,-3.2,3.2);
   }
-
+ 
+  nJetsAcceptance.push_back(0);
+  nJetsAcceptance.push_back(0);
+  nMuonsAcceptance.push_back(0);
+  nMuonsAcceptance.push_back(0);
 
 }
 
@@ -266,6 +285,11 @@ KinematicsChecker::endJob() {
    //edm::LogError  ("SummaryError") << "My error message \n";    // or  edm::LogProblem  (not formated)
    //use LogInfo to summarise information (ex: pourcentage of events matched ...)
    //edm::LogInfo   ("MainResults") << "My LogInfo message \n";  // or  edm::LogVerbatim (not formated)
+  edm::LogInfo   ("MainResults") << "Number of events where at least on of the 4 highest pt jets outside |eta|<" << jetsAcceptance_[0] << ": " << nJetsAcceptance[0] << "\n";
+  edm::LogInfo   ("MainResults") << "Number of events where at least on of the 4 highest pt jets has pt<" << jetsAcceptance_[1] << ": " << nJetsAcceptance[1] << "\n";
+  edm::LogInfo   ("MainResults") << "Number of events where the first muon is outside |eta|<" << muonsAcceptance_[0] << ": " << nMuonsAcceptance[0] << "\n";
+  edm::LogInfo   ("MainResults") << "Number of events where the first muon has pt<" << muonsAcceptance_[1] << ": " << nMuonsAcceptance[1] << "\n";
+
 }
 
 //define this as a plug-in
