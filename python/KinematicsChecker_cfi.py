@@ -8,6 +8,6 @@ kinematics = cms.EDAnalyzer('KinematicsChecker',
         useMaxDist      = cms.bool(True),
         useDeltaR       = cms.bool(False),
         maxDist         = cms.double(0.5),
-        jetsAcceptance  = cms.vdouble(2.4,40),                 #acceptance region for 4 first jets in jet collection (eta,pt)
-        muonsAcceptance  = cms.vdouble(2.1,30)                 #acceptance region for first muon in muon collection  (eta,pt)
+        jetsAcceptance  = cms.vdouble(2.4,15),                 #acceptance region for jets in jet collection   (eta,pt)
+        muonsAcceptance  = cms.vdouble(2.5,15)                 #acceptance region for muons in muon collection (eta,pt)
 ) 

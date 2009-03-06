@@ -13,7 +13,7 @@
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: KinematicsChecker.cc,v 1.1 2009/02/26 12:33:07 jmmaes Exp $
+// $Id: KinematicsChecker.cc,v 1.2 2009/03/06 14:00:44 jmmaes Exp $
 //
 //
 
@@ -174,18 +174,28 @@ KinematicsChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
      for(unsigned int j=0;j<ObjectP4s[i].size();j++) TH1Dcontainer_[i]["phi"]->Fill(ObjectP4s[i][j].Phi());
    }
    
-   //Check acceptance
-   if(ObjectP4s[0].size()>3){
-     
-     if(ObjectP4s[0][0].Pt()<jetsAcceptance_[1]||ObjectP4s[0][1].Pt()<jetsAcceptance_[1]||ObjectP4s[0][2].Pt()<jetsAcceptance_[1]||ObjectP4s[0][3].Pt()<jetsAcceptance_[1]) nJetsAcceptance[1]++;
-     if(fabs(ObjectP4s[0][0].Eta())>jetsAcceptance_[0]||fabs(ObjectP4s[0][1].Eta())>jetsAcceptance_[0]||fabs(ObjectP4s[0][2].Eta())>jetsAcceptance_[0]||fabs(ObjectP4s[0][3].Eta())>jetsAcceptance_[0]) nJetsAcceptance[0]++;
+   //Check acceptance 
+   bool bj0=false;
+   bool bj1=false;
+   bool bm0=false;
+   bool bm1=false;
+   
+   for(unsigned int j=0; j<ObjectP4s[0].size(); j++){
+     if(ObjectP4s[0][j].Pt()<jetsAcceptance_[1]) bj1=true;
+     if(fabs(ObjectP4s[0][j].Eta())>jetsAcceptance_[0]) bj0=true;
    }
+   if(bj0) nJetsAcceptance[0]++;
+   if(bj1) nJetsAcceptance[1]++;
 
-   if(ObjectP4s[1].size()>0){ 
-     if(ObjectP4s[1][0].Pt()<muonsAcceptance_[1]) nMuonsAcceptance[1]++;
-     if(fabs(ObjectP4s[1][0].Eta())>muonsAcceptance_[0]) nMuonsAcceptance[0]++;
+   for(unsigned int j=0; j<ObjectP4s[1].size(); j++){
+     if(ObjectP4s[1][j].Pt()<muonsAcceptance_[1]) bm1=true;
+     if(fabs(ObjectP4s[1][j].Eta())>muonsAcceptance_[0]) bm0=true;
    }
-     
+   if(bm0) nMuonsAcceptance[0]++;
+   if(bm1) nMuonsAcceptance[1]++;
+   
+
+   
    for(unsigned int i=0;i<3;i++){
      ObjectP4s[i].clear();
    }
@@ -285,11 +295,14 @@ KinematicsChecker::endJob() {
    //edm::LogError  ("SummaryError") << "My error message \n";    // or  edm::LogProblem  (not formated)
    //use LogInfo to summarise information (ex: pourcentage of events matched ...)
    //edm::LogInfo   ("MainResults") << "My LogInfo message \n";  // or  edm::LogVerbatim (not formated)
-  edm::LogInfo   ("MainResults") << "Number of events where at least on of the 4 highest pt jets outside |eta|<" << jetsAcceptance_[0] << ": " << nJetsAcceptance[0] << "\n";
-  edm::LogInfo   ("MainResults") << "Number of events where at least on of the 4 highest pt jets has pt<" << jetsAcceptance_[1] << ": " << nJetsAcceptance[1] << "\n";
-  edm::LogInfo   ("MainResults") << "Number of events where the first muon is outside |eta|<" << muonsAcceptance_[0] << ": " << nMuonsAcceptance[0] << "\n";
-  edm::LogInfo   ("MainResults") << "Number of events where the first muon has pt<" << muonsAcceptance_[1] << ": " << nMuonsAcceptance[1] << "\n";
-
+  /* edm::LogInfo   ("MainResults") << "Number of events where at least one jet is outside |eta|<" << jetsAcceptance_[0] << ": " << nJetsAcceptance[0] << "\n";
+  edm::LogInfo   ("MainResults") << "Number of events where at least one jet has pt<" << jetsAcceptance_[1] << ": " << nJetsAcceptance[1] << "\n";
+  edm::LogInfo   ("MainResults") << "Number of events where at least one muon is outside |eta|<" << muonsAcceptance_[0] << ": " << nMuonsAcceptance[0] << "\n";
+  edm::LogInfo   ("MainResults") << "Number of events where at least one muon has pt<" << muonsAcceptance_[1] << ": " << nMuonsAcceptance[1] << "\n";*/
+  edm::LogError   ("MainError") << "Number of events where at least one jet is outside |eta|<" << jetsAcceptance_[0] << ": " << nJetsAcceptance[0] << "\n";
+  edm::LogError   ("MainError") << "Number of events where at least one jet has pt<" << jetsAcceptance_[1] << ": " << nJetsAcceptance[1] << "\n";
+  edm::LogError   ("MainError") << "Number of events where at least one muon is outside |eta|<" << muonsAcceptance_[0] << ": " << nMuonsAcceptance[0] << "\n";
+  edm::LogError   ("MainError") << "Number of events where at least one muon has pt<" << muonsAcceptance_[1] << ": " << nMuonsAcceptance[1] << "\n";
 }
 
 //define this as a plug-in
