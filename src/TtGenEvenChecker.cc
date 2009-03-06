@@ -13,7 +13,7 @@
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: TtGenEvenChecker.cc,v 1.1 2009/02/25 10:44:43 echabert Exp $
+// $Id: TtGenEvenChecker.cc,v 1.2 2009/03/05 15:42:49 villella Exp $
 //
 //
 
@@ -421,9 +421,11 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
   ///////////////////////////////////////////////// 
  
    
-
    DeltaR.clear(); 
    vector<float> PtRad;
+   if(genEvt.ISR().size()==0){
+    TH1Fcontainer_["ISRPt"]->Fill(-1);
+   }
    for(unsigned int x=0;x<genEvt.ISR().size();x++){
      TH1Fcontainer_["ISRPt"]->Fill(genEvt.ISR()[x]->pt());
      TH1Fcontainer_["ISREta"]->Fill(genEvt.ISR()[x]->eta());
@@ -440,12 +442,17 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
    if(DeltaR.size()>0) TH1Fcontainer_["DeltaRISRQuark"]->Fill(DeltaR[0]);
    std::sort(vec.begin(),vec.end(),HightestPt());
    if(PtRad.size()>0){
+     bool found = false;
      for(unsigned int x=0;x<vec.size();x++)
        if(PtRad[0]>vec[x].pt()){
-         TH1Dcontainer_["RankHightestISR"]->Fill(x);
-         break;
+         TH1Dcontainer_["RankHightestISR"]->Fill(x+1);
+         found = true;
+	 break;
        }
+     if(!found) TH1Dcontainer_["RankHightestISR"]->Fill(vec.size()+1);
    }
+   else TH1Dcontainer_["RankHightestISR"]->Fill(999);
+   
    std::sort(vec.begin(),vec.end(),LowestPt());
    int nof = 0;
    for(unsigned int x=0;x<PtRad.size();x++)
@@ -480,20 +487,24 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
    if(DeltaR.size()>0) TH1Fcontainer_["DeltaRTopRadiationQuark"]->Fill(DeltaR[0]);
    std::sort(vec.begin(),vec.end(),HightestPt());
    if(PtRad.size()>0){
+     bool found = false;
      for(unsigned int x=0;x<vec.size();x++)
        if(PtRad[0]>vec[x].pt()){
-         TH1Dcontainer_["RankHightestTopRadiation"]->Fill(x);
-         break;
+         TH1Dcontainer_["RankHightestTopRadiation"]->Fill(x+1);
+         found = true;
+	 break;
        }
+     if(!found) TH1Dcontainer_["RankHightestTopRadiation"]->Fill(vec.size()+1);
    }
+   else TH1Dcontainer_["RankHightestTopRadiation"]->Fill(999);
+   nof=0;
    std::sort(vec.begin(),vec.end(),LowestPt());
    for(unsigned int x=0;x<PtRad.size();x++)
      if(PtRad[x]>vec[0].pt()) nof++;
    TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->Fill(nof);
    
-  
+ 
   }
-  
   ///////////////////////////////////////////////// 
   //Compare particles with different status      //
   ///////////////////////////////////////////////// 
@@ -784,73 +795,73 @@ TtGenEventChecker::endJob ()
   edm::LogVerbatim ("MainResults") << " -------------------------------";
   //take care
   //here born of integral are hard coded and depend on the numberOfbins !!
-  a = TH1Fcontainer_["LowestPtQuark"]->Integral(0,15)/ TH1Fcontainer_["LowestPtQuark"]->Integral();
+  a = TH1Fcontainer_["LowestPtQuark"]->Integral(0,15)/ TH1Fcontainer_["LowestPtQuark"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " Quark with Pt < 15 GeV: "<<a*100<<" \%";
-  a = TH1Fcontainer_["LowestPtQuark"]->Integral(0,20)/ TH1Fcontainer_["LowestPtQuark"]->Integral();
+  a = TH1Fcontainer_["LowestPtQuark"]->Integral(0,20)/ TH1Fcontainer_["LowestPtQuark"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " Quark with Pt < 20 GeV: "<<a*100<<" \%";
-  a = TH1Fcontainer_["LowestPtQuark"]->Integral(0,25)/ TH1Fcontainer_["LowestPtQuark"]->Integral();
+  a = TH1Fcontainer_["LowestPtQuark"]->Integral(0,25)/ TH1Fcontainer_["LowestPtQuark"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " Quark with Pt < 25 GeV: "<<a*100<<" \%";
-  a = TH1Fcontainer_["LowestPtQuark"]->Integral(0,30)/ TH1Fcontainer_["LowestPtQuark"]->Integral();
+  a = TH1Fcontainer_["LowestPtQuark"]->Integral(0,30)/ TH1Fcontainer_["LowestPtQuark"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " Quark with Pt < 30 GeV: "<<a*100<<" \%";
-  a = TH1Fcontainer_["HightestEtaQuark"]->Integral(0,240)/TH1Fcontainer_["HightestEtaQuark"]->Integral();
+  a = TH1Fcontainer_["HightestEtaQuark"]->Integral(0,240)/TH1Fcontainer_["HightestEtaQuark"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " Quark with Eta > 2.4: "<<(1-a)*100<<" \%";
-  a = TH1Fcontainer_["HightestEtaQuark"]->Integral(0,300)/TH1Fcontainer_["HightestEtaQuark"]->Integral();
+  a = TH1Fcontainer_["HightestEtaQuark"]->Integral(0,300)/TH1Fcontainer_["HightestEtaQuark"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " Quark with Eta > 3: "<<(1-a)*100<<" \%";
-  a = TH1Fcontainer_["HightestEtaQuark"]->Integral(0,400)/TH1Fcontainer_["HightestEtaQuark"]->Integral();
+  a = TH1Fcontainer_["HightestEtaQuark"]->Integral(0,400)/TH1Fcontainer_["HightestEtaQuark"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " Quark with Eta > 4: "<<(1-a)*100<<" \%";
-  a = TH1Fcontainer_["DeltaRlQuarks"]->Integral(0,50)/TH1Fcontainer_["DeltaRlQuarks"]->Integral();
+  a = TH1Fcontainer_["DeltaRlQuarks"]->Integral(0,50)/TH1Fcontainer_["DeltaRlQuarks"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " l-Quarks with DeltaR < 0.5: "<<a*100<<" \%";
-  a = TH1Fcontainer_["DeltaRBClosestlQuarksSame"]->Integral(0,50)/TH1Fcontainer_["DeltaRBClosestlQuarksSame"]->Integral();
+  a = TH1Fcontainer_["DeltaRBClosestlQuarksSame"]->Integral(0,50)/TH1Fcontainer_["DeltaRBClosestlQuarksSame"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " l-Quarks & B (same top) with DeltaR < 0.5: "<<a*100<<" \%";
-  a = TH1Fcontainer_["DeltaRBClosestlQuarks"]->Integral(0,50)/TH1Fcontainer_["DeltaRBClosestlQuarks"]->Integral();
+  a = TH1Fcontainer_["DeltaRBClosestlQuarks"]->Integral(0,50)/TH1Fcontainer_["DeltaRBClosestlQuarks"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " l-Quarks & B  with DeltaR < 0.5: "<<a*100<<" \%";
-  a = TH1Fcontainer_["MinimalDeltaRQuarks"]->Integral(0,50)/TH1Fcontainer_["MinimalDeltaRQuarks"]->Integral();
+  a = TH1Fcontainer_["MinimalDeltaRQuarks"]->Integral(0,50)/TH1Fcontainer_["MinimalDeltaRQuarks"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " minimal DeltaR  between 4 quarks < 0.5: "<<a*100<<" \%";
-  a = TH1Fcontainer_["MinimalDeltaRQuarks"]->Integral(0,100)/TH1Fcontainer_["MinimalDeltaRQuarks"]->Integral();
+  a = TH1Fcontainer_["MinimalDeltaRQuarks"]->Integral(0,100)/TH1Fcontainer_["MinimalDeltaRQuarks"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " minimal DeltaR  between 4 quarks < 1.0: "<<a*100<<" \%";
-  a = TH1Fcontainer_["MinimalDeltaRQuarksLepton"]->Integral(0,30)/TH1Fcontainer_["MinimalDeltaRQuarksLepton"]->Integral();
+  a = TH1Fcontainer_["MinimalDeltaRQuarksLepton"]->Integral(0,30)/TH1Fcontainer_["MinimalDeltaRQuarksLepton"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " DeltaR(quarks, muon) < 0.3: "<<a*100<<" \%";
   //
  
   //Radiations
   //take care
   //here born of integral are hard coded and depend on the numberOfbins !!
-  a = TH1Dcontainer_["RankHightestISR"]->Integral(0,4)/TH1Dcontainer_["RankHightestISR"]->Integral();
+  a = TH1Dcontainer_["RankHightestISR"]->Integral(0,5)/TH1Dcontainer_["RankHightestISR"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " ISR with Pt > quarks: "<<a*100<<" \%";
-  a = TH1Dcontainer_["RankHightestTopRadiation"]->Integral(0,4)/TH1Dcontainer_["RankHightestTopRadiation"]->Integral();
+  a = TH1Dcontainer_["RankHightestTopRadiation"]->Integral(0,5)/TH1Dcontainer_["RankHightestTopRadiation"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " Top Radiation with Pt > quarks: "<<a*100<<" \%";
-  a = TH1Fcontainer_["ISRPt"]->Integral(0,30)/TH1Fcontainer_["ISRPt"]->Integral();
+  a = TH1Fcontainer_["ISRPt"]->Integral(0,30)/TH1Fcontainer_["ISRPt"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " ISR  with Pt > 30 GeV: "<<(1-a)*100<<" \%";
-  a = TH1Fcontainer_["TopRadiationPt"]->Integral(0,30)/TH1Fcontainer_["TopRadiationPt"]->Integral();
+  a = TH1Fcontainer_["TopRadiationPt"]->Integral(0,30)/TH1Fcontainer_["TopRadiationPt"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " TopRadiation  with Pt > 30 GeV: "<<(1-a)*100<<" \%";
   //
  
-  a = TH1Dcontainer_["NofISRWithHightestPtThanQuarks"]->Integral(0,1)/TH1Dcontainer_["NofISRWithHightestPtThanQuarks"]->Integral();
+  a = TH1Dcontainer_["NofISRWithHightestPtThanQuarks"]->Integral(0,1)/TH1Dcontainer_["NofISRWithHightestPtThanQuarks"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " At least one ISR  with Pt > Quarks: "<<(1-a)*100<<" \%";
-  a = TH1Dcontainer_["NofISRWithHightestPtThanQuarks"]->Integral(0,2)/TH1Dcontainer_["NofISRWithHightestPtThanQuarks"]->Integral();
+  a = TH1Dcontainer_["NofISRWithHightestPtThanQuarks"]->Integral(0,2)/TH1Dcontainer_["NofISRWithHightestPtThanQuarks"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " At least 2 ISR  with Pt > Quarks: "<<(1-a)*100<<" \%";
-  a = TH1Dcontainer_["NofISRWithHightestPtThanQuarks"]->Integral(0,3)/TH1Dcontainer_["NofISRWithHightestPtThanQuarks"]->Integral();
+  a = TH1Dcontainer_["NofISRWithHightestPtThanQuarks"]->Integral(0,3)/TH1Dcontainer_["NofISRWithHightestPtThanQuarks"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " At least 3 ISR  with Pt > Quarks: "<<(1-a)*100<<" \%";
-  a = TH1Dcontainer_["NofISRWithHightestPtThanQuarks"]->Integral(0,4)/TH1Dcontainer_["NofISRWithHightestPtThanQuarks"]->Integral();
+  a = TH1Dcontainer_["NofISRWithHightestPtThanQuarks"]->Integral(0,4)/TH1Dcontainer_["NofISRWithHightestPtThanQuarks"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " At least 4 ISR  with Pt > Quarks: "<<(1-a)*100<<" \%";
-  a = TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->Integral(0,1)/TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->Integral();
+  a = TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->Integral(0,1)/TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " At least one TopRadiation  with Pt > Quarks: "<<(1-a)*100<<" \%";
-  a = TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->Integral(0,2)/TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->Integral();
+  a = TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->Integral(0,2)/TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " At least 2 TopRadiation  with Pt > Quarks: "<<(1-a)*100<<" \%";
-  a = TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->Integral(0,3)/TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->Integral();
+  a = TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->Integral(0,3)/TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " At least 3 TopRadiation  with Pt > Quarks: "<<(1-a)*100<<" \%";
-  a = TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->Integral(0,4)/TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->Integral();
+  a = TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->Integral(0,4)/TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " At least 4 TopRadiation  with Pt > Quarks: "<<(1-a)*100<<" \%";
    
   // Bquarks
   edm::LogVerbatim ("MainResults") << "-------------------- ";
   edm::LogVerbatim ("MainResults") << " Other ";
   edm::LogVerbatim ("MainResults") << "-------------------- ";
-  a = TH1Dcontainer_["NofBFromTop"]->Integral(0,2)/TH1Dcontainer_["NofBFromTop"]->Integral();
+  a = TH1Dcontainer_["NofBFromTop"]->Integral(0,2)/TH1Dcontainer_["NofBFromTop"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " Events with 1 b-quarks instead of 2: "<<a*100<<"\%";
-  if(TH1Dcontainer_["NofTopsRadiation"]->Integral(0,1) == TH1Dcontainer_["NofTopsRadiation"]->Integral()) 
+  if(TH1Dcontainer_["NofTopsRadiation"]->Integral(0,1) == TH1Dcontainer_["NofTopsRadiation"]->GetEntries()) 
     edm::LogVerbatim ("MainResults") << " There is no top radiations in this sample";
-  if(TH1Dcontainer_["NofISR"]->Integral(0,1) == TH1Dcontainer_["NofISR"]->Integral()) 
+  if(TH1Dcontainer_["NofISR"]->Integral(0,1) == TH1Dcontainer_["NofISR"]->GetEntries()) 
     edm::LogVerbatim ("MainResults") << " There is no ISR in this sample (normally present in MadGraph sample)";
 
   
