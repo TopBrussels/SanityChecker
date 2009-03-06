@@ -57,7 +57,6 @@ class MuonChecker : public edm::EDAnalyzer {
       // ----------member data ---------------------------
 
      std::map<std::string,TH1D*> histocontainer_; // simple map to contain all histograms. Histograms are booked in the beginJob() method
-     std::map<int,std::string> pdgid_;
   
      edm::InputTag muoLabel_;
      bool verbose_;
@@ -90,6 +89,24 @@ class MuonChecker : public edm::EDAnalyzer {
    "TM2DCompatibilityTight",	      // likelihood based tight selector
    "TMLastStationOptimizedLowPtLoose",// combination of TMLastStation and TMOneStation
    "TMLastStationOptimizedLowPtTight" // combination of TMLastStation and TMOneStation
+   };
+
+   const char *MesonsPdgId[6] = {
+   "W boson",                          // PdgId = 24 or -24
+   "Light Mesons (I=1)",               // PdgId/100 = 1
+   "Light Mesons (I=0)",               // PdgId/100 = 2
+   "Strange Mesons",                   // PdgId/100 = 3
+   "Charmed Mesons",                   // PdgId/100 = 4
+   "Bottom Mesons",                    // PdgId/100 = 5
+   };
+
+   const char *BaryonsPdgId[6] = {
+   "Other"
+   "Light Baryons",                    // PdgId/1000 = 1
+   "Light Baryons",                    // PdgId/1000 = 2
+   "Strange Baryons",                  // PdgId/1000 = 3
+   "Charmed Baryons",                  // PdgId/1000 = 4
+   "Bottom Baryons"                    // PdgId/1000 = 5
    };
 
 //
@@ -141,22 +158,46 @@ MuonChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    const TtGenEvent & genEvt = *genEvtHandle;
 
    bool GenLeplMatch = false;
-   OverlapChecker MyChecker;
+   //OverlapChecker MyChecker;
    std::string MatchedMuon = "";
 
    for(std::vector<pat::Muon>::const_iterator muon_iter = muons.begin(); muon_iter!=muons.end(); ++muon_iter)
    {
-	//if(muon_iter->genLepton() != 0 && muon_iter->genLepton()->numberOfMothers() != 0) histocontainer_["GenMuonMotherPid"]->Fill(muon_iter->genLepton()->mother(0)->pdgId());
-	if(muon_iter->genLepton() == 0)
+	GenLeplMatch = false;
+	
+	if(muon_iter->genParticle() == 0)
 	{
-		edm::LogWarning ("LinkBroken") << "--- NoGenMuonEvtFound ---";
-		GenLeplMatch = false;
+		edm::LogWarning ("LinkBroken") << "--- NoGenMuonFound ---";
 	}
-	else if( genEvt.isSemiLeptonic(genEvt.kMuon) )
+	else if( muon_iter->genParticle()->numberOfMothers() != 0 )
 	{
-		GenLeplMatch	= MyChecker(*muon_iter->genLepton(),*genEvt.singleLepton());
+		Int_t PDG = fabs(muon_iter->genParticle()->mother(0)->pdgId());
+		if(PDG<100)
+		{
+			if(PDG == 24) histocontainer_["GenMuonMotherPid"]->Fill(MesonsPdgId[0],1);
+			else if(muon_iter->genParticle()->mother(0)->numberOfMothers() != 0 )
+			{
+				if(fabs(muon_iter->genParticle()->mother(0)->mother(0)->pdgId()) == 24) 
+				{
+					histocontainer_["GenMuonMotherPid"]->Fill(MesonsPdgId[0],1);
+					if( genEvt.isSemiLeptonic(genEvt.kMuon) && muon_iter->genParticle()->mother(0)->mother(0)->numberOfMothers() != 0 )
+					{
+						if(fabs(muon_iter->genParticle()->mother(0)->mother(0)->mother(0)->pdgId()) == 6) GenLeplMatch = true;
+						//std::cout<<"Check overlap with the genparticle : "<<GenLeplMatch<<std::endl;
+					}
+				}
+			}
+		}
+		else if(100<PDG && PDG<600)
+		{
+			histocontainer_["GenMuonMotherPid"]->Fill(MesonsPdgId[PDG/100],1);
+		}
+		else if(999<PDG && PDG<6000)
+		{
+			histocontainer_["GenMuonMotherPid"]->Fill(BaryonsPdgId[PDG/1000],1);
+		}
+		else    histocontainer_["GenMuonMotherPid"]->Fill(BaryonsPdgId[0],1);
 	}
-	else    GenLeplMatch = false;
 
 	(GenLeplMatch ? MatchedMuon = "TopMuonMatch_" : MatchedMuon = "");
 
@@ -194,9 +235,6 @@ MuonChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 	histocontainer_[MatchedMuon+"MuonCharge"] ->Fill(muon_iter->charge());
    }
-
-   //edm::LogWarning  ("NoDataFound") << "My warning message - NoDataFound"; // or  edm::LogPrint    (not formated)
-   //edm::LogWarning  ("LinkBroken") << "My warning message - LinkBroken"; // or  edm::LogPrint    (not formated)
 }
 
 
@@ -207,7 +245,7 @@ MuonChecker::beginJob(const edm::EventSetup&)
   edm::Service<TFileService> fs;
   if (!fs) throw edm::Exception(edm::errors::Configuration, "TFileService missing from configuration!");
 
-  histocontainer_["GenMuonMotherPid"]      		    =fs->make<TH1D>("GenMuonMotherPid","Mother PDG Id of generated muon matching the leading reconstructed muon",1000,0,1000);
+  histocontainer_["GenMuonMotherPid"]      		    =fs->make<TH1D>("GenMuonMotherPid","Mother PDG Id of generated muon matching the leading reconstructed muon",12,0,12);histocontainer_["GenMuonMotherPid"]->LabelsDeflate("X");
   histocontainer_["MuonId"]      		            =fs->make<TH1D>("MuonId","Muon identification algorithms",13,0,13);histocontainer_["MuonId"]->LabelsDeflate("X");
   ///////////////////////////////////////////////////////////////////////////////
   // for all global muons (except the one from the semi-muonic top quark decay) :
