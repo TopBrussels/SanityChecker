@@ -1,11 +1,13 @@
 import FWCore.ParameterSet.Config as cms
 
 kinematics = cms.EDAnalyzer('KinematicsChecker',
-	jetsName     = cms.InputTag('selectedLayer1Jets'),
-	muonsName    = cms.InputTag('selectedLayer1Muons'),
-        metsName     = cms.InputTag('selectedLayer1METs'),
-        matchingAlgo = cms.int32(0),
-        useMaxDist   = cms.bool(True),
-        useDeltaR    = cms.bool(False),
-        maxDist      = cms.double(0.5)
+	jetsName        = cms.InputTag('selectedLayer1Jets'),
+	muonsName       = cms.InputTag('selectedLayer1Muons'),
+        metsName        = cms.InputTag('selectedLayer1METs'),
+        matchingAlgo    = cms.int32(0),
+        useMaxDist      = cms.bool(True),
+        useDeltaR       = cms.bool(False),
+        maxDist         = cms.double(0.5),
+        jetsAcceptance  = cms.vdouble(2.4,40),                 #acceptance region for 4 first jets in jet collection (eta,pt)
+        muonsAcceptance  = cms.vdouble(2.1,30)                 #acceptance region for first muon in muon collection  (eta,pt)
 ) 
