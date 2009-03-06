@@ -75,12 +75,12 @@ class JetMetChecker : public edm::EDAnalyzer {
   std::map<std::string,TH1F*> TH1Fcontainer_; // simple map to contain all TH1F.
   std::map<std::string,TH2F*> TH2Fcontainer_; // simple map to contain all TH2F.
   std::map<std::string,TH1D*> TH1DcontainerForbTagging_[11]; // simple map to contain all TH1D.
-  std::map<std::string,TGraph*> TGraphcontainerForbTagging_[11]; // simple map to contain all TGraph.
+  //std::map<std::string,TGraph*> TGraphcontainerForbTagging_[11]; // simple map to contain all TGraph.
 
-  std::string objectNames_[5]; //= {"Inclusive","bOnly","cOnly","gOnly","lOnly"};
-  std::string bTaggerNames_[11]; //= {"trackCountingHighPurBJetTags","trackCountingHighEffBJetTags","softMuonNoIPBJetTags","softMuonBJetTags","softMuonBJetTags","softElectronBJetTags","simpleSecondaryVertexBJetTags","jetProbabilityBJetTags","impactParameterMVABJetTags","combinedSecondaryVertexMVABJetTags","combinedSecondaryVertexBJetTags"};
-  double lowerRanges_[11]; //={-10,-10,0,0,0,0,0,0,0,0,0};
-  double upperRanges_[11]; //={30,30,1,1,1,8,2.5,8,1,1,1};
+  std::string objectNames_[5];
+  std::string bTaggerNames_[11]; 
+  double lowerRanges_[11];
+  double upperRanges_[11];
   int nBins;
 
 
@@ -341,13 +341,16 @@ JetMetChecker::beginJob(const edm::EventSetup&)
     TH1DcontainerForbTagging_[i]["ljets"] = subDirsbTagging[i].make<TH1D>("ljets" ,"distribution of b discriminant",nBins,lowerRanges_[i],upperRanges_[i]);
     TH1DcontainerForbTagging_[i]["gjets"] = subDirsbTagging[i].make<TH1D>("gjets" ,"distribution of b discriminant",nBins,lowerRanges_[i],upperRanges_[i]);
 
-    //    TGraphcontainerForbTagging_[i]["Effcjets"] = subDirsbTagging[i].make<TGraph>("Effcjets");
-    TGraphcontainerForbTagging_[i]["Effcjets"] = subDirsbTagging[i].make<TGraph>();
+    /* TGraphcontainerForbTagging_[i]["Effcjets"] = subDirsbTagging[i].make<TGraph>();
     TGraphcontainerForbTagging_[i]["Effcjets"]->SetName("Effcjets");
     TGraphcontainerForbTagging_[i]["Effljets"] = subDirsbTagging[i].make<TGraph>();
     TGraphcontainerForbTagging_[i]["Effljets"]->SetName("Effljets");
     TGraphcontainerForbTagging_[i]["Effgjets"] = subDirsbTagging[i].make<TGraph>();
-    TGraphcontainerForbTagging_[i]["Effgjets"]->SetName("Effgjets");
+    TGraphcontainerForbTagging_[i]["Effgjets"]->SetName("Effgjets");*/
+    
+    TH1DcontainerForbTagging_[i]["Effcjets"] = subDirsbTagging[i].make<TH1D>("Effcjets" ,"b tag efficiency versus c mistag rate",1000,0,1);
+    TH1DcontainerForbTagging_[i]["Effljets"] = subDirsbTagging[i].make<TH1D>("Effljets" ,"b tag efficiency versus c mistag rate",1000,0,1);
+    TH1DcontainerForbTagging_[i]["Effgjets"] = subDirsbTagging[i].make<TH1D>("Effgjets" ,"b tag efficiency versus c mistag rate",1000,0,1);
   }
 
   // TH1Dcontainer_["njetsInSubDir"] = subDir.make<TH1D>("njets-2" ,"jet multiplicity for jets with E_{T} > 30 GeV",20,0,20);//wrote in subdirectory
@@ -362,11 +365,15 @@ JetMetChecker::endJob() {
   //Piece of code to make b-tag efficiency as function of non-b tag efficiency
 
   double xVal=0;
+  int intxVal=0;
   double xValAdder=0;
+
   double cVal=0;
   double cValAdder=0;
+
   double lVal=0;
   double lValAdder=0;
+
   double gVal=0;
   double gValAdder=0;
   
@@ -374,6 +381,7 @@ JetMetChecker::endJob() {
     
     xVal=0;
     xValAdder=0;
+    intxVal=0;
     cVal=0;
     cValAdder=0;
     lVal=0;
@@ -384,18 +392,22 @@ JetMetChecker::endJob() {
     for(int bin=nBins+1; bin>0; bin--){//the number of bins should be the same, ALLWAYS!
       xValAdder += TH1DcontainerForbTagging_[i]["bjets"]->GetBinContent(bin);
       xVal=xValAdder/TH1DcontainerForbTagging_[i]["bjets"]->Integral();
-     
+      intxVal=int (1000*xVal);
+
       cValAdder += TH1DcontainerForbTagging_[i]["cjets"]->GetBinContent(bin);
       cVal=cValAdder/TH1DcontainerForbTagging_[i]["cjets"]->Integral();
-      TGraphcontainerForbTagging_[i]["Effcjets"]->SetPoint(bin,xVal,cVal);
+      //TGraphcontainerForbTagging_[i]["Effcjets"]->SetPoint(bin,xVal,cVal);
+      TH1DcontainerForbTagging_[i]["Effcjets"]->SetBinContent(intxVal,cVal);
 
       lValAdder += TH1DcontainerForbTagging_[i]["ljets"]->GetBinContent(bin);
       lVal=lValAdder/TH1DcontainerForbTagging_[i]["ljets"]->Integral();
-      TGraphcontainerForbTagging_[i]["Effljets"]->SetPoint(bin,xVal,lVal);
-
+      //TGraphcontainerForbTagging_[i]["Effljets"]->SetPoint(bin,xVal,lVal);
+      TH1DcontainerForbTagging_[i]["Effljets"]->SetBinContent(intxVal,lVal);
+  
       gValAdder += TH1DcontainerForbTagging_[i]["gjets"]->GetBinContent(bin);
       gVal=gValAdder/TH1DcontainerForbTagging_[i]["gjets"]->Integral();
-      TGraphcontainerForbTagging_[i]["Effgjets"]->SetPoint(bin,xVal,gVal);
+      //TGraphcontainerForbTagging_[i]["Effgjets"]->SetPoint(bin,xVal,gVal);  
+      TH1DcontainerForbTagging_[i]["Effgjets"]->SetBinContent(intxVal,gVal);
 
     }
   }  
