@@ -24,9 +24,9 @@ process.MessageLogger = cms.Service("MessageLogger",
                                          decayChain = cms.untracked.PSet(limit = cms.untracked.int32(0)))
 )
 
-process.load("TopBrussels.SanityChecker.PATLayer1_Ttjets_MG_NoSel_input_cfi")
+process.load("TopBrussels.SanityChecker.PATLayer1_Ttjets_MG_input_cfi")
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100000) )
 
 #process.source = cms.Source("PoolSource",
 #    # replace 'myfile.root' with the source file you want to use
@@ -43,6 +43,7 @@ process.load("TopBrussels.SanityChecker.ResolutionChecker_cfi")
 process.load("TopBrussels.SanityChecker.KinematicsChecker_cfi")
 process.load("TopBrussels.SanityChecker.JetMetChecker_cfi")
 process.load("TopQuarkAnalysis.TopEventProducers.producers.TtDecaySelection_cfi")
+process.ttDecaySelection.channel_1 = [0, 1, 0]
 process.load("TopBrussels.SanityChecker.TruthRecoChecker_cfi")
 process.load("TopBrussels.SanityChecker.MuonChecker_cfi")
 process.load("TopBrussels.SanityChecker.VertexChecker_cfi")
