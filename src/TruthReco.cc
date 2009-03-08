@@ -1101,8 +1101,6 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 				double arraynew[100];
 				if(NumberISR !=0 && NumberRadiation !=0){
 	 				if(verbose_) cout << "keep the jets matched to radiation (ISR and top) and their ranks"<< endl;									
-					cout <<originalrankjetsradiation.size() << endl;
-					cout <<originalrankjetsISR.size() << endl;
 					for(unsigned int j=0; j<myselectedjets.size();j++){ 
 						for(unsigned int l =0; l<originalrankjetsradiation.size(); l++){
 							if(j == (unsigned int) originalrankjetsradiation[l]){
@@ -1110,7 +1108,6 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 								arraynew[j]=0;
 								l=originalrankjetsradiation.size();		
 							}else{arraynew[j]=1;}
-							cout << "looking for a jet matched with the top radiation " << arraynew[j]<<endl;
 						}
 						if(arraynew[j] != 0){
 							for(unsigned int k =0; k<originalrankjetsISR.size(); k++){
@@ -1119,10 +1116,8 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 									arraynew[j]=0;
 									k=originalrankjetsISR.size();					
 								}else{arraynew[j]=1;}
-								cout << "looking for a jet matched with the ISR " << arraynew[j]<<endl;
 							}
 						}
-						cout <<arraynew[j]<<endl;
 					}
 				}else if((NumberISR ==0) && (NumberRadiation !=0)){
 	 				if(verbose_) cout << "keep the jets matched to radiation (top) and their ranks"<< endl;									
@@ -1165,8 +1160,6 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 				if(Radiation && jetmatchedwithradiation){
  					if(verbose_){
 						cout << "sort the jets on pT"<< endl;									
-						cout << rankjetsmatchedtorad.size() <<endl;
-						cout << ptjetsmatchedtorad.size() <<endl;
 					}
 					//highest pT jet has per definition lowest rank!
 					//sort first on rank --> make plot of lowest
