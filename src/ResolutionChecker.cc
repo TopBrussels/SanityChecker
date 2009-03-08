@@ -86,7 +86,6 @@ ResolutionChecker::ResolutionChecker(const edm::ParameterSet& iConfig)
 
 ResolutionChecker::~ResolutionChecker()
 {
-  std::cout<<"nr. of "<<objectType_<<" filled: "<<nrFilled<<std::endl;
 }
 
 
@@ -172,7 +171,7 @@ ResolutionChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
      Handle<std::vector<pat::MET> >  mets;
      iEvent.getByLabel(labelName_,mets);
      if(mets->size()>=1) { 
-       if( genEvt->isSemiLeptonic() && ROOT::Math::VectorUtil::DeltaR(genEvt->singleNeutrino()->p4(), (*mets)[0].p4()) < minDR_) {
+       if( genEvt->isSemiLeptonic() && genEvt->singleNeutrino() != 0 && ROOT::Math::VectorUtil::DeltaR(genEvt->singleNeutrino()->p4(), (*mets)[0].p4()) < minDR_) {
          p4gen.push_back(new reco::Particle(0,genEvt->singleNeutrino()->p4(),math::XYZPoint()));
          p4rec.push_back(new reco::Particle((pat::MET)((*mets)[0])));
        }
@@ -398,47 +397,49 @@ ResolutionChecker::endJob() {
       hResEtaBin[ro][etab] -> Fit(fResEtaBin[ro][etab]->GetName(),"RQ");
     }
   } 
-  if(objectType_ == "lJets" && nrFilled == 0) edm::LogError  ("SummaryError") << "No plots filled for light jets \n";    
-  if(objectType_ == "bJets" && nrFilled == 0) edm::LogError  ("SummaryError") << "No plots filled for bjets \n";    
-  if(objectType_ == "muon" && nrFilled == 0) edm::LogError  ("SummaryError") << "No plots filled for muons \n";    
-  if(objectType_ == "electron" && nrFilled == 0) edm::LogError  ("SummaryError") << "No plots filled for electrons \n";    
-  if(objectType_ == "tau" && nrFilled == 0) edm::LogError  ("SummaryError") << "No plots filled for taus \n";    
-  if(objectType_ == "met" && nrFilled == 0) edm::LogError  ("SummaryError") << "No plots filled for met \n";    
-
-  if(nrFilled != 0) {
-		edm::LogInfo   ("MainResults") <<"\n\n\n" <<"nr. of "<<objectType_<<" filled: "<<nrFilled <<"\n";  
+  if(objectType_ == "lJets" && nrFilled == 0) edm::LogProblem  ("SummaryError") << "No plots filled for light jets \n";    
+  if(objectType_ == "bJets" && nrFilled == 0) edm::LogProblem  ("SummaryError") << "No plots filled for bjets \n";    
+  if(objectType_ == "muon" && nrFilled == 0) edm::LogProblem  ("SummaryError") << "No plots filled for muons \n";    
+  if(objectType_ == "electron" && nrFilled == 0) edm::LogProblem  ("SummaryError") << "No plots filled for electrons \n";    
+  if(objectType_ == "tau" && nrFilled == 0) edm::LogProblem  ("SummaryError") << "No plots filled for taus \n";    
+  if(objectType_ == "met" && nrFilled == 0) edm::LogProblem  ("SummaryError") << "No plots filled for met \n";    
+	
+	
+	edm::LogVerbatim   ("MainResults") <<"\n\n\n RESULTS OF RESOLUTION MODULE \n\n"; 
+  if(nrFilled != 0 && objectType_ != "met") {
+		edm::LogVerbatim   ("MainResults") <<"\n\n\n" <<"nr. of "<<objectType_<<" filled: "<<nrFilled <<"\n";  
   	for(ro=0; ro<8; ro++) {
-    	edm::LogInfo   ("MainResults") << "Resolutions on " << resObsName2[ro] << "\n\n";
+    	edm::LogVerbatim   ("MainResults") << "Resolutions on " << resObsName2[ro] << "\n\n";
 			for(int etab=0; etab<etanrbins; etab++) {	
   			if(nrFilled != 0 && ro != 6) {
-					edm::LogInfo   ("MainResults") << "if(fabs(eta)<"<<etabinVals_[etab+1] <<") res = " << 
+					edm::LogVerbatim   ("MainResults") << "if(fabs(eta)<"<<etabinVals_[etab+1] <<") res = " << 
 					fResEtaBin[ro][etab]->GetParameter(0) << "+" << fResEtaBin[ro][etab]->GetParameter(1) 
-					<< "*exp(-(" <<fResEtaBin[ro][etab]->GetParameter(2) << "*pt));" <<"\n";  
+					<< "*exp(-(" <<fResEtaBin[ro][etab]->GetParameter(2) << "*pt));";  
 				}else if(nrFilled != 0 && ro == 6){
-					edm::LogInfo   ("MainResults") << "if(fabs(eta)<"<<etabinVals_[etab+1] <<") res = " << 
+					edm::LogVerbatim   ("MainResults") << "if(fabs(eta)<"<<etabinVals_[etab+1] <<") res = " << 
 					fResEtaBin[ro][etab]->GetParameter(0) << "+" << fResEtaBin[ro][etab]->GetParameter(1) 
-					<< "*pt;" <<"\n";  					
+					<< "*pt;";  					
+				}
+			}
+		}
+	}else if(nrFilled != 0 && objectType_ == "met"){
+		edm::LogVerbatim   ("MainResults") <<"\n\n\n" <<"nr. of "<<objectType_<<" filled: "<<nrFilled <<"\n";  
+  	for(ro=0; ro<8; ro++) {
+    	edm::LogVerbatim   ("MainResults") << "Resolutions on " << resObsName2[ro] << "\n\n";
+			for(int etab=0; etab<etanrbins; etab++) {	
+  			if(nrFilled != 0 && ro != 6) {
+					edm::LogVerbatim   ("MainResults") << "res = " <<
+					fResEtaBin[ro][etab]->GetParameter(0) << "+" << fResEtaBin[ro][etab]->GetParameter(1) 
+					<< "*exp(-(" <<fResEtaBin[ro][etab]->GetParameter(2) << "*pt));";  
+				}else if(nrFilled != 0 && ro == 6){
+					edm::LogVerbatim   ("MainResults") << "res = " << 
+					fResEtaBin[ro][etab]->GetParameter(0) << "+" << fResEtaBin[ro][etab]->GetParameter(1) 
+					<< "*pt;";  					
 				}
 			}
 		}
 	}
-  if(nrFilled != 0) {
-		std::cout<<std::endl<<std::endl<<std::endl <<"nr. of "<<objectType_<<" filled: "<<nrFilled <<std::endl<<std::endl;  
-  	for(ro=0; ro<8; ro++) {
-    	std::cout << "Resolutions on " << resObsName2[ro] << std::endl;
-			for(int etab=0; etab<etanrbins; etab++) {	
-  			if(nrFilled != 0 && ro != 6) {
-					std::cout << "if(fabs(eta)<"<<etabinVals_[etab+1] <<") res = " << 
-					fResEtaBin[ro][etab]->GetParameter(0) << "+" << fResEtaBin[ro][etab]->GetParameter(1) 
-					<< "*exp(-(" <<fResEtaBin[ro][etab]->GetParameter(2) << "*pt));" <<std::endl;  
-				}else if(nrFilled != 0 && ro == 6){
-					std::cout << "if(fabs(eta)<"<<etabinVals_[etab+1] <<") res = " << 
-					fResEtaBin[ro][etab]->GetParameter(0) << "+" << fResEtaBin[ro][etab]->GetParameter(1) 
-					<< "*pt;" <<std::endl;  					
-				}
-			}
-		}
-	}		
+	edm::LogVerbatim   ("MainResults") <<"\n\n\n END RESULTS OF RESOLUTION MODULE \n\n"; 	
 }
 
 //define this as a plug-in
