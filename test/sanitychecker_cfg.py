@@ -52,4 +52,4 @@ process.TFileService = cms.Service("TFileService",
 	)
 	
 
-process.p = cms.Path(process.makeGenEvt * (process.TtGenEventChecker + process.Resolutions_lJets + process.Resolutions_bJets + process.kinematics + process.jetmet + process.muonchecker + (process.ttDecaySelection * process.TruthReco + process.vertex)))
+process.p = cms.Path(process.makeGenEvt * (process.TtGenEventChecker + process.Resolutions_lJets + process.Resolutions_bJets + process.kinematics + process.jetmet + process.muonchecker + (process.ttDecaySelection * process.TruthReco) + process.vertex))
