@@ -51,11 +51,11 @@ process.p = cms.Path(
     (process.TtGenEventChecker +
      process.Resolutions_lJets +
      process.Resolutions_bJets +
-     process.kinematics +
      process.jetmet +
      process.muonchecker +
      (process.ttDecaySelection * process.TruthReco) +
-     process.vertex)
+     process.vertex) +
+     process.kinematics 
     )
 
 
