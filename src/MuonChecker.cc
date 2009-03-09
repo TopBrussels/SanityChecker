@@ -303,9 +303,9 @@ void
 MuonChecker::endJob()
 {
    //use LogError to summarise the error that happen in the execution (by example from warning) (ex: Nof where we cannot access such variable)
-   edm::LogError  ("SummaryError") << "My error message \n";    // or  edm::LogProblem  (not formated)
+   //edm::LogError  ("SummaryError") << "My error message \n";    // or  edm::LogProblem  (not formated)
    //use LogInfo to summarise information (ex: pourcentage of events matched ...)
-   edm::LogInfo   ("MainResults") << "My LogInfo message \n";  // or  edm::LogVerbatim (not formated)
+   //edm::LogInfo   ("MainResults") << "My LogInfo message \n";  // or  edm::LogVerbatim (not formated)
 }
 
 //define this as a plug-in
