@@ -6,7 +6,7 @@ process = cms.Process("SanityCheck")
 process.MessageLogger = cms.Service("MessageLogger",
    
     destinations = cms.untracked.vstring("Warning_SC", "ErrorSummary_SC", "InfoSummary_SC"), # 3 files for 3 different type of output
-
+    statistics = cms.untracked.vstring("statistics.txt"),
     debugModules = cms.untracked.vstring('*'), #for all modules
 
     categories = cms.untracked.vstring("inputChain","decayChain","NoDataFound","LinkBroken","SummaryError","MainResults"), # list of categories
@@ -26,14 +26,7 @@ process.MessageLogger = cms.Service("MessageLogger",
 
 process.load("TopBrussels.SanityChecker.PATLayer1_Ttjets_MG_input_cfi")
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100000) )
-
-#process.source = cms.Source("PoolSource",
-#    # replace 'myfile.root' with the source file you want to use
-#    fileNames = cms.untracked.vstring(
-#        #'file:myfile.root'
-#    )
-#)
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) )
 
 ## std sequence to produce the ttGenEvt
 process.load("TopQuarkAnalysis.TopEventProducers.sequences.ttGenEvent_cff")
@@ -53,4 +46,16 @@ process.TFileService = cms.Service("TFileService",
 	)
 	
 
-process.p = cms.Path(process.makeGenEvt * (process.TtGenEventChecker + process.Resolutions_lJets + process.Resolutions_bJets + process.kinematics + process.jetmet + process.muonchecker + (process.ttDecaySelection * process.TruthReco) + process.vertex))
+process.p = cms.Path(
+    process.makeGenEvt *
+    (process.TtGenEventChecker +
+     process.Resolutions_lJets +
+     process.Resolutions_bJets +
+     process.kinematics +
+     process.jetmet +
+     process.muonchecker +
+     (process.ttDecaySelection * process.TruthReco) +
+     process.vertex)
+    )
+
+
