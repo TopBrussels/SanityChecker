@@ -13,7 +13,7 @@
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: VertexChecker.cc,v 1.2 2009/03/04 11:18:14 jmmaes Exp $
+// $Id: VertexChecker.cc,v 1.1 2009/03/06 13:37:15 villella Exp $
 //
 //
 
@@ -127,7 +127,7 @@ VertexChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    
    //Check if branches are available
    if (!vertex.isValid()){
-     edm::LogWarning  ("NoVertexFound") << "My warning message - NoVertexFound"; 
+     edm::LogWarning  ("LinkBroken") << "My warning message - NoVertexFound"; 
      throw cms::Exception("ProductNotFound") <<"Primary vertex collection not found"<<std::endl;
    }
    
@@ -182,8 +182,8 @@ VertexChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    //edm::LogInfo   ("category") << "My LogInfo message";  // or  edm::LogVerbatim (not formated)
 
    //use Warning for event by event problem 
-   edm::LogWarning  ("NoDataFound") << "My warning message - NoDataFound"; // or  edm::LogPrint    (not formated)
-   edm::LogWarning  ("LinkBroken") << "My warning message - LinkBroken"; // or  edm::LogPrint    (not formated)
+   //edm::LogWarning  ("NoDataFound") << "My warning message - NoDataFound"; // or  edm::LogPrint    (not formated)
+   //edm::LogWarning  ("LinkBroken") << "My warning message - LinkBroken"; // or  edm::LogPrint    (not formated)
 
 }
 
@@ -219,9 +219,9 @@ VertexChecker::beginJob(const edm::EventSetup&)
 void 
 VertexChecker::endJob() {
    //use LogError to summarise the error that happen in the execution (by example from warning) (ex: Nof where we cannot access such variable)
-   edm::LogError  ("SummaryError") << "My error message \n";    // or  edm::LogProblem  (not formated)
+   //edm::LogError  ("SummaryError") << "My error message \n";    // or  edm::LogProblem  (not formated)
    //use LogInfo to summarise information (ex: pourcentage of events matched ...)
-   edm::LogInfo   ("MainResults") << "My LogInfo message \n";  // or  edm::LogVerbatim (not formated)
+   //edm::LogInfo   ("MainResults") << "My LogInfo message \n";  // or  edm::LogVerbatim (not formated)
 }
 
 //define this as a plug-in
