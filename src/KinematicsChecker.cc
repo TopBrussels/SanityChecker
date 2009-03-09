@@ -13,7 +13,7 @@
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: KinematicsChecker.cc,v 1.4 2009/03/09 15:03:22 jmmaes Exp $
+// $Id: KinematicsChecker.cc,v 1.5 2009/03/09 15:06:40 jmmaes Exp $
 //
 //
 
@@ -40,6 +40,8 @@
 #include "TH1F.h"
 #include "TH2F.h"
 #include "TLorentzVector.h"
+#include <vector>
+#include <Math/VectorUtil.h>
 
 //
 // class decleration
@@ -59,7 +61,7 @@ class KinematicsChecker : public edm::EDAnalyzer {
       edm::InputTag jets_;
       edm::InputTag muons_;
       edm::InputTag mets_;
-  int matchingAlgo_;
+      int matchingAlgo_;
       bool useMaxDist_;
       bool useDeltaR_;
       double maxDist_;
@@ -67,12 +69,12 @@ class KinematicsChecker : public edm::EDAnalyzer {
       //Histograms are booked in the beginJob() method
       std::map<std::string,TDirectory*> TDirectorycontainer_; // simple map to contain all TDirectory.
       //std::map<std::string,TH1D*> TH1Dcontainer_; // simple map to contain all TH1D.
-      std::map<std::string,TH1D*> TH1Dcontainer_[4]; // simple map to contain all TH1D.
+      std::map<std::string,TH1D*> TH1Dcontainer_[8]; // simple map to contain all TH1D.
       std::map<std::string,TH1F*> TH1Fcontainer_; // simple map to contain all TH1F.
       std::map<std::string,TH2F*> TH2Fcontainer_; // simple map to contain all TH2F.
 
-  std::vector< double > jetsAcceptance_, muonsAcceptance_;
-  std::vector< double > nJetsAcceptance, nMuonsAcceptance;
+      std::vector< double > jetsAcceptance_, muonsAcceptance_;
+      std::vector< double > nJetsAcceptance, nMuonsAcceptance;
   
    
 };
@@ -124,6 +126,8 @@ KinematicsChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
    using namespace edm;
    using namespace std;
 
+
+
 #ifdef THIS_IS_AN_EVENT_EXAMPLE
    Handle<ExampleData> pIn;
    iEvent.getByLabel("example",pIn);
@@ -142,7 +146,8 @@ KinematicsChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 
    Handle< std::vector<pat::MET> > mets;
    iEvent.getByLabel(mets_, mets);
-   
+
+
    //Check if branches are available
    if (!jets.isValid()){
      edm::LogWarning  ("LinkBroken") << "My warning message - No Jets Found"; 
@@ -200,31 +205,33 @@ KinematicsChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
      ObjectP4s[i].clear();
    }
    
-   //matching
+
    Handle<TtGenEvent> genEvt;
    iEvent.getByLabel ("genEvt",genEvt);
   
    //Check if branch is available  
    if (!genEvt.isValid()){
-     edm::LogWarning  ("LinkBroken") << "My warning message - No GenEvt Found";
+     edm::LogWarning  ("LinkBroken") << "KinematicsChecker - No GenEvt Found";
    }
-   
+
+
    if (genEvt.isValid()){
      
      if(genEvt->isSemiLeptonic(genEvt->kMuon)) {
        
+       // Make plots only with jets from ttbar events (matched with a certain algo)
        // Matching index : Hadronic Q  = 0, Hadronic Q' = 1, Hadronic b  = 2, Leptonic b  = 3;
-       std::vector<const reco::Candidate *> quarks;
-       quarks.push_back(genEvt->hadronicDecayQuark());
-       quarks.push_back(genEvt->hadronicDecayQuarkBar());
-       quarks.push_back(genEvt->hadronicDecayB());
-       quarks.push_back(genEvt->leptonicDecayB());
+       std::vector<const reco::Candidate *> TopQuarks;
+       TopQuarks.push_back(genEvt->hadronicDecayQuark());
+       TopQuarks.push_back(genEvt->hadronicDecayQuarkBar());
+       TopQuarks.push_back(genEvt->hadronicDecayB());
+       TopQuarks.push_back(genEvt->leptonicDecayB());
        if(jets->size()>=4) { 
 
-	 JetPartonMatching *GenMatch = new JetPartonMatching(quarks, *jets, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
+	 JetPartonMatching *GenMatchTopQuarks = new JetPartonMatching(TopQuarks, *jets, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
 
 	 for(unsigned int i=0; i<4; i++){
-	   Int_t Idx = GenMatch->getMatchForParton(i,0);
+	   Int_t Idx = GenMatchTopQuarks->getMatchForParton(i,0);
 	   if(Idx>=0) ObjectP4s[0].push_back(((*jets)[Idx]).p4());
 	 }
 	 
@@ -237,6 +244,153 @@ KinematicsChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 	 for(unsigned int j=0;j<ObjectP4s[0].size();j++) TH1Dcontainer_[3]["phi"]->Fill(ObjectP4s[0][j].Phi());
 
        }
+       
+       //  Make plots only with jets from ISR (matched with a certain algo)  
+
+       ObjectP4s[0].clear();
+       std::vector<const reco::Candidate *> ISRquarks;
+       unsigned int NumberISR = genEvt->ISR().size();	
+       if(NumberISR>0) {
+
+	 //Fill vector with ISR quarks
+	 for(unsigned int i=0; i<NumberISR; i++){
+	   ISRquarks.push_back((genEvt->ISR())[i]);
+	 }
+
+	 //Remove quarks if there are more then jets, to have unambiguios jet parton matching
+	 if(NumberISR > jets->size()){  
+	   edm::LogWarning  ("LinkBroken") << "there are more quarks from initial state radiation than there are jets in the jet collection";//TODO: waht to do with "category"?
+	   unsigned int diffSize=ISRquarks.size()-jets->size();
+	   for(unsigned int i = 0; i<diffSize; i++ ){
+	     ISRquarks.pop_back();
+	   }
+	 }
+
+	 JetPartonMatching *GenMatchISRquarks = new JetPartonMatching(ISRquarks, *jets, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_); 
+
+	 for(unsigned int i=0; i<NumberISR; i++){
+	   Int_t Idx = GenMatchISRquarks->getMatchForParton(i,0);
+	   if(Idx>=0) ObjectP4s[0].push_back(((*jets)[Idx]).p4());
+	 }
+
+	 TH1Dcontainer_[4]["number"]->Fill(ObjectP4s[0].size()); 
+	 for(unsigned int j=0; j<ObjectP4s[0].size(); j++) TH1Dcontainer_[4]["pt"]->Fill(ObjectP4s[0][j].Pt());  
+	 for(unsigned int j=0;j<ObjectP4s[0].size();j++) TH1Dcontainer_[4]["eta"]->Fill(ObjectP4s[0][j].Eta()); 
+	 for(unsigned int j=0;j<ObjectP4s[0].size();j++) TH1Dcontainer_[4]["et"]->Fill(ObjectP4s[0][j].Et());
+	 for(unsigned int j=0;j<ObjectP4s[0].size();j++) TH1Dcontainer_[4]["energy"]->Fill(ObjectP4s[0][j].E());
+	 for(unsigned int j=0;j<ObjectP4s[0].size();j++) TH1Dcontainer_[4]["theta"]->Fill(ObjectP4s[0][j].Theta());
+	 for(unsigned int j=0;j<ObjectP4s[0].size();j++) TH1Dcontainer_[4]["phi"]->Fill(ObjectP4s[0][j].Phi());
+
+       }
+
+       //  Make plots only with jets from topRadiation (matched with a certain algo)  
+       ObjectP4s[0].clear();
+
+       std::vector<const reco::Candidate *> TopRadQuarks;
+       unsigned int NumberTopRadLep = genEvt->leptonicDecayTopRadiation().size();		
+       unsigned int NumberTopRadHad = genEvt->hadronicDecayTopRadiation().size();		
+       unsigned int NumberTopRad = NumberTopRadLep+NumberTopRadHad;	
+       
+       if(NumberTopRadLep!=0 ) {
+	 for(unsigned int i=0;i<NumberTopRadLep; i++){
+	   TopRadQuarks.push_back((genEvt->leptonicDecayTopRadiation())[i]);
+	 }
+       }
+       if(NumberTopRadHad!=0 ) {
+	 for(unsigned int i=0; i<NumberTopRadHad; i++){
+	   TopRadQuarks.push_back((genEvt->hadronicDecayTopRadiation())[i]);
+	 }
+       }
+
+       if(NumberTopRad>0){ 
+
+	 //Remove quarks if there are more than jets, to have unambiguios jet parton matching
+	 if(NumberISR > jets->size()){
+	   edm::LogWarning  ("LinkBroken") << "there are more quarks from top radiation than there are jets in the jet collection";//TODO: waht to do with "category"?
+	   unsigned int diffSize=TopRadQuarks.size()-jets->size();
+	   for(unsigned int i = 0; i<diffSize; i++ ){
+	     TopRadQuarks.pop_back();
+	   }
+	 }
+
+	 JetPartonMatching *GenMatchTopRadQuarks = new JetPartonMatching(TopRadQuarks, *jets, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_); 
+
+	 for(unsigned int i=0; i<NumberTopRad; i++){
+	   Int_t Idx = GenMatchTopRadQuarks->getMatchForParton(i,0);
+	   if(Idx>=0) ObjectP4s[0].push_back(((*jets)[Idx]).p4());
+	 }
+
+	 TH1Dcontainer_[5]["number"]->Fill(ObjectP4s[0].size()); 
+	 for(unsigned int j=0; j<ObjectP4s[0].size(); j++) TH1Dcontainer_[5]["pt"]->Fill(ObjectP4s[0][j].Pt());  
+	 for(unsigned int j=0;j<ObjectP4s[0].size();j++) TH1Dcontainer_[5]["eta"]->Fill(ObjectP4s[0][j].Eta()); 
+	 for(unsigned int j=0;j<ObjectP4s[0].size();j++) TH1Dcontainer_[5]["et"]->Fill(ObjectP4s[0][j].Et());
+	 for(unsigned int j=0;j<ObjectP4s[0].size();j++) TH1Dcontainer_[5]["energy"]->Fill(ObjectP4s[0][j].E());
+	 for(unsigned int j=0;j<ObjectP4s[0].size();j++) TH1Dcontainer_[5]["theta"]->Fill(ObjectP4s[0][j].Theta());
+	 for(unsigned int j=0;j<ObjectP4s[0].size();j++) TH1Dcontainer_[5]["phi"]->Fill(ObjectP4s[0][j].Phi());
+
+
+       }
+     
+       for(unsigned int i=0;i<3;i++){
+	 ObjectP4s[i].clear();
+       }
+       
+       //Make plots for matched muon 
+       if(muons->size()>0){
+
+	 double ClosestDelR=999.;
+	 int ClosestIdx=-1;
+
+	 for(unsigned int i=0; i<muons->size();i++){
+	 	
+		   if(ROOT::Math::VectorUtil::Angle(genEvt->singleLepton()->p4(),(*muons)[i].p4())<ClosestDelR){
+	     ClosestDelR=ROOT::Math::VectorUtil::Angle(genEvt->singleLepton()->p4(),(*muons)[i].p4());
+	     ClosestIdx=i;
+	   }
+	 }
+
+	 if(ClosestDelR<0.3){
+	   ObjectP4s[1].push_back(((*muons)[ClosestIdx].p4()));
+	   
+	   TH1Dcontainer_[6]["number"]->Fill(ObjectP4s[1].size()); 
+	   for(unsigned int j=0; j<ObjectP4s[1].size(); j++) TH1Dcontainer_[6]["pt"]->Fill(ObjectP4s[1][j].Pt());  
+	   for(unsigned int j=0;j<ObjectP4s[1].size();j++) TH1Dcontainer_[6]["eta"]->Fill(ObjectP4s[1][j].Eta()); 
+	   for(unsigned int j=0;j<ObjectP4s[1].size();j++) TH1Dcontainer_[6]["et"]->Fill(ObjectP4s[1][j].Et());
+	   for(unsigned int j=0;j<ObjectP4s[1].size();j++) TH1Dcontainer_[6]["energy"]->Fill(ObjectP4s[1][j].E());
+	   for(unsigned int j=0;j<ObjectP4s[1].size();j++) TH1Dcontainer_[6]["theta"]->Fill(ObjectP4s[1][j].Theta());
+	   for(unsigned int j=0;j<ObjectP4s[1].size();j++) TH1Dcontainer_[6]["phi"]->Fill(ObjectP4s[1][j].Phi());
+	 }
+	 if(ClosestDelR==999.){ClosestDelR=-1;}
+
+	 TH1Fcontainer_["deltaRmuons"]->Fill(ClosestDelR);
+
+       }
+  
+       for(unsigned int i=0;i<3;i++){
+	 ObjectP4s[i].clear();
+       }
+       
+       if(mets->size()>0){
+	 double ClosestDelR=999.;
+	  
+	 ClosestDelR=ROOT::Math::VectorUtil::Angle(genEvt->singleNeutrino()->p4(),(*mets)[0].p4());
+	 
+	 if(ClosestDelR<0.3){
+	   ObjectP4s[2].push_back(((*mets)[0].p4()));
+	   
+	   TH1Dcontainer_[7]["number"]->Fill(ObjectP4s[2].size()); 
+	   for(unsigned int j=0; j<ObjectP4s[2].size(); j++) TH1Dcontainer_[7]["pt"]->Fill(ObjectP4s[2][j].Pt());  
+	   for(unsigned int j=0;j<ObjectP4s[2].size();j++) TH1Dcontainer_[7]["eta"]->Fill(ObjectP4s[2][j].Eta()); 
+	   for(unsigned int j=0;j<ObjectP4s[2].size();j++) TH1Dcontainer_[7]["et"]->Fill(ObjectP4s[2][j].Et());
+	   for(unsigned int j=0;j<ObjectP4s[2].size();j++) TH1Dcontainer_[7]["energy"]->Fill(ObjectP4s[2][j].E());
+	   for(unsigned int j=0;j<ObjectP4s[2].size();j++) TH1Dcontainer_[7]["theta"]->Fill(ObjectP4s[2][j].Theta());
+	   for(unsigned int j=0;j<ObjectP4s[2].size();j++) TH1Dcontainer_[7]["phi"]->Fill(ObjectP4s[2][j].Phi());
+	 }
+	 if(ClosestDelR==999.){ClosestDelR=-1;}
+	 TH1Fcontainer_["deltaRmets"]->Fill(ClosestDelR);
+	 
+       }
+       
      }
    }
 }
@@ -248,13 +402,13 @@ KinematicsChecker::beginJob(const edm::EventSetup&)
 {
   edm::Service<TFileService> fs;
   if (!fs) throw edm::Exception(edm::errors::Configuration, "TFileService missing from configuration!");
-  
-  std::string ObjectNames[4] = {"Jets","Muons","METs","MatchedJets"};
+ 
+  std::string ObjectNames[8] = {"Jets","Muons","METs","MatchedTopJets","MatchedISRjets","MatchedTopRadJets","MatchedMuons","MatchedMets"};
 
   std::vector< TFileDirectory > subDirs;
-  for(unsigned int i=0;i<4;i++) subDirs.push_back(fs->mkdir( ObjectNames[i] ));
+  for(unsigned int i=0;i<8;i++) subDirs.push_back(fs->mkdir( ObjectNames[i] ));
 
-  for(unsigned int i=0;i<4;i++){
+  for(unsigned int i=0;i<8;i++){  
     TH1Dcontainer_[i]["number"] = subDirs[i].make<TH1D>("number" ,"number of objects",50,0,50);
     TH1Dcontainer_[i]["pt"] = subDirs[i].make<TH1D>("pt" ,"pt",50,0,100);
     TH1Dcontainer_[i]["et"] = subDirs[i].make<TH1D>("et" ,"et",50,0,100);
@@ -264,6 +418,11 @@ KinematicsChecker::beginJob(const edm::EventSetup&)
     TH1Dcontainer_[i]["phi"] = subDirs[i].make<TH1D>("phi" ,"phi",50,-3.2,3.2);
   }
  
+  
+  TH1Fcontainer_["deltaRmuons"] = subDirs[6].make<TH1F>("deltaRmuons" ,"deltaR of closest reconstructed muon to generated muon",50,-1,5);
+  TH1Fcontainer_["deltaRmets"] = subDirs[7].make<TH1F>("deltaRmets" ,"deltaR of neutrino and missing transverse energy",50,-1,5);
+  
+
   nJetsAcceptance.push_back(0);
   nJetsAcceptance.push_back(0);
   nMuonsAcceptance.push_back(0);
