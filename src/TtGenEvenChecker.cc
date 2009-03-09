@@ -13,7 +13,7 @@
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: TtGenEvenChecker.cc,v 1.2 2009/03/05 15:42:49 villella Exp $
+// $Id: TtGenEvenChecker.cc,v 1.3 2009/03/06 18:12:49 echabert Exp $
 //
 //
 
@@ -796,69 +796,69 @@ TtGenEventChecker::endJob ()
   //take care
   //here born of integral are hard coded and depend on the numberOfbins !!
   a = TH1Fcontainer_["LowestPtQuark"]->Integral(0,15)/ TH1Fcontainer_["LowestPtQuark"]->GetEntries();
-  edm::LogVerbatim ("MainResults") << " Quark with Pt < 15 GeV: "<<a*100<<" \%";
+  edm::LogVerbatim ("MainResults") << " Quark with Pt < 15 GeV: "<<a*100<<" %";
   a = TH1Fcontainer_["LowestPtQuark"]->Integral(0,20)/ TH1Fcontainer_["LowestPtQuark"]->GetEntries();
-  edm::LogVerbatim ("MainResults") << " Quark with Pt < 20 GeV: "<<a*100<<" \%";
+  edm::LogVerbatim ("MainResults") << " Quark with Pt < 20 GeV: "<<a*100<<" %";
   a = TH1Fcontainer_["LowestPtQuark"]->Integral(0,25)/ TH1Fcontainer_["LowestPtQuark"]->GetEntries();
-  edm::LogVerbatim ("MainResults") << " Quark with Pt < 25 GeV: "<<a*100<<" \%";
+  edm::LogVerbatim ("MainResults") << " Quark with Pt < 25 GeV: "<<a*100<<" %";
   a = TH1Fcontainer_["LowestPtQuark"]->Integral(0,30)/ TH1Fcontainer_["LowestPtQuark"]->GetEntries();
-  edm::LogVerbatim ("MainResults") << " Quark with Pt < 30 GeV: "<<a*100<<" \%";
+  edm::LogVerbatim ("MainResults") << " Quark with Pt < 30 GeV: "<<a*100<<" %";
   a = TH1Fcontainer_["HightestEtaQuark"]->Integral(0,240)/TH1Fcontainer_["HightestEtaQuark"]->GetEntries();
-  edm::LogVerbatim ("MainResults") << " Quark with Eta > 2.4: "<<(1-a)*100<<" \%";
+  edm::LogVerbatim ("MainResults") << " Quark with Eta > 2.4: "<<(1-a)*100<<" %";
   a = TH1Fcontainer_["HightestEtaQuark"]->Integral(0,300)/TH1Fcontainer_["HightestEtaQuark"]->GetEntries();
-  edm::LogVerbatim ("MainResults") << " Quark with Eta > 3: "<<(1-a)*100<<" \%";
+  edm::LogVerbatim ("MainResults") << " Quark with Eta > 3: "<<(1-a)*100<<" %";
   a = TH1Fcontainer_["HightestEtaQuark"]->Integral(0,400)/TH1Fcontainer_["HightestEtaQuark"]->GetEntries();
-  edm::LogVerbatim ("MainResults") << " Quark with Eta > 4: "<<(1-a)*100<<" \%";
+  edm::LogVerbatim ("MainResults") << " Quark with Eta > 4: "<<(1-a)*100<<" %";
   a = TH1Fcontainer_["DeltaRlQuarks"]->Integral(0,50)/TH1Fcontainer_["DeltaRlQuarks"]->GetEntries();
-  edm::LogVerbatim ("MainResults") << " l-Quarks with DeltaR < 0.5: "<<a*100<<" \%";
+  edm::LogVerbatim ("MainResults") << " l-Quarks with DeltaR < 0.5: "<<a*100<<" %";
   a = TH1Fcontainer_["DeltaRBClosestlQuarksSame"]->Integral(0,50)/TH1Fcontainer_["DeltaRBClosestlQuarksSame"]->GetEntries();
-  edm::LogVerbatim ("MainResults") << " l-Quarks & B (same top) with DeltaR < 0.5: "<<a*100<<" \%";
+  edm::LogVerbatim ("MainResults") << " l-Quarks & B (same top) with DeltaR < 0.5: "<<a*100<<" %";
   a = TH1Fcontainer_["DeltaRBClosestlQuarks"]->Integral(0,50)/TH1Fcontainer_["DeltaRBClosestlQuarks"]->GetEntries();
-  edm::LogVerbatim ("MainResults") << " l-Quarks & B  with DeltaR < 0.5: "<<a*100<<" \%";
+  edm::LogVerbatim ("MainResults") << " l-Quarks & B  with DeltaR < 0.5: "<<a*100<<" %";
   a = TH1Fcontainer_["MinimalDeltaRQuarks"]->Integral(0,50)/TH1Fcontainer_["MinimalDeltaRQuarks"]->GetEntries();
-  edm::LogVerbatim ("MainResults") << " minimal DeltaR  between 4 quarks < 0.5: "<<a*100<<" \%";
+  edm::LogVerbatim ("MainResults") << " minimal DeltaR  between 4 quarks < 0.5: "<<a*100<<" %";
   a = TH1Fcontainer_["MinimalDeltaRQuarks"]->Integral(0,100)/TH1Fcontainer_["MinimalDeltaRQuarks"]->GetEntries();
-  edm::LogVerbatim ("MainResults") << " minimal DeltaR  between 4 quarks < 1.0: "<<a*100<<" \%";
+  edm::LogVerbatim ("MainResults") << " minimal DeltaR  between 4 quarks < 1.0: "<<a*100<<" %";
   a = TH1Fcontainer_["MinimalDeltaRQuarksLepton"]->Integral(0,30)/TH1Fcontainer_["MinimalDeltaRQuarksLepton"]->GetEntries();
-  edm::LogVerbatim ("MainResults") << " DeltaR(quarks, muon) < 0.3: "<<a*100<<" \%";
+  edm::LogVerbatim ("MainResults") << " DeltaR(quarks, muon) < 0.3: "<<a*100<<" %";
   //
  
   //Radiations
   //take care
   //here born of integral are hard coded and depend on the numberOfbins !!
   a = TH1Dcontainer_["RankHightestISR"]->Integral(0,5)/TH1Dcontainer_["RankHightestISR"]->GetEntries();
-  edm::LogVerbatim ("MainResults") << " ISR with Pt > quarks: "<<a*100<<" \%";
+  edm::LogVerbatim ("MainResults") << " ISR with Pt > quarks: "<<a*100<<" %";
   a = TH1Dcontainer_["RankHightestTopRadiation"]->Integral(0,5)/TH1Dcontainer_["RankHightestTopRadiation"]->GetEntries();
-  edm::LogVerbatim ("MainResults") << " Top Radiation with Pt > quarks: "<<a*100<<" \%";
+  edm::LogVerbatim ("MainResults") << " Top Radiation with Pt > quarks: "<<a*100<<" %";
   a = TH1Fcontainer_["ISRPt"]->Integral(0,30)/TH1Fcontainer_["ISRPt"]->GetEntries();
-  edm::LogVerbatim ("MainResults") << " ISR  with Pt > 30 GeV: "<<(1-a)*100<<" \%";
+  edm::LogVerbatim ("MainResults") << " ISR  with Pt > 30 GeV: "<<(1-a)*100<<" %";
   a = TH1Fcontainer_["TopRadiationPt"]->Integral(0,30)/TH1Fcontainer_["TopRadiationPt"]->GetEntries();
-  edm::LogVerbatim ("MainResults") << " TopRadiation  with Pt > 30 GeV: "<<(1-a)*100<<" \%";
+  edm::LogVerbatim ("MainResults") << " TopRadiation  with Pt > 30 GeV: "<<(1-a)*100<<" %";
   //
  
   a = TH1Dcontainer_["NofISRWithHightestPtThanQuarks"]->Integral(0,1)/TH1Dcontainer_["NofISRWithHightestPtThanQuarks"]->GetEntries();
-  edm::LogVerbatim ("MainResults") << " At least one ISR  with Pt > Quarks: "<<(1-a)*100<<" \%";
+  edm::LogVerbatim ("MainResults") << " At least one ISR  with Pt > Quarks: "<<(1-a)*100<<" %";
   a = TH1Dcontainer_["NofISRWithHightestPtThanQuarks"]->Integral(0,2)/TH1Dcontainer_["NofISRWithHightestPtThanQuarks"]->GetEntries();
-  edm::LogVerbatim ("MainResults") << " At least 2 ISR  with Pt > Quarks: "<<(1-a)*100<<" \%";
+  edm::LogVerbatim ("MainResults") << " At least 2 ISR  with Pt > Quarks: "<<(1-a)*100<<" %";
   a = TH1Dcontainer_["NofISRWithHightestPtThanQuarks"]->Integral(0,3)/TH1Dcontainer_["NofISRWithHightestPtThanQuarks"]->GetEntries();
-  edm::LogVerbatim ("MainResults") << " At least 3 ISR  with Pt > Quarks: "<<(1-a)*100<<" \%";
+  edm::LogVerbatim ("MainResults") << " At least 3 ISR  with Pt > Quarks: "<<(1-a)*100<<" %";
   a = TH1Dcontainer_["NofISRWithHightestPtThanQuarks"]->Integral(0,4)/TH1Dcontainer_["NofISRWithHightestPtThanQuarks"]->GetEntries();
-  edm::LogVerbatim ("MainResults") << " At least 4 ISR  with Pt > Quarks: "<<(1-a)*100<<" \%";
+  edm::LogVerbatim ("MainResults") << " At least 4 ISR  with Pt > Quarks: "<<(1-a)*100<<" %";
   a = TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->Integral(0,1)/TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->GetEntries();
-  edm::LogVerbatim ("MainResults") << " At least one TopRadiation  with Pt > Quarks: "<<(1-a)*100<<" \%";
+  edm::LogVerbatim ("MainResults") << " At least one TopRadiation  with Pt > Quarks: "<<(1-a)*100<<" %";
   a = TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->Integral(0,2)/TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->GetEntries();
-  edm::LogVerbatim ("MainResults") << " At least 2 TopRadiation  with Pt > Quarks: "<<(1-a)*100<<" \%";
+  edm::LogVerbatim ("MainResults") << " At least 2 TopRadiation  with Pt > Quarks: "<<(1-a)*100<<" %";
   a = TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->Integral(0,3)/TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->GetEntries();
-  edm::LogVerbatim ("MainResults") << " At least 3 TopRadiation  with Pt > Quarks: "<<(1-a)*100<<" \%";
+  edm::LogVerbatim ("MainResults") << " At least 3 TopRadiation  with Pt > Quarks: "<<(1-a)*100<<" %";
   a = TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->Integral(0,4)/TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->GetEntries();
-  edm::LogVerbatim ("MainResults") << " At least 4 TopRadiation  with Pt > Quarks: "<<(1-a)*100<<" \%";
+  edm::LogVerbatim ("MainResults") << " At least 4 TopRadiation  with Pt > Quarks: "<<(1-a)*100<<" %";
    
   // Bquarks
   edm::LogVerbatim ("MainResults") << "-------------------- ";
   edm::LogVerbatim ("MainResults") << " Other ";
   edm::LogVerbatim ("MainResults") << "-------------------- ";
   a = TH1Dcontainer_["NofBFromTop"]->Integral(0,2)/TH1Dcontainer_["NofBFromTop"]->GetEntries();
-  edm::LogVerbatim ("MainResults") << " Events with 1 b-quarks instead of 2: "<<a*100<<"\%";
+  edm::LogVerbatim ("MainResults") << " Events with 1 b-quarks instead of 2: "<<a*100<<"%";
   if(TH1Dcontainer_["NofTopsRadiation"]->Integral(0,1) == TH1Dcontainer_["NofTopsRadiation"]->GetEntries()) 
     edm::LogVerbatim ("MainResults") << " There is no top radiations in this sample";
   if(TH1Dcontainer_["NofISR"]->Integral(0,1) == TH1Dcontainer_["NofISR"]->GetEntries()) 
@@ -870,21 +870,21 @@ TtGenEventChecker::endJob ()
   edm::LogVerbatim ("MainResults") << " Branching ratio ";
   edm::LogVerbatim ("MainResults") << "-------------------- ";
   a = (float) (TH1Dcontainer_["BRatio"]->GetBinContent(2)/TH1Dcontainer_["BRatio"]->GetBinContent(1));
-  edm::LogVerbatim ("MainResults") << "ttbar evt: "<<a*100<<" \%";
+  edm::LogVerbatim ("MainResults") << "ttbar evt: "<<a*100<<" %";
   a = (float) (TH1Dcontainer_["BRatio"]->GetBinContent(3)/TH1Dcontainer_["BRatio"]->GetBinContent(2));
-  edm::LogVerbatim ("MainResults") << "FullHadronic: "<<a*100<<" \%";
+  edm::LogVerbatim ("MainResults") << "FullHadronic: "<<a*100<<" %";
   a = (float) (TH1Dcontainer_["BRatio"]->GetBinContent(4)/TH1Dcontainer_["BRatio"]->GetBinContent(2));
-  edm::LogVerbatim ("MainResults") << "FullLeptonic: "<<a*100<<" \%";
+  edm::LogVerbatim ("MainResults") << "FullLeptonic: "<<a*100<<" %";
   a = (float) (TH1Dcontainer_["BRatio"]->GetBinContent(5)/TH1Dcontainer_["BRatio"]->GetBinContent(2));
-  edm::LogVerbatim ("MainResults") << "SemiLeptonic: "<<a*100<<" \%";
+  edm::LogVerbatim ("MainResults") << "SemiLeptonic: "<<a*100<<" %";
   a = (float) (TH1Dcontainer_["BRatio"]->GetBinContent(6)/TH1Dcontainer_["BRatio"]->GetBinContent(2));
-  edm::LogVerbatim ("MainResults") << "SemiLeptonic Muon: "<<a*100<<" \%";
+  edm::LogVerbatim ("MainResults") << "SemiLeptonic Muon: "<<a*100<<" %";
   a = (float) (TH1Dcontainer_["BRatio"]->GetBinContent(7)/TH1Dcontainer_["BRatio"]->GetBinContent(2));
-  edm::LogVerbatim ("MainResults") << "SemiLeptonic Electron: "<<a*100<<" \%";
+  edm::LogVerbatim ("MainResults") << "SemiLeptonic Electron: "<<a*100<<" %";
   a = (float) (TH1Dcontainer_["BRatio"]->GetBinContent(8)/TH1Dcontainer_["BRatio"]->GetBinContent(2));
-  edm::LogVerbatim ("MainResults") << "SemiLeptonic Tau: "<<a*100<<" \%";
+  edm::LogVerbatim ("MainResults") << "SemiLeptonic Tau: "<<a*100<<" %";
   a = (float) (TH1Dcontainer_["BRatio"]->GetBinContent(9)/TH1Dcontainer_["BRatio"]->GetBinContent(2));
-  edm::LogVerbatim ("MainResults") << "SemiLeptonic Other: "<<a*100<<" \%";
+  edm::LogVerbatim ("MainResults") << "SemiLeptonic Other: "<<a*100<<" %";
 
 }
 
