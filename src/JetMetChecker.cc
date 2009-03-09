@@ -13,7 +13,7 @@
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: JetMetChecker.cc,v 1.2 2009/03/04 11:18:14 jmmaes Exp $
+// $Id: JetMetChecker.cc,v 1.4 2009/03/06 13:16:19 jmmaes Exp $
 //
 //
 
@@ -83,6 +83,7 @@ class JetMetChecker : public edm::EDAnalyzer {
   double upperRanges_[11];
   int nBins;
 
+  std::vector< std::string > availableTaggers;
 
 };
 
@@ -194,11 +195,11 @@ JetMetChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    
    //Check if branches are available
    if (!jets.isValid()){
-     edm::LogWarning  ("NoJetsFound") << "My warning message - NoJetsFound"; 
+     edm::LogWarning  ("NoJetsFound") << "JetMetCheckerWarning - NoJetsFound"; 
      throw cms::Exception("ProductNotFound") <<"jet collection not found"<<std::endl;
    }
    if (!mets.isValid()){
-     edm::LogWarning  ("NoMetsFound") << "My warning message - NoMetsFound";
+     edm::LogWarning  ("NoMetsFound") << "JetMetCheckerWarning - NoMetsFound";
      throw cms::Exception("ProductNotFound") <<"MET collection not found"<<std::endl;
    }
 
@@ -213,10 +214,10 @@ JetMetChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      TH1Dcontainer_["energyFractionHadronic"]->Fill((*jets)[i].energyFractionHadronic());
      TH1Dcontainer_["maxEInEmTowers"]->Fill((*jets)[i].maxEInEmTowers());
      TH1Dcontainer_["maxEInHadTowers"]->Fill((*jets)[i].maxEInHadTowers());
-
+     
      JetCorrName = (*jets)[i].jetCorrName();   
-
-  //towers infos
+     
+     //towers infos
      jettowers = (*jets)[i].getCaloConstituents();
      std::vector <CaloTowerPtr>::const_iterator caloiter;
      for(caloiter=jettowers.begin();caloiter!=jettowers.end();caloiter++){
@@ -241,18 +242,26 @@ JetMetChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   
    //Check if branch is available  
    if (!genEvt.isValid()){
-     edm::LogWarning  ("NoGenEvtFound") << "My warning message - NoGenEvtFound";
+     edm::LogWarning  ("NoGenEvtFound") << "JetMetCheckerWarning - NoGenEvtFound";
    }
    
    bool taggerIsAvailable=false;
+   bool taggerAlreadyIn=false;
 
    for(unsigned int i=0;i<11;i++){
      
      if(  jets->size() == 0) continue;
 
      //test if b-tagger is available
-     for(int k=0; k<(*jets)[0].getPairDiscri().size(); k++){     
+     for(unsigned int k=0; k<(*jets)[0].getPairDiscri().size(); k++){     
        if( (*jets)[0].getPairDiscri()[k].first != bTaggerNames_[i]) taggerIsAvailable = true;
+       if(taggerIsAvailable==true){
+	 for(unsigned int l=0; l<availableTaggers.size(); l++){
+	   if(availableTaggers[l]==bTaggerNames_[i]) taggerAlreadyIn=true;
+	 }
+	 if(!taggerAlreadyIn) availableTaggers.push_back(bTaggerNames_[i]);
+	 taggerAlreadyIn=false;
+       }
      }
      if(taggerIsAvailable = false) continue;
    
@@ -283,25 +292,6 @@ JetMetChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	 }*/
      }
    }
-   
-   //   TH1Dcontainer_["njets"]->Fill(1);
-   //   TH1Dcontainer_["njetsInSubDir"]->Fill(2);
-   // TH1Dcontainer_["njetsInSubSubDir"]->Fill(3);
-
-   //tree levels of message
-   //no endl needed 
-   //use '\n' to go to next line
-   //we can use different category for the same EDAnalyser
-   //ex: NoDataFound - LinkBroken - TooMuchDataFound - SummaryError - MainResults
-   
-   //edm::LogError  ("category") << "My error message";    // or  edm::LogProblem  (not formated)
-   //edm::LogWarning  ("category") << "My warning message"; // or  edm::LogPrint    (not formated)
-   //edm::LogInfo   ("category") << "My LogInfo message";  // or  edm::LogVerbatim (not formated)
-
-   //use Warning for event by event problem 
-   edm::LogWarning  ("NoDataFound") << "My warning message - NoDataFound"; // or  edm::LogPrint    (not formated)
-   edm::LogWarning  ("LinkBroken") << "My warning message - LinkBroken"; // or  edm::LogPrint    (not formated)
-
 }
 
 
@@ -309,15 +299,14 @@ JetMetChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 void 
 JetMetChecker::beginJob(const edm::EventSetup&)
 {
-    edm::Service<TFileService> fs;
+  edm::Service<TFileService> fs;
   if (!fs) throw edm::Exception(edm::errors::Configuration, "TFileService missing from configuration!");
-
-   TFileDirectory subDir = fs->mkdir( "PatJets" );
-   // TFileDirectory subsubDir = subDir.mkdir( "PatJets" );
-
-  //define the histograms booked
-  //TH1D
-   //  TH1Dcontainer_["JetTwrEt"] = fs->make<TH1D>("JetTwrEt" ,"jet towers Et ",100,0,1000);// wrote in main directory
+  
+  TFileDirectory subDir = fs->mkdir( "PatJets" );
+  // TFileDirectory subsubDir = subDir.mkdir( "PatJets" );
+  
+  
+  //  TH1Dcontainer_["JetTwrEt"] = fs->make<TH1D>("JetTwrEt" ,"jet towers Et ",100,0,1000);// wrote in main directory
   TH1Dcontainer_["Jetn90"] = subDir.make<TH1D>("Jetn90" ,"n90 ",10,0,10);
   TH1Dcontainer_["JetTowersArea"] = subDir.make<TH1D>("JetTowersArea" ," Jet Towers Area ",nBins,0,1);
   TH1Dcontainer_["JetTwrEt"] = subDir.make<TH1D>("JetTwrEt" ,"jet towers Et ",nBins,0,100);
@@ -341,20 +330,11 @@ JetMetChecker::beginJob(const edm::EventSetup&)
     TH1DcontainerForbTagging_[i]["ljets"] = subDirsbTagging[i].make<TH1D>("ljets" ,"distribution of b discriminant",nBins,lowerRanges_[i],upperRanges_[i]);
     TH1DcontainerForbTagging_[i]["gjets"] = subDirsbTagging[i].make<TH1D>("gjets" ,"distribution of b discriminant",nBins,lowerRanges_[i],upperRanges_[i]);
 
-    /* TGraphcontainerForbTagging_[i]["Effcjets"] = subDirsbTagging[i].make<TGraph>();
-    TGraphcontainerForbTagging_[i]["Effcjets"]->SetName("Effcjets");
-    TGraphcontainerForbTagging_[i]["Effljets"] = subDirsbTagging[i].make<TGraph>();
-    TGraphcontainerForbTagging_[i]["Effljets"]->SetName("Effljets");
-    TGraphcontainerForbTagging_[i]["Effgjets"] = subDirsbTagging[i].make<TGraph>();
-    TGraphcontainerForbTagging_[i]["Effgjets"]->SetName("Effgjets");*/
-    
     TH1DcontainerForbTagging_[i]["Effcjets"] = subDirsbTagging[i].make<TH1D>("Effcjets" ,"b tag efficiency versus c mistag rate",1000,0,1);
     TH1DcontainerForbTagging_[i]["Effljets"] = subDirsbTagging[i].make<TH1D>("Effljets" ,"b tag efficiency versus c mistag rate",1000,0,1);
     TH1DcontainerForbTagging_[i]["Effgjets"] = subDirsbTagging[i].make<TH1D>("Effgjets" ,"b tag efficiency versus c mistag rate",1000,0,1);
   }
 
-  // TH1Dcontainer_["njetsInSubDir"] = subDir.make<TH1D>("njets-2" ,"jet multiplicity for jets with E_{T} > 30 GeV",20,0,20);//wrote in subdirectory
-  // TH1Dcontainer_["njetsInSubSubDir"] = subsubDir.make<TH1D>("njets-3" ,"jet multiplicity for jets with E_{T} > 30 GeV",20,0,20);//wrote in subsubdirectory
 
 }
 
@@ -396,26 +376,45 @@ JetMetChecker::endJob() {
 
       cValAdder += TH1DcontainerForbTagging_[i]["cjets"]->GetBinContent(bin);
       cVal=cValAdder/TH1DcontainerForbTagging_[i]["cjets"]->Integral();
-      //TGraphcontainerForbTagging_[i]["Effcjets"]->SetPoint(bin,xVal,cVal);
       TH1DcontainerForbTagging_[i]["Effcjets"]->SetBinContent(intxVal,cVal);
 
       lValAdder += TH1DcontainerForbTagging_[i]["ljets"]->GetBinContent(bin);
       lVal=lValAdder/TH1DcontainerForbTagging_[i]["ljets"]->Integral();
-      //TGraphcontainerForbTagging_[i]["Effljets"]->SetPoint(bin,xVal,lVal);
       TH1DcontainerForbTagging_[i]["Effljets"]->SetBinContent(intxVal,lVal);
   
       gValAdder += TH1DcontainerForbTagging_[i]["gjets"]->GetBinContent(bin);
       gVal=gValAdder/TH1DcontainerForbTagging_[i]["gjets"]->Integral();
-      //TGraphcontainerForbTagging_[i]["Effgjets"]->SetPoint(bin,xVal,gVal);  
       TH1DcontainerForbTagging_[i]["Effgjets"]->SetBinContent(intxVal,gVal);
 
     }
   }  
 
-  //use LogError to summarise the error that happen in the execution (by example from warning) (ex: Nof where we cannot access such variable)
-  //edm::LogError  ("SummaryError") << "My error message \n";    // or  edm::LogProblem  (not formated)
-  //use LogInfo to summarise information (ex: pourcentage of events matched ...)
-  //edm::LogInfo   ("MainResults") << "Current level of jet energy corrections = " << JetCorrName<< "\%";  // or  edm::LogVerbatim (not formated)
+  edm::LogVerbatim ("MainResults") << " -------------------------------------------";
+  edm::LogVerbatim ("MainResults") << " -------------------------------------------";
+  edm::LogVerbatim ("MainResults") << " --     Report from JetMMET Checker      -- ";
+  edm::LogVerbatim ("MainResults") << " -------------------------------------------";
+  edm::LogVerbatim ("MainResults") << " -------------------------------------------";
+
+  edm::LogVerbatim ("MainResults") << " ";
+  edm::LogVerbatim ("MainResults") << " -------------------------------";
+  edm::LogVerbatim ("MainResults") << "  Info from jets";
+  edm::LogVerbatim ("MainResults") << " -------------------------------";
+  edm::LogVerbatim ("MainResults") << " ";
+
+  edm::LogVerbatim ("MainResults") << "Current level of jet energy corrections = " << JetCorrName ; 
+
+  edm::LogVerbatim ("MainResults") << " ";
+  
+  edm::LogVerbatim ("MainResults") << " -------------------------------";
+  edm::LogVerbatim ("MainResults") << "  Info from b-tagging";
+  edm::LogVerbatim ("MainResults") << " -------------------------------";
+  edm::LogVerbatim ("MainResults") << " ";
+  edm::LogVerbatim ("MainResults") << "Available b-tag algorithms:";
+
+  for(unsigned int l=0; l<availableTaggers.size(); l++){
+    edm::LogVerbatim ("MainResults") <<  availableTaggers[l];
+  } 
+  edm::LogVerbatim ("MainResults") << " ";
 }
 
 //define this as a plug-in
