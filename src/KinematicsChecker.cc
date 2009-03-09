@@ -13,7 +13,7 @@
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: KinematicsChecker.cc,v 1.2 2009/03/06 14:00:44 jmmaes Exp $
+// $Id: KinematicsChecker.cc,v 1.3 2009/03/06 14:32:38 jmmaes Exp $
 //
 //
 
@@ -239,23 +239,6 @@ KinematicsChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
        }
      }
    }
-
- 
-
-    //tree levels of message
-   //no endl needed 
-   //use '\n' to go to next line
-   //we can use different category for the same EDAnalyser
-   //ex: NoDataFound - LinkBroken - TooMuchDataFound - SummaryError - MainResults
-   
-   //edm::LogError  ("category") << "My error message";    // or  edm::LogProblem  (not formated)
-   //edm::LogWarning  ("category") << "My warning message"; // or  edm::LogPrint    (not formated)
-   //edm::LogInfo   ("category") << "My LogInfo message";  // or  edm::LogVerbatim (not formated)
-
-   //use Warning for event by event problem 
-   //edm::LogWarning  ("NoDataFound") << "My warning message - NoDataFound"; // or  edm::LogPrint    (not formated)
-   //edm::LogWarning  ("LinkBroken") << "My warning message - LinkBroken"; // or  edm::LogPrint    (not formated)
-
 }
 
 
@@ -291,18 +274,23 @@ KinematicsChecker::beginJob(const edm::EventSetup&)
 // ------------ method called once each job just after ending the event loop  ------------
 void 
 KinematicsChecker::endJob() {
-   //use LogError to summarise the error that happen in the execution (by example from warning) (ex: Nof where we cannot access such variable)
-   //edm::LogError  ("SummaryError") << "My error message \n";    // or  edm::LogProblem  (not formated)
-   //use LogInfo to summarise information (ex: pourcentage of events matched ...)
-   //edm::LogInfo   ("MainResults") << "My LogInfo message \n";  // or  edm::LogVerbatim (not formated)
-  /* edm::LogInfo   ("MainResults") << "Number of events where at least one jet is outside |eta|<" << jetsAcceptance_[0] << ": " << nJetsAcceptance[0] << "\n";
-  edm::LogInfo   ("MainResults") << "Number of events where at least one jet has pt<" << jetsAcceptance_[1] << ": " << nJetsAcceptance[1] << "\n";
-  edm::LogInfo   ("MainResults") << "Number of events where at least one muon is outside |eta|<" << muonsAcceptance_[0] << ": " << nMuonsAcceptance[0] << "\n";
-  edm::LogInfo   ("MainResults") << "Number of events where at least one muon has pt<" << muonsAcceptance_[1] << ": " << nMuonsAcceptance[1] << "\n";*/
-  edm::LogError   ("MainError") << "Number of events where at least one jet is outside |eta|<" << jetsAcceptance_[0] << ": " << nJetsAcceptance[0] << "\n";
-  edm::LogError   ("MainError") << "Number of events where at least one jet has pt<" << jetsAcceptance_[1] << ": " << nJetsAcceptance[1] << "\n";
-  edm::LogError   ("MainError") << "Number of events where at least one muon is outside |eta|<" << muonsAcceptance_[0] << ": " << nMuonsAcceptance[0] << "\n";
-  edm::LogError   ("MainError") << "Number of events where at least one muon has pt<" << muonsAcceptance_[1] << ": " << nMuonsAcceptance[1] << "\n";
+
+  edm::LogVerbatim ("SummaryResults") << " -------------------------------------------";
+  edm::LogVerbatim ("SummaryResults") << " -------------------------------------------";
+  edm::LogVerbatim ("SummaryResults") << " --   Report from Kinematics Checker     -- ";
+  edm::LogVerbatim ("SummaryResults") << " -------------------------------------------";
+  edm::LogVerbatim ("SummaryResults") << " -------------------------------------------";
+
+  edm::LogVerbatim ("SummaryResults") << " ";
+  edm::LogVerbatim ("SummaryResults") << " -------------------------------";
+  edm::LogVerbatim ("SummaryResults") << "  Info on acceptance";
+  edm::LogVerbatim ("SummaryResults") << " -------------------------------";
+  edm::LogVerbatim ("SummaryResults") << " ";
+
+  edm::LogProblem   ("SummaryError") << "Number of events where at least one jet is outside |eta|<" << jetsAcceptance_[0] << ": " << nJetsAcceptance[0];
+  edm::LogProblem   ("SummaryError") << "Number of events where at least one jet has pt<" << jetsAcceptance_[1] << ": " << nJetsAcceptance[1];
+  edm::LogProblem   ("SummaryError") << "Number of events where at least one muon is outside |eta|<" << muonsAcceptance_[0] << ": " << nMuonsAcceptance[0];
+  edm::LogProblem   ("SummaryError") << "Number of events where at least one muon has pt<" << muonsAcceptance_[1] << ": " << nMuonsAcceptance[1];
 }
 
 //define this as a plug-in
