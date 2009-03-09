@@ -13,7 +13,7 @@
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: KinematicsChecker.cc,v 1.3 2009/03/06 14:32:38 jmmaes Exp $
+// $Id: KinematicsChecker.cc,v 1.4 2009/03/09 15:03:22 jmmaes Exp $
 //
 //
 
@@ -145,15 +145,15 @@ KinematicsChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
    
    //Check if branches are available
    if (!jets.isValid()){
-     edm::LogWarning  ("NoJetsFound") << "My warning message - NoJetsFound"; 
+     edm::LogWarning  ("LinkBroken") << "My warning message - No Jets Found"; 
      throw cms::Exception("ProductNotFound") <<"jet collection not found"<<std::endl;
    }
    if (!muons.isValid()){
-     edm::LogWarning  ("NoMuonsFound") << "My warning message - NoMuonsFound"; 
+     edm::LogWarning  ("LinkBroken") << "My warning message - No Muons Found"; 
      throw cms::Exception("ProductNotFound") <<"muon collection not found"<<std::endl;
    }
    if (!mets.isValid()){
-     edm::LogWarning  ("NoMetsFound") << "My warning message - NoMetsFound";
+     edm::LogWarning  ("LinkBroken") << "My warning message - No Mets Found";
      throw cms::Exception("ProductNotFound") <<"MET collection not found"<<std::endl;
    }
 
@@ -206,7 +206,7 @@ KinematicsChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   
    //Check if branch is available  
    if (!genEvt.isValid()){
-     edm::LogWarning  ("NoGenEvtFound") << "My warning message - NoGenEvtFound";
+     edm::LogWarning  ("LinkBroken") << "My warning message - No GenEvt Found";
    }
    
    if (genEvt.isValid()){
