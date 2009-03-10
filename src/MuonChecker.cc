@@ -63,6 +63,10 @@ class MuonChecker : public edm::EDAnalyzer {
   
      int NbOfEvents;
      int NbOfSemiMuEvents;
+     int NbOfNoGenMu;
+     int NbOfMu;
+     int MuonsOrigin[12];
+     int Muoncharge[2];
 
 };
 
@@ -115,6 +119,13 @@ class MuonChecker : public edm::EDAnalyzer {
 MuonChecker::MuonChecker(const edm::ParameterSet& iConfig)
 {
 	muoLabel_ = iConfig.getParameter<edm::InputTag>("muonTag");
+	NbOfEvents       = 0;
+	NbOfSemiMuEvents = 0;
+	NbOfNoGenMu      = 0;
+	NbOfMu           = 0;
+	for(int i=0;i<12;i++) MuonsOrigin[i]=0;
+	Muoncharge[0]    = 0;
+	Muoncharge[1]    = 0;
 }
 
 MuonChecker::~MuonChecker()
@@ -133,6 +144,7 @@ MuonChecker::~MuonChecker()
 void
 MuonChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
+   NbOfEvents++;
 
    // PAT Muons
    edm::Handle<std::vector<pat::Muon> > muonHandle;
@@ -153,7 +165,6 @@ MuonChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    if (!genEvtHandle.isValid())
    {
      edm::LogWarning  ("NoDataFound") << "--- NoGenEvtFound ---";
-     throw cms::Exception("ProductNotFound") <<"Gen event not found"<<std::endl;
    }
    const TtGenEvent & genEvt = *genEvtHandle;
 
@@ -163,27 +174,33 @@ MuonChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
    for(std::vector<pat::Muon>::const_iterator muon_iter = muons.begin(); muon_iter!=muons.end(); ++muon_iter)
    {
+	NbOfMu++;
 	GenLeplMatch = false;
 	
 	if(muon_iter->genParticle() == 0)
 	{
 		edm::LogWarning ("LinkBroken") << "--- NoGenMuonFound ---";
+		NbOfNoGenMu++;
 	}
 	else if( muon_iter->genParticle()->numberOfMothers() != 0 )
 	{
 		Int_t PDG = fabs(muon_iter->genParticle()->mother(0)->pdgId());
 		if(PDG<100)
 		{
-			if(PDG == 24) histocontainer_["GenMuonMotherPid"]->Fill(MesonsPdgId[0],1);
+			if(PDG == 24) {histocontainer_["GenMuonMotherPid"]->Fill(MesonsPdgId[0],1);MuonsOrigin[0]++;}
 			else if(muon_iter->genParticle()->mother(0)->numberOfMothers() != 0 )
 			{
 				if(fabs(muon_iter->genParticle()->mother(0)->mother(0)->pdgId()) == 24) 
 				{
-					histocontainer_["GenMuonMotherPid"]->Fill(MesonsPdgId[0],1);
-					if( genEvt.isSemiLeptonic(genEvt.kMuon) && muon_iter->genParticle()->mother(0)->mother(0)->numberOfMothers() != 0 )
+					histocontainer_["GenMuonMotherPid"]->Fill(MesonsPdgId[0],1);MuonsOrigin[0]++;
+					if(genEvtHandle.isValid())//->isNonnull())
 					{
-						if(fabs(muon_iter->genParticle()->mother(0)->mother(0)->mother(0)->pdgId()) == 6) GenLeplMatch = true;
-						//std::cout<<"Check overlap with the genparticle : "<<GenLeplMatch<<std::endl;
+						if( genEvt.isSemiLeptonic(genEvt.kMuon) && muon_iter->genParticle()->mother(0)->mother(0)->numberOfMothers() != 0 )
+						{
+							NbOfSemiMuEvents++;
+							if(fabs(muon_iter->genParticle()->mother(0)->mother(0)->mother(0)->pdgId()) == 6) GenLeplMatch = true;
+							//std::cout<<"Check overlap with the genparticle : "<<GenLeplMatch<<std::endl;
+						}
 					}
 				}
 			}
@@ -191,12 +208,18 @@ MuonChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 		else if(100<PDG && PDG<600)
 		{
 			histocontainer_["GenMuonMotherPid"]->Fill(MesonsPdgId[PDG/100],1);
+			MuonsOrigin[PDG/100]++;
 		}
 		else if(999<PDG && PDG<6000)
 		{
 			histocontainer_["GenMuonMotherPid"]->Fill(BaryonsPdgId[PDG/1000],1);
+			MuonsOrigin[(PDG/1000)+6]++;
 		}
-		else    histocontainer_["GenMuonMotherPid"]->Fill(BaryonsPdgId[0],1);
+		else
+		{
+			histocontainer_["GenMuonMotherPid"]->Fill(BaryonsPdgId[0],1);
+			MuonsOrigin[6]++;
+		}
 	}
 
 	(GenLeplMatch ? MatchedMuon = "TopMuonMatch_" : MatchedMuon = "");
@@ -234,6 +257,7 @@ MuonChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   	histocontainer_[MatchedMuon+"MuonVetoHad"] ->Fill(muon_iter->hcalIsoDeposit()->candEnergy());
 
 	histocontainer_[MatchedMuon+"MuonCharge"] ->Fill(muon_iter->charge());
+	(muon_iter->charge()>0 ? Muoncharge[0]++ : Muoncharge[1]++);
    }
 }
 
@@ -306,6 +330,35 @@ MuonChecker::endJob()
    //edm::LogError  ("SummaryError") << "My error message \n";    // or  edm::LogProblem  (not formated)
    //use LogInfo to summarise information (ex: pourcentage of events matched ...)
    //edm::LogInfo   ("MainResults") << "My LogInfo message \n";  // or  edm::LogVerbatim (not formated)
+
+  edm::LogVerbatim ("MainResults") << " ------------------------------------------";
+  edm::LogVerbatim ("MainResults") << " ------------------------------------------";
+  edm::LogVerbatim ("MainResults") << " --   Report from MuonSanityChecker     -- ";
+  edm::LogVerbatim ("MainResults") << " ------------------------------------------";
+  edm::LogVerbatim ("MainResults") << " ------------------------------------------";
+  edm::LogVerbatim ("MainResults") << " Nb of processed events :"<<NbOfEvents;
+  edm::LogVerbatim ("MainResults") << " Nb of semi-muonic events :"<<NbOfSemiMuEvents;
+  edm::LogVerbatim ("MainResults") << " Nb of muons found :"<<NbOfMu;
+  edm::LogVerbatim ("MainResults") << " Nb of NoGen muon found : "<<NbOfNoGenMu;
+  edm::LogVerbatim ("MainResults") << " -- average : ";
+  edm::LogVerbatim ("MainResults") << " -- sigma : ";
+  edm::LogVerbatim ("MainResults") << " -- Composition : ";
+  edm::LogVerbatim ("MainResults") << " ---- W bosons : "<<MuonsOrigin[0];
+  edm::LogVerbatim ("MainResults") << " ---- Light mesons (I=1) (Pions, rho, etc...): "<<MuonsOrigin[1];
+  edm::LogVerbatim ("MainResults") << " ---- Light mesons (I=0) (ita, omega, etc...): "<<MuonsOrigin[2];
+  edm::LogVerbatim ("MainResults") << " ---- s-mesons (K^{0/+-}, etc...): "<<MuonsOrigin[3];
+  edm::LogVerbatim ("MainResults") << " ---- c-mesons (D^{0/+-}, etc...): "<<MuonsOrigin[4];
+  edm::LogVerbatim ("MainResults") << " ---- b-mesons (B^{0/+-}, etc...): "<<MuonsOrigin[5];
+  edm::LogVerbatim ("MainResults") << " ---- Light baryons (n, p, etc...): "<<MuonsOrigin[7]+MuonsOrigin[8];
+  edm::LogVerbatim ("MainResults") << " ---- s-baryons (lambda, sigma, etc...): "<<MuonsOrigin[9];
+  edm::LogVerbatim ("MainResults") << " ---- c-baryons (lambda_c, sigma_c, etc...): "<<MuonsOrigin[10];
+  edm::LogVerbatim ("MainResults") << " ---- b-baryons (lambda_b, sigma_b, etc...): "<<MuonsOrigin[11];
+  edm::LogVerbatim ("MainResults") << " ---- Others : "<<MuonsOrigin[6];
+  edm::LogVerbatim ("MainResults") << " Nb of NoGen muon found : "<<NbOfNoGenMu;
+  edm::LogVerbatim ("MainResults") << " Muon charge : ";
+  edm::LogVerbatim ("MainResults") << " -- (+) : "<<Muoncharge[0];
+  edm::LogVerbatim ("MainResults") << " -- (-) : "<<Muoncharge[1];
+  
 }
 
 //define this as a plug-in
