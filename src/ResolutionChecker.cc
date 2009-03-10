@@ -404,42 +404,54 @@ ResolutionChecker::endJob() {
   if(objectType_ == "tau" && nrFilled == 0) edm::LogProblem  ("SummaryError") << "No plots filled for taus \n";    
   if(objectType_ == "met" && nrFilled == 0) edm::LogProblem  ("SummaryError") << "No plots filled for met \n";    
 	
-	
-	edm::LogVerbatim   ("MainResults") <<"\n\n\n RESULTS OF RESOLUTION MODULE \n\n"; 
+  edm::LogVerbatim ("MainResults") << " \n\n";	
+  edm::LogVerbatim ("MainResults") << " ----------------------------------------------";
+  edm::LogVerbatim ("MainResults") << " ----------------------------------------------";
+  edm::LogVerbatim ("MainResults") << " Resolutions on "<< objectType_ << " with nrfilled: "<<nrFilled;
+  edm::LogVerbatim ("MainResults") << " ----------------------------------------------";
+  edm::LogVerbatim ("MainResults") << " ----------------------------------------------";
   if(nrFilled != 0 && objectType_ != "met") {
-		edm::LogVerbatim   ("MainResults") <<"\n\n\n" <<"nr. of "<<objectType_<<" filled: "<<nrFilled <<"\n";  
   	for(ro=0; ro<8; ro++) {
-    	edm::LogVerbatim   ("MainResults") << "Resolutions on " << resObsName2[ro] << "\n\n";
+ 			edm::LogVerbatim ("MainResults") << "-------------------- ";
+    	edm::LogVerbatim ("MainResults") << "\n Resolutions on " << resObsName2[ro] << "\n";
+  		edm::LogVerbatim ("MainResults") << "-------------------- ";
 			for(int etab=0; etab<etanrbins; etab++) {	
   			if(nrFilled != 0 && ro != 6) {
-					edm::LogVerbatim   ("MainResults") << "if(fabs(eta)<"<<etabinVals_[etab+1] <<") res = " << 
-					fResEtaBin[ro][etab]->GetParameter(0) << "+" << fResEtaBin[ro][etab]->GetParameter(1) 
-					<< "*exp(-(" <<fResEtaBin[ro][etab]->GetParameter(2) << "*pt));";  
+					if(etab == 0){
+						edm::LogVerbatim   ("MainResults") << "if(fabs(eta)<"<<etabinVals_[etab+1] <<") res = " << 
+						fResEtaBin[ro][etab]->GetParameter(0) << "+" << fResEtaBin[ro][etab]->GetParameter(1) 
+						<< "*exp(-(" <<fResEtaBin[ro][etab]->GetParameter(2) << "*pt));";  
+					}else{ 
+						edm::LogVerbatim   ("MainResults") << "else if(fabs(eta)<"<<etabinVals_[etab+1] <<") res = " << 
+						fResEtaBin[ro][etab]->GetParameter(0) << "+" << fResEtaBin[ro][etab]->GetParameter(1) 
+						<< "*exp(-(" <<fResEtaBin[ro][etab]->GetParameter(2) << "*pt));";  					
+					}
 				}else if(nrFilled != 0 && ro == 6){
-					edm::LogVerbatim   ("MainResults") << "if(fabs(eta)<"<<etabinVals_[etab+1] <<") res = " << 
-					fResEtaBin[ro][etab]->GetParameter(0) << "+" << fResEtaBin[ro][etab]->GetParameter(1) 
-					<< "*pt;";  					
+					if(etab == 0){
+						edm::LogVerbatim   ("MainResults") << "if(fabs(eta)<"<<etabinVals_[etab+1] <<") res = " << 
+						fResEtaBin[ro][etab]->GetParameter(0) << "+" << fResEtaBin[ro][etab]->GetParameter(1) 
+						<< "*pt;";
+					}else{  					
+						edm::LogVerbatim   ("MainResults") << "else if(fabs(eta)<"<<etabinVals_[etab+1] <<") res = " << 
+						fResEtaBin[ro][etab]->GetParameter(0) << "+" << fResEtaBin[ro][etab]->GetParameter(1) 
+						<< "*pt;";
+
+					}
 				}
 			}
 		}
 	}else if(nrFilled != 0 && objectType_ == "met"){
-		edm::LogVerbatim   ("MainResults") <<"\n\n\n" <<"nr. of "<<objectType_<<" filled: "<<nrFilled <<"\n";  
-  	for(ro=0; ro<8; ro++) {
-    	edm::LogVerbatim   ("MainResults") << "Resolutions on " << resObsName2[ro] << "\n\n";
-			for(int etab=0; etab<etanrbins; etab++) {	
-  			if(nrFilled != 0 && ro != 6) {
+ 	for(ro=0; ro<8; ro++) {
+ 			edm::LogVerbatim ("MainResults") << "-------------------- ";
+    	edm::LogVerbatim ("MainResults") << "\n Resolutions on " << resObsName2[ro] << "\n";
+  		edm::LogVerbatim ("MainResults") << "-------------------- ";
+			if(nrFilled != 0 && ro != 6) {
 					edm::LogVerbatim   ("MainResults") << "res = " <<
-					fResEtaBin[ro][etab]->GetParameter(0) << "+" << fResEtaBin[ro][etab]->GetParameter(1) 
-					<< "*exp(-(" <<fResEtaBin[ro][etab]->GetParameter(2) << "*pt));";  
-				}else if(nrFilled != 0 && ro == 6){
-					edm::LogVerbatim   ("MainResults") << "res = " << 
-					fResEtaBin[ro][etab]->GetParameter(0) << "+" << fResEtaBin[ro][etab]->GetParameter(1) 
-					<< "*pt;";  					
-				}
+					fResEtaBin[ro][0]->GetParameter(0) << "+" << fResEtaBin[ro][0]->GetParameter(1) 
+					<< "*exp(-(" <<fResEtaBin[ro][0]->GetParameter(2) << "*pt));";  			
 			}
 		}
 	}
-	edm::LogVerbatim   ("MainResults") <<"\n\n\n END RESULTS OF RESOLUTION MODULE \n\n"; 	
 }
 
 //define this as a plug-in
