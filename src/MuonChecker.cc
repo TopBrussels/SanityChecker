@@ -338,10 +338,9 @@ MuonChecker::endJob()
   edm::LogVerbatim ("MainResults") << " ------------------------------------------";
   edm::LogVerbatim ("MainResults") << " Nb of processed events :"<<NbOfEvents;
   edm::LogVerbatim ("MainResults") << " Nb of semi-muonic events :"<<NbOfSemiMuEvents;
-  edm::LogVerbatim ("MainResults") << " Nb of muons found :"<<NbOfMu;
   edm::LogVerbatim ("MainResults") << " Nb of NoGen muon found : "<<NbOfNoGenMu;
-  edm::LogVerbatim ("MainResults") << " -- average : ";
-  edm::LogVerbatim ("MainResults") << " -- sigma : ";
+  edm::LogVerbatim ("MainResults") << " Nb of muons found :"<<NbOfMu;
+  edm::LogVerbatim ("MainResults") << " -- average : "<<NbOfMu/NbOfSemiMuEvents;
   edm::LogVerbatim ("MainResults") << " -- Composition : ";
   edm::LogVerbatim ("MainResults") << " ---- W bosons : "<<MuonsOrigin[0];
   edm::LogVerbatim ("MainResults") << " ---- Light mesons (I=1) (Pions, rho, etc...): "<<MuonsOrigin[1];
@@ -354,7 +353,6 @@ MuonChecker::endJob()
   edm::LogVerbatim ("MainResults") << " ---- c-baryons (lambda_c, sigma_c, etc...): "<<MuonsOrigin[10];
   edm::LogVerbatim ("MainResults") << " ---- b-baryons (lambda_b, sigma_b, etc...): "<<MuonsOrigin[11];
   edm::LogVerbatim ("MainResults") << " ---- Others : "<<MuonsOrigin[6];
-  edm::LogVerbatim ("MainResults") << " Nb of NoGen muon found : "<<NbOfNoGenMu;
   edm::LogVerbatim ("MainResults") << " Muon charge : ";
   edm::LogVerbatim ("MainResults") << " -- (+) : "<<Muoncharge[0];
   edm::LogVerbatim ("MainResults") << " -- (-) : "<<Muoncharge[1];
