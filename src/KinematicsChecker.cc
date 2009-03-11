@@ -13,7 +13,7 @@
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: KinematicsChecker.cc,v 1.5 2009/03/09 15:06:40 jmmaes Exp $
+// $Id: KinematicsChecker.cc,v 1.6 2009/03/09 22:18:12 jmmaes Exp $
 //
 //
 
@@ -47,6 +47,19 @@
 // class decleration
 //
 
+/*struct HighestPt{
+  bool operator()( reco::Candidate * j1, reco::Candidate * j2 ) const{
+    //return j1->p4().Pt() > j2->p4().Pt() ;
+    return true;
+  }
+  };*/
+
+struct Highest{
+  bool operator()( double j1, double j2 ) const{
+    return j1 > j2 ;
+  }
+};
+
 class KinematicsChecker : public edm::EDAnalyzer {
    public:
       explicit KinematicsChecker(const edm::ParameterSet&);
@@ -76,6 +89,7 @@ class KinematicsChecker : public edm::EDAnalyzer {
       std::vector< double > jetsAcceptance_, muonsAcceptance_;
       std::vector< double > nJetsAcceptance, nMuonsAcceptance;
   
+  bool verbose_;
    
 };
 
@@ -101,8 +115,9 @@ KinematicsChecker::KinematicsChecker(const edm::ParameterSet& iConfig)
   useMaxDist_       =   iConfig.getParameter<bool>( "useMaxDist" );
   useDeltaR_        =   iConfig.getParameter<bool>( "useDeltaR" );
   maxDist_          =   iConfig.getParameter<double>( "maxDist" );
-  jetsAcceptance_   =  iConfig.getParameter< std::vector< double > >( "jetsAcceptance" );
-  muonsAcceptance_  =  iConfig.getParameter< std::vector< double > >( "muonsAcceptance" );
+  jetsAcceptance_   =   iConfig.getParameter< std::vector< double > >( "jetsAcceptance" );
+  muonsAcceptance_  =   iConfig.getParameter< std::vector< double > >( "muonsAcceptance" );
+  verbose_     =   iConfig.getParameter<bool>( "verbose" );
 }
 
 
@@ -218,7 +233,16 @@ KinematicsChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
    if (genEvt.isValid()){
      
      if(genEvt->isSemiLeptonic(genEvt->kMuon)) {
-       
+
+       //make a copy of the jet collection to be able to drop jets from it
+       std::vector<pat::Jet> jets_clone;
+       for(unsigned int i=0; i<jets->size(); i++){
+	 jets_clone.push_back((*jets)[i]);
+       }
+      
+       if(verbose_){std::cout << " jets->size(): " << jets->size() << std::endl;}
+       if(verbose_){std::cout << " jets_clone.size(): " << jets_clone.size() << std::endl;}
+
        // Make plots only with jets from ttbar events (matched with a certain algo)
        // Matching index : Hadronic Q  = 0, Hadronic Q' = 1, Hadronic b  = 2, Leptonic b  = 3;
        std::vector<const reco::Candidate *> TopQuarks;
@@ -226,15 +250,21 @@ KinematicsChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
        TopQuarks.push_back(genEvt->hadronicDecayQuarkBar());
        TopQuarks.push_back(genEvt->hadronicDecayB());
        TopQuarks.push_back(genEvt->leptonicDecayB());
-       if(jets->size()>=4) { 
+       if(TopQuarks.size()==4) { 
 
-	 JetPartonMatching *GenMatchTopQuarks = new JetPartonMatching(TopQuarks, *jets, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
+	 JetPartonMatching *GenMatchTopQuarks = new JetPartonMatching(TopQuarks, jets_clone, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
 
 	 for(unsigned int i=0; i<4; i++){
 	   Int_t Idx = GenMatchTopQuarks->getMatchForParton(i,0);
-	   if(Idx>=0) ObjectP4s[0].push_back(((*jets)[Idx]).p4());
+	   if(Idx>=0){
+	     ObjectP4s[0].push_back((jets_clone[Idx]).p4());
+	     //drop jets from collection
+	     jets_clone.erase(jets_clone.begin()+Idx);
+	   }
 	 }
-	 
+	  
+	 if(verbose_){std::cout << " jets_clone.size(): " << jets_clone.size() << std::endl;}
+
 	 TH1Dcontainer_[3]["number"]->Fill(ObjectP4s[0].size()); 
 	 for(unsigned int j=0; j<ObjectP4s[0].size(); j++) TH1Dcontainer_[3]["pt"]->Fill(ObjectP4s[0][j].Pt());  
 	 for(unsigned int j=0;j<ObjectP4s[0].size();j++) TH1Dcontainer_[3]["eta"]->Fill(ObjectP4s[0][j].Eta()); 
@@ -247,31 +277,64 @@ KinematicsChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
        
        //  Make plots only with jets from ISR (matched with a certain algo)  
 
-       ObjectP4s[0].clear();
+       for(unsigned int i=0;i<3;i++){
+	 ObjectP4s[i].clear();
+       }
+   
        std::vector<const reco::Candidate *> ISRquarks;
+       std::vector<const reco::Candidate *> ISRquarksSorted;
+       std::vector<double> IRSquarksPt;
+
        unsigned int NumberISR = genEvt->ISR().size();	
        if(NumberISR>0) {
+	 if(verbose_){std::cout << " NumberISR: " <<NumberISR << std::endl;}
 
 	 //Fill vector with ISR quarks
 	 for(unsigned int i=0; i<NumberISR; i++){
 	   ISRquarks.push_back((genEvt->ISR())[i]);
+	   IRSquarksPt.push_back((genEvt->ISR())[i]->p4().pt());
 	 }
-
-	 //Remove quarks if there are more then jets, to have unambiguios jet parton matching
-	 if(NumberISR > jets->size()){  
-	   edm::LogWarning  ("LinkBroken") << "there are more quarks from initial state radiation than there are jets in the jet collection";//TODO: waht to do with "category"?
-	   unsigned int diffSize=ISRquarks.size()-jets->size();
-	   for(unsigned int i = 0; i<diffSize; i++ ){
-	     ISRquarks.pop_back();
+	 
+	 //sort vector
+	 //std::sort(ISRquarks.begin(),ISRquarks.begin(),HighestPt());
+	 //sort by ugly method
+	 std::sort(IRSquarksPt.begin(),IRSquarksPt.end(),Highest());
+		   
+	 for(unsigned int i=0; i<NumberISR; i++){
+	   for(unsigned int j=0; j<NumberISR; j++){
+	     double diff=fabs(IRSquarksPt[i]-ISRquarks[j]->p4().pt());
+	     if(diff<0.001){
+	       ISRquarksSorted.push_back(ISRquarks[j]);
+	     }
 	   }
 	 }
-
-	 JetPartonMatching *GenMatchISRquarks = new JetPartonMatching(ISRquarks, *jets, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_); 
-
-	 for(unsigned int i=0; i<NumberISR; i++){
-	   Int_t Idx = GenMatchISRquarks->getMatchForParton(i,0);
-	   if(Idx>=0) ObjectP4s[0].push_back(((*jets)[Idx]).p4());
+	 
+	 if(verbose_){std::cout << " ISRquarks.size(): " << ISRquarks.size() << std::endl;}
+	 if(verbose_){std::cout << " ISRquarksSorted.size(): " << ISRquarksSorted.size() << std::endl;}
+	 //Remove quarks if there are more then jets, to have unambiguios jet parton matching
+	 if(NumberISR > jets_clone.size()){  
+	   edm::LogWarning  ("LinkBroken") << "there are more quarks from initial state radiation than there are jets in the jet collection";//TODO: waht to do with "category"?
+	   unsigned int diffSize=ISRquarksSorted.size()-jets_clone.size();
+	   if(diffSize>0){
+	     for(unsigned int i = 0; i<diffSize; i++ ){
+	       ISRquarksSorted.pop_back();
+	     }
+	   }
 	 }
+	 if(verbose_){std::cout << " ISRquarksSorted.size(): " << ISRquarksSorted.size() << std::endl;}
+ 
+	 JetPartonMatching *GenMatchISRquarks = new JetPartonMatching(ISRquarksSorted, jets_clone, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_); 
+	 
+	 if(verbose_){std::cout << " jets_clone.size(): " << jets_clone.size() << std::endl;}
+	 for(unsigned int i=0; i<ISRquarksSorted.size(); i++){
+	   Int_t Idx = GenMatchISRquarks->getMatchForParton(i,0);
+	   if(Idx>=0){
+	     ObjectP4s[0].push_back((jets_clone[Idx]).p4()); 
+	     //drop jets from collection
+	     jets_clone.erase(jets_clone.begin()+Idx);
+	   }
+	 }
+	 if(verbose_){std::cout << " jets_clone.size(): " << jets_clone.size() << std::endl;}
 
 	 TH1Dcontainer_[4]["number"]->Fill(ObjectP4s[0].size()); 
 	 for(unsigned int j=0; j<ObjectP4s[0].size(); j++) TH1Dcontainer_[4]["pt"]->Fill(ObjectP4s[0][j].Pt());  
@@ -284,9 +347,14 @@ KinematicsChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
        }
 
        //  Make plots only with jets from topRadiation (matched with a certain algo)  
-       ObjectP4s[0].clear();
+       for(unsigned int i=0;i<3;i++){
+	 ObjectP4s[i].clear();
+       }
 
        std::vector<const reco::Candidate *> TopRadQuarks;
+       std::vector<const reco::Candidate *> TopRadQuarksSorted;  
+       std::vector<double> TopRadQuarksPt;
+       
        unsigned int NumberTopRadLep = genEvt->leptonicDecayTopRadiation().size();		
        unsigned int NumberTopRadHad = genEvt->hadronicDecayTopRadiation().size();		
        unsigned int NumberTopRad = NumberTopRadLep+NumberTopRadHad;	
@@ -294,30 +362,47 @@ KinematicsChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
        if(NumberTopRadLep!=0 ) {
 	 for(unsigned int i=0;i<NumberTopRadLep; i++){
 	   TopRadQuarks.push_back((genEvt->leptonicDecayTopRadiation())[i]);
+	   TopRadQuarksPt.push_back((genEvt->leptonicDecayTopRadiation())[i]->p4().pt());
 	 }
        }
        if(NumberTopRadHad!=0 ) {
 	 for(unsigned int i=0; i<NumberTopRadHad; i++){
 	   TopRadQuarks.push_back((genEvt->hadronicDecayTopRadiation())[i]);
+	   TopRadQuarksPt.push_back((genEvt->hadronicDecayTopRadiation())[i]->p4().pt());
 	 }
        }
 
        if(NumberTopRad>0){ 
-
-	 //Remove quarks if there are more than jets, to have unambiguios jet parton matching
-	 if(NumberISR > jets->size()){
-	   edm::LogWarning  ("LinkBroken") << "there are more quarks from top radiation than there are jets in the jet collection";//TODO: waht to do with "category"?
-	   unsigned int diffSize=TopRadQuarks.size()-jets->size();
-	   for(unsigned int i = 0; i<diffSize; i++ ){
-	     TopRadQuarks.pop_back();
+ 
+	 //sort by ugly method
+	 std::sort(TopRadQuarksPt.begin(),TopRadQuarksPt.end(),Highest());
+	 
+	 for(unsigned int i=0; i<NumberTopRad; i++){
+	   for(unsigned int j=0; j<NumberTopRad; j++){
+	     double diff=fabs(TopRadQuarksPt[i]-TopRadQuarks[j]->p4().pt());
+	     if(diff<0.001){
+	       TopRadQuarksSorted.push_back(TopRadQuarks[j]);
+	     }
 	   }
 	 }
+	 if(verbose_){std::cout << " jets_clone.size(): " << jets_clone.size() << std::endl;} 
+	 if(verbose_) std::cout << " TopRadQuarksSorted.size() " << TopRadQuarksSorted.size() << std::endl; 
+	 if(verbose_) std::cout << " TopRadQuarks.size() " << TopRadQuarks.size() << std::endl; 
+	 //Remove quarks if there are more than jets, to have unambiguios jet parton matching
+	 if(NumberTopRad > jets_clone.size()){
+	   edm::LogWarning  ("LinkBroken") << "there are more quarks from top radiation than there are jets in the jet collection";//TODO: waht to do with "category"?
+	   unsigned int diffSize=TopRadQuarksSorted.size()-jets_clone.size();
+	   if(verbose_){std::cout << " diffSize (TopRadQuarksSorted.size()-jets_clone.size()): " <<  diffSize << std::endl;}
+	   for(unsigned int i = 0; i<diffSize; i++ ){
+	     TopRadQuarksSorted.pop_back();
+	   }
+	 }
+	
+	 JetPartonMatching *GenMatchTopRadQuarks = new JetPartonMatching(TopRadQuarksSorted, jets_clone, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_); 
 
-	 JetPartonMatching *GenMatchTopRadQuarks = new JetPartonMatching(TopRadQuarks, *jets, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_); 
-
-	 for(unsigned int i=0; i<NumberTopRad; i++){
+	 for(unsigned int i=0; i<TopRadQuarksSorted.size(); i++){
 	   Int_t Idx = GenMatchTopRadQuarks->getMatchForParton(i,0);
-	   if(Idx>=0) ObjectP4s[0].push_back(((*jets)[Idx]).p4());
+	   if(Idx>=0) ObjectP4s[0].push_back((jets_clone[Idx]).p4());
 	 }
 
 	 TH1Dcontainer_[5]["number"]->Fill(ObjectP4s[0].size()); 
@@ -343,8 +428,8 @@ KinematicsChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 
 	 for(unsigned int i=0; i<muons->size();i++){
 	 	
-		   if(ROOT::Math::VectorUtil::Angle(genEvt->singleLepton()->p4(),(*muons)[i].p4())<ClosestDelR){
-	     ClosestDelR=ROOT::Math::VectorUtil::Angle(genEvt->singleLepton()->p4(),(*muons)[i].p4());
+	   if(ROOT::Math::VectorUtil::DeltaR(genEvt->singleLepton()->p4(),(*muons)[i].p4())<ClosestDelR){
+	     ClosestDelR=ROOT::Math::VectorUtil::DeltaR(genEvt->singleLepton()->p4(),(*muons)[i].p4());
 	     ClosestIdx=i;
 	   }
 	 }
@@ -353,16 +438,24 @@ KinematicsChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 	   ObjectP4s[1].push_back(((*muons)[ClosestIdx].p4()));
 	   
 	   TH1Dcontainer_[6]["number"]->Fill(ObjectP4s[1].size()); 
-	   for(unsigned int j=0; j<ObjectP4s[1].size(); j++) TH1Dcontainer_[6]["pt"]->Fill(ObjectP4s[1][j].Pt());  
-	   for(unsigned int j=0;j<ObjectP4s[1].size();j++) TH1Dcontainer_[6]["eta"]->Fill(ObjectP4s[1][j].Eta()); 
-	   for(unsigned int j=0;j<ObjectP4s[1].size();j++) TH1Dcontainer_[6]["et"]->Fill(ObjectP4s[1][j].Et());
-	   for(unsigned int j=0;j<ObjectP4s[1].size();j++) TH1Dcontainer_[6]["energy"]->Fill(ObjectP4s[1][j].E());
-	   for(unsigned int j=0;j<ObjectP4s[1].size();j++) TH1Dcontainer_[6]["theta"]->Fill(ObjectP4s[1][j].Theta());
-	   for(unsigned int j=0;j<ObjectP4s[1].size();j++) TH1Dcontainer_[6]["phi"]->Fill(ObjectP4s[1][j].Phi());
+	   TH1Dcontainer_[6]["pt"]->Fill(ObjectP4s[1][0].Pt());  
+	   TH1Dcontainer_[6]["eta"]->Fill(ObjectP4s[1][0].Eta()); 
+	   TH1Dcontainer_[6]["et"]->Fill(ObjectP4s[1][0].Et());
+	   TH1Dcontainer_[6]["energy"]->Fill(ObjectP4s[1][0].E());
+	   TH1Dcontainer_[6]["theta"]->Fill(ObjectP4s[1][0].Theta());
+	   TH1Dcontainer_[6]["phi"]->Fill(ObjectP4s[1][0].Phi());
+	   
+	   TH1Fcontainer_["resEtMuons"]->Fill((genEvt->singleLepton()->p4().Et()-ObjectP4s[1][0].Et())/ObjectP4s[1][0].Et());
+	   TH1Fcontainer_["resPtMuons"]->Fill((genEvt->singleLepton()->p4().Pt()-ObjectP4s[1][0].Pt())/ObjectP4s[1][0].Pt()); 
+	   TH1Fcontainer_["resPhiMuons"]->Fill((genEvt->singleLepton()->p4().Phi()-ObjectP4s[1][0].Phi())/ObjectP4s[1][0].Phi()); 
+	   TH1Fcontainer_["resThetaMuons"]->Fill((genEvt->singleLepton()->p4().Theta()-ObjectP4s[1][0].Theta())/ObjectP4s[1][0].Theta()); 
+	   TH1Fcontainer_["resEtaMuons"]->Fill((genEvt->singleLepton()->p4().Eta()-ObjectP4s[1][0].Eta())/ObjectP4s[1][0].Eta()); 
+
+
 	 }
 	 if(ClosestDelR==999.){ClosestDelR=-1;}
 
-	 TH1Fcontainer_["deltaRmuons"]->Fill(ClosestDelR);
+	 TH1Fcontainer_["deltaRMuons"]->Fill(ClosestDelR);
 
        }
   
@@ -371,23 +464,29 @@ KinematicsChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
        }
        
        if(mets->size()>0){
-	 double ClosestDelR=999.;
-	  
-	 ClosestDelR=ROOT::Math::VectorUtil::Angle(genEvt->singleNeutrino()->p4(),(*mets)[0].p4());
+
+	 double ClosestDelPhi=999.;
+	 ClosestDelPhi=fabs(ROOT::Math::VectorUtil::DeltaPhi(genEvt->singleNeutrino()->p4(),(*mets)[0].p4()));
 	 
-	 if(ClosestDelR<0.3){
-	   ObjectP4s[2].push_back(((*mets)[0].p4()));
-	   
-	   TH1Dcontainer_[7]["number"]->Fill(ObjectP4s[2].size()); 
-	   for(unsigned int j=0; j<ObjectP4s[2].size(); j++) TH1Dcontainer_[7]["pt"]->Fill(ObjectP4s[2][j].Pt());  
-	   for(unsigned int j=0;j<ObjectP4s[2].size();j++) TH1Dcontainer_[7]["eta"]->Fill(ObjectP4s[2][j].Eta()); 
-	   for(unsigned int j=0;j<ObjectP4s[2].size();j++) TH1Dcontainer_[7]["et"]->Fill(ObjectP4s[2][j].Et());
-	   for(unsigned int j=0;j<ObjectP4s[2].size();j++) TH1Dcontainer_[7]["energy"]->Fill(ObjectP4s[2][j].E());
-	   for(unsigned int j=0;j<ObjectP4s[2].size();j++) TH1Dcontainer_[7]["theta"]->Fill(ObjectP4s[2][j].Theta());
-	   for(unsigned int j=0;j<ObjectP4s[2].size();j++) TH1Dcontainer_[7]["phi"]->Fill(ObjectP4s[2][j].Phi());
-	 }
-	 if(ClosestDelR==999.){ClosestDelR=-1;}
-	 TH1Fcontainer_["deltaRmets"]->Fill(ClosestDelR);
+
+	 ObjectP4s[2].push_back(((*mets)[0].p4()));
+	
+	 TH1Dcontainer_[7]["number"]->Fill(ObjectP4s[2].size()); 
+	 TH1Dcontainer_[7]["pt"]->Fill(ObjectP4s[2][0].Pt());  
+	 TH1Dcontainer_[7]["eta"]->Fill(ObjectP4s[2][0].Eta()); 
+	 TH1Dcontainer_[7]["et"]->Fill(ObjectP4s[2][0].Et());
+	 TH1Dcontainer_[7]["energy"]->Fill(ObjectP4s[2][0].E());
+	 TH1Dcontainer_[7]["theta"]->Fill(ObjectP4s[2][0].Theta());
+	 TH1Dcontainer_[7]["phi"]->Fill(ObjectP4s[2][0].Phi());
+	 
+	 TH1Fcontainer_["resEtMets"]->Fill((genEvt->singleLepton()->p4().Et()-ObjectP4s[2][0].Et())/ObjectP4s[2][0].Et());
+	 TH1Fcontainer_["resPtMets"]->Fill((genEvt->singleLepton()->p4().Pt()-ObjectP4s[2][0].Pt())/ObjectP4s[2][0].Pt()); 
+	 TH1Fcontainer_["resPhiMets"]->Fill((genEvt->singleLepton()->p4().Phi()-ObjectP4s[2][0].Phi())/ObjectP4s[2][0].Phi()); 
+	 TH1Fcontainer_["resPxMets"]->Fill((genEvt->singleLepton()->p4().Px()-ObjectP4s[2][0].Px())/ObjectP4s[2][0].Px()); 
+	 TH1Fcontainer_["resPyMets"]->Fill((genEvt->singleLepton()->p4().Py()-ObjectP4s[2][0].Py())/ObjectP4s[2][0].Py()); 
+ 
+	 if(ClosestDelPhi==999.){ClosestDelPhi=-1;}
+	 TH1Fcontainer_["deltaPhiMets"]->Fill(ClosestDelPhi);
 	 
        }
        
@@ -409,19 +508,31 @@ KinematicsChecker::beginJob(const edm::EventSetup&)
   for(unsigned int i=0;i<8;i++) subDirs.push_back(fs->mkdir( ObjectNames[i] ));
 
   for(unsigned int i=0;i<8;i++){  
-    TH1Dcontainer_[i]["number"] = subDirs[i].make<TH1D>("number" ,"number of objects",50,0,50);
-    TH1Dcontainer_[i]["pt"] = subDirs[i].make<TH1D>("pt" ,"pt",50,0,100);
-    TH1Dcontainer_[i]["et"] = subDirs[i].make<TH1D>("et" ,"et",50,0,100);
+    TH1Dcontainer_[i]["number"] = subDirs[i].make<TH1D>("number" ,"number of objects",50,0,30);
+    TH1Dcontainer_[i]["pt"] = subDirs[i].make<TH1D>("pt" ,"pt",50,0,200);
+    TH1Dcontainer_[i]["et"] = subDirs[i].make<TH1D>("et" ,"et",50,0,200);
     TH1Dcontainer_[i]["eta"] = subDirs[i].make<TH1D>("eta" ,"eta",50,-6,6);
-    TH1Dcontainer_[i]["energy"] = subDirs[i].make<TH1D>("energy" ,"energy",50,0,200);
+    TH1Dcontainer_[i]["energy"] = subDirs[i].make<TH1D>("energy" ,"energy",50,0,400);
     TH1Dcontainer_[i]["theta"] = subDirs[i].make<TH1D>("theta" ,"theta",50,0,3.2);
     TH1Dcontainer_[i]["phi"] = subDirs[i].make<TH1D>("phi" ,"phi",50,-3.2,3.2);
   }
  
   
-  TH1Fcontainer_["deltaRmuons"] = subDirs[6].make<TH1F>("deltaRmuons" ,"deltaR of closest reconstructed muon to generated muon",50,-1,5);
-  TH1Fcontainer_["deltaRmets"] = subDirs[7].make<TH1F>("deltaRmets" ,"deltaR of neutrino and missing transverse energy",50,-1,5);
-  
+  TH1Fcontainer_["deltaRMuons"] = subDirs[6].make<TH1F>("deltaRMuons" ,"deltaR of closest reconstructed muon to generated muon",50,-1,5);
+  TH1Fcontainer_["resEtMuons"] = subDirs[6].make<TH1F>("resEtMuons" ,"resolution Et (gen-rec)/rec",50,-.2,.5);
+  TH1Fcontainer_["resPtMuons"] = subDirs[6].make<TH1F>("resPtMuons" ,"resolution Pt (gen-rec)/rec",50,-.2,.5);
+  TH1Fcontainer_["resPhiMuons"] = subDirs[6].make<TH1F>("resPhiMuons" ,"resolution Phi (gen-rec)/rec",50,-.1,.1);
+  TH1Fcontainer_["resThetaMuons"] = subDirs[6].make<TH1F>("resThetaMuons" ,"resolution Theta (gen-rec)/rec",50,-.1,.1);
+  TH1Fcontainer_["resEtaMuons"] = subDirs[6].make<TH1F>("resEtaMuons" ,"resolution Eta (gen-rec)/rec",50,-.1,.1);
+
+
+  TH1Fcontainer_["deltaPhiMets"] = subDirs[7].make<TH1F>("deltaPhiMets" ,"deltaPhi of neutrino and missing transverse energy",50,-1,5);
+  TH1Fcontainer_["resEtMets"] = subDirs[7].make<TH1F>("resEtMets" ,"resolution Et (gen-rec)/rec",50,-1,3);
+  TH1Fcontainer_["resPtMets"] = subDirs[7].make<TH1F>("resPtMets" ,"resolution Pt (gen-rec)/rec",50,-1,3);
+  TH1Fcontainer_["resPhiMets"] = subDirs[7].make<TH1F>("resPhiMets" ,"resolution Phi (gen-rec)/rec",50,-4,2);
+  TH1Fcontainer_["resPxMets"] = subDirs[7].make<TH1F>("resPxMets" ,"resolution Px (gen-rec)/rec",50,-3,3);
+  TH1Fcontainer_["resPyMets"] = subDirs[7].make<TH1F>("resPyMets" ,"resolution Py (gen-rec)/rec",50,-3,3);
+ 
 
   nJetsAcceptance.push_back(0);
   nJetsAcceptance.push_back(0);
@@ -450,6 +561,49 @@ KinematicsChecker::endJob() {
   edm::LogProblem   ("SummaryError") << "Number of events where at least one jet has pt<" << jetsAcceptance_[1] << ": " << nJetsAcceptance[1];
   edm::LogProblem   ("SummaryError") << "Number of events where at least one muon is outside |eta|<" << muonsAcceptance_[0] << ": " << nMuonsAcceptance[0];
   edm::LogProblem   ("SummaryError") << "Number of events where at least one muon has pt<" << muonsAcceptance_[1] << ": " << nMuonsAcceptance[1];
+ 
+  edm::LogVerbatim ("SummaryResults") << " ";
+  edm::LogVerbatim ("SummaryResults") << " -------------------------------";
+  edm::LogVerbatim ("SummaryResults") << "  Info on resolution of Muon/MET";
+  edm::LogVerbatim ("SummaryResults") << " -------------------------------";
+  edm::LogVerbatim ("SummaryResults") << " ";
+ 
+  edm::LogVerbatim ("SummaryResults") << "The numbers and plots are made only for semi-muonic ttbar events";
+  double a,b;
+  a = TH1Fcontainer_["resEtMuons"]->GetMean();
+  b = TH1Fcontainer_["resEtMuons"]->GetRMS();
+  edm::LogVerbatim ("MainResults") << "MUON:Mean value of Et resolution: " << a*100 << "% +/- " << b*100 << "%";
+  a = TH1Fcontainer_["resPtMuons"]->GetMean();
+  b = TH1Fcontainer_["resPtMuons"]->GetRMS();
+  edm::LogVerbatim ("MainResults") << "MUON:Mean value of Pt resolution: " << a*100 << "% +/- " << b*100 << "%";
+  a = TH1Fcontainer_["resPhiMuons"]->GetMean();
+  b = TH1Fcontainer_["resPhiMuons"]->GetRMS();
+  edm::LogVerbatim ("MainResults") << "MUON:Mean value of Phi resolution: " << a*100 << "% +/- " << b*100 << "%";
+  a = TH1Fcontainer_["resThetaMuons"]->GetMean();
+  b = TH1Fcontainer_["resThetaMuons"]->GetRMS();
+  edm::LogVerbatim ("MainResults") << "MUON:Mean value of Theta resolution: " << a*100 << "% +/- " << b*100 << "%";
+  a = TH1Fcontainer_["resEtaMuons"]->GetMean();
+  b = TH1Fcontainer_["resEtaMuons"]->GetRMS();
+  edm::LogVerbatim ("MainResults") << "MUON:Mean value of Eta resolution: " << a*100 << "% +/- " << b*100 << "%";
+
+
+  a = TH1Fcontainer_["resEtMets"]->GetMean();
+  b = TH1Fcontainer_["resEtMets"]->GetRMS();
+  edm::LogVerbatim ("MainResults") << "MET:Mean value of Et resolution: " << a*100 << "% +/- " << b*100 << "%";
+  a = TH1Fcontainer_["resPtMets"]->GetMean();
+  b = TH1Fcontainer_["resPtMets"]->GetRMS();
+  edm::LogVerbatim ("MainResults") << "MET:Mean value of Pt resolution: " << a*100 << "% +/- " << b*100 << "%";
+  a = TH1Fcontainer_["resPhiMets"]->GetMean();
+  b = TH1Fcontainer_["resPhiMets"]->GetRMS();
+  edm::LogVerbatim ("MainResults") << "MET:Mean value of Phi resolution: " << a*100 << "% +/- " << b*100 << "%";
+  a = TH1Fcontainer_["resPxMets"]->GetMean();
+  b = TH1Fcontainer_["resPxMets"]->GetRMS();
+  edm::LogVerbatim ("MainResults") << "MET:Mean value of Px resolution: " << a*100 << "% +/- " << b*100 << "%";
+  a = TH1Fcontainer_["resPyMets"]->GetMean();
+  b = TH1Fcontainer_["resPyMets"]->GetRMS();
+  edm::LogVerbatim ("MainResults") << "MET:Mean value of Py resolution: " << a*100 << "% +/- " << b*100 << "%";
+ 
+
 }
 
 //define this as a plug-in
