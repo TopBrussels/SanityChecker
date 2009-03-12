@@ -13,7 +13,7 @@
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: JetMetChecker.cc,v 1.4 2009/03/06 13:16:19 jmmaes Exp $
+// $Id: JetMetChecker.cc,v 1.5 2009/03/09 15:01:48 jmmaes Exp $
 //
 //
 
@@ -35,7 +35,7 @@
 //needed for MessageLogger
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 
-
+#include "TopQuarkAnalysis/TopTools/interface/JetPartonMatching.h"
 #include "AnalysisDataFormats/TopObjects/interface/TtGenEvent.h"
 #include "DataFormats/PatCandidates/interface/Jet.h"
 #include "DataFormats/PatCandidates/interface/MET.h"
@@ -66,7 +66,11 @@ class JetMetChecker : public edm::EDAnalyzer {
   edm::InputTag jets_;
   edm::InputTag vertex_;
   edm::InputTag mets_;
- 
+  int matchingAlgo_;
+  bool useMaxDist_;
+  bool useDeltaR_;
+  double maxDist_;
+  
   std::string  JetCorrName;
  
   //Histograms are booked in the beginJob() method
@@ -105,6 +109,10 @@ JetMetChecker::JetMetChecker(const edm::ParameterSet& iConfig)
   jets_          =   iConfig.getParameter<edm::InputTag>( "jetsName" );
   vertex_        =   iConfig.getParameter<edm::InputTag>( "vertexName" );
   mets_          =   iConfig.getParameter<edm::InputTag>( "metsName" );
+  matchingAlgo_     =   iConfig.getParameter<int>( "matchingAlgo" );
+  useMaxDist_       =   iConfig.getParameter<bool>( "useMaxDist" );
+  useDeltaR_        =   iConfig.getParameter<bool>( "useDeltaR" );
+  maxDist_          =   iConfig.getParameter<double>( "maxDist" );
 
   objectNames_[0] = "Inclusive";
   objectNames_[1] = "bOnly";
@@ -169,129 +177,176 @@ JetMetChecker::~JetMetChecker()
 void
 JetMetChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
-   using namespace edm;
-   using namespace std;
-   
-
-#ifdef THIS_IS_AN_EVENT_EXAMPLE
-   Handle<ExampleData> pIn;
-   iEvent.getByLabel("example",pIn);
-#endif
-   
-#ifdef THIS_IS_AN_EVENTSETUP_EXAMPLE
-   ESHandle<SetupData> pSetup;
-   iSetup.get<SetupRecord>().get(pSetup);
-#endif
-   //Here you handle the collection you want to access
-   
-   Handle< std::vector<pat::Jet> > jets;
-   iEvent.getByLabel(jets_, jets);
- 
-   Handle< std::vector<reco::Vertex> > vertex;
-   iEvent.getByLabel(vertex_, vertex);
-   
-   Handle< std::vector<pat::MET> > mets;
-   iEvent.getByLabel(mets_, mets);
-   
-   //Check if branches are available
-   if (!jets.isValid()){
-     edm::LogWarning  ("NoJetsFound") << "JetMetCheckerWarning - NoJetsFound"; 
-     throw cms::Exception("ProductNotFound") <<"jet collection not found"<<std::endl;
-   }
-   if (!mets.isValid()){
-     edm::LogWarning  ("NoMetsFound") << "JetMetCheckerWarning - NoMetsFound";
-     throw cms::Exception("ProductNotFound") <<"MET collection not found"<<std::endl;
-   }
-
-   vector <CaloTowerPtr> jettowers;
-   
- 
-   for( unsigned int i=0;i<jets->size();i++) {
-   
-     TH1Dcontainer_["Jetn90"]->Fill((*jets)[i].n90());
-     TH1Dcontainer_["JetTowersArea"]->Fill((*jets)[i].towersArea());
-     TH1Dcontainer_["emEnergyFraction"]->Fill((*jets)[i].emEnergyFraction());
-     TH1Dcontainer_["energyFractionHadronic"]->Fill((*jets)[i].energyFractionHadronic());
-     TH1Dcontainer_["maxEInEmTowers"]->Fill((*jets)[i].maxEInEmTowers());
-     TH1Dcontainer_["maxEInHadTowers"]->Fill((*jets)[i].maxEInHadTowers());
-     
-     JetCorrName = (*jets)[i].jetCorrName();   
-     
-     //towers infos
-     jettowers = (*jets)[i].getCaloConstituents();
-     std::vector <CaloTowerPtr>::const_iterator caloiter;
-     for(caloiter=jettowers.begin();caloiter!=jettowers.end();caloiter++){
-       //       double caloet=(*caloiter)->et();
-       TH1Dcontainer_["JetTwrEt"]->Fill((*caloiter)->et());
-       TH1Dcontainer_["JetTwrPhi"]->Fill((*caloiter)->phi());
-       TH1Dcontainer_["JetTwrEta"]->Fill((*caloiter)->eta());
-     }
-
-     //tracks infos
-     edm::RefVector< reco::TrackCollection > tracks;
-     tracks = (*jets)[i].associatedTracks();
-     for(unsigned int ti=0; ti<tracks.size(); ti++){
-       TH1Dcontainer_["JetTrkPt"]->Fill(tracks[ti]->pt());
-     }
-
-   }//close for jets
-
-    
-   Handle<TtGenEvent> genEvt;
-   iEvent.getByLabel ("genEvt",genEvt);
+  using namespace edm;
+  using namespace std;
   
-   //Check if branch is available  
-   if (!genEvt.isValid()){
-     edm::LogWarning  ("NoGenEvtFound") << "JetMetCheckerWarning - NoGenEvtFound";
-   }
-   
-   bool taggerIsAvailable=false;
-   bool taggerAlreadyIn=false;
-
-   for(unsigned int i=0;i<11;i++){
-     
-     if(  jets->size() == 0) continue;
-
-     //test if b-tagger is available
-     for(unsigned int k=0; k<(*jets)[0].getPairDiscri().size(); k++){     
-       if( (*jets)[0].getPairDiscri()[k].first != bTaggerNames_[i]) taggerIsAvailable = true;
-       if(taggerIsAvailable==true){
-	 for(unsigned int l=0; l<availableTaggers.size(); l++){
-	   if(availableTaggers[l]==bTaggerNames_[i]) taggerAlreadyIn=true;
-	 }
-	 if(!taggerAlreadyIn) availableTaggers.push_back(bTaggerNames_[i]);
-	 taggerAlreadyIn=false;
-       }
-     }
-     if(taggerIsAvailable = false) continue;
-   
-     
-     for(std::vector<pat::Jet>::const_iterator iJet = jets->begin(); iJet != jets->end(); ++iJet) {
-       
-       TH1DcontainerForbTagging_[i]["Inclusive"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
-       
-       if (genEvt.isValid()){
-	 //std::cout << "iJet->partonFlavour() : " << iJet->partonFlavour() << std::endl;
-	 if(fabs(iJet->partonFlavour())==5){
-	   TH1DcontainerForbTagging_[i]["bjets"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
-	 }
-	 if(fabs(iJet->partonFlavour())==4){
-	   TH1DcontainerForbTagging_[i]["cjets"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
-	 }
-	 if(fabs(iJet->partonFlavour())==21){
-	   TH1DcontainerForbTagging_[i]["gjets"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
-	 } 
-	 if(fabs(iJet->partonFlavour())==1||fabs(iJet->partonFlavour())==2||fabs(iJet->partonFlavour())==3){
-	   TH1DcontainerForbTagging_[i]["ljets"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
-	 }
-	 if(fabs(iJet->partonFlavour())!=1&&fabs(iJet->partonFlavour())!=2&&fabs(iJet->partonFlavour())!=3&&fabs(iJet->partonFlavour())!=4&&fabs(iJet->partonFlavour())!=5&&fabs(iJet->partonFlavour())!=21){//std::cout << "partonflavour is not a udscb or g" << std::endl;
-	 }
-       }
-       /*for(int j = 0;j<iJet->getPairDiscri().size();j++ ){
-	 std::cout << "Available b-tag discriminators : " <<  iJet->getPairDiscri()[j].first << std::endl;
-	 }*/
-     }
-   }
+  
+#ifdef THIS_IS_AN_EVENT_EXAMPLE
+  Handle<ExampleData> pIn;
+  iEvent.getByLabel("example",pIn);
+#endif
+  
+#ifdef THIS_IS_AN_EVENTSETUP_EXAMPLE
+  ESHandle<SetupData> pSetup;
+  iSetup.get<SetupRecord>().get(pSetup);
+#endif
+  //Here you handle the collection you want to access
+  
+  Handle< std::vector<pat::Jet> > jets;
+  iEvent.getByLabel(jets_, jets);
+  
+  Handle< std::vector<reco::Vertex> > vertex;
+  iEvent.getByLabel(vertex_, vertex);
+  
+  Handle< std::vector<pat::MET> > mets;
+  iEvent.getByLabel(mets_, mets);
+  
+  //Check if branches are available
+  if (!jets.isValid()){
+    edm::LogWarning  ("NoJetsFound") << "JetMetCheckerWarning - NoJetsFound"; 
+    throw cms::Exception("ProductNotFound") <<"jet collection not found"<<std::endl;
+  }
+  if (!mets.isValid()){
+    edm::LogWarning  ("NoMetsFound") << "JetMetCheckerWarning - NoMetsFound";
+    throw cms::Exception("ProductNotFound") <<"MET collection not found"<<std::endl;
+  }
+  
+  vector <CaloTowerPtr> jettowers;
+  
+  
+  for( unsigned int i=0;i<jets->size();i++) {
+    
+    TH1Dcontainer_["Jetn90"]->Fill((*jets)[i].n90());
+    TH1Dcontainer_["JetTowersArea"]->Fill((*jets)[i].towersArea());
+    TH1Dcontainer_["emEnergyFraction"]->Fill((*jets)[i].emEnergyFraction());
+    TH1Dcontainer_["energyFractionHadronic"]->Fill((*jets)[i].energyFractionHadronic());
+    TH1Dcontainer_["maxEInEmTowers"]->Fill((*jets)[i].maxEInEmTowers());
+    TH1Dcontainer_["maxEInHadTowers"]->Fill((*jets)[i].maxEInHadTowers());
+    
+    JetCorrName = (*jets)[i].jetCorrName();   
+    
+    //towers infos
+    jettowers = (*jets)[i].getCaloConstituents();
+    std::vector <CaloTowerPtr>::const_iterator caloiter;
+    for(caloiter=jettowers.begin();caloiter!=jettowers.end();caloiter++){
+      //       double caloet=(*caloiter)->et();
+      TH1Dcontainer_["JetTwrEt"]->Fill((*caloiter)->et());
+      TH1Dcontainer_["JetTwrPhi"]->Fill((*caloiter)->phi());
+      TH1Dcontainer_["JetTwrEta"]->Fill((*caloiter)->eta());
+    }
+    
+    //tracks infos
+    edm::RefVector< reco::TrackCollection > tracks;
+    tracks = (*jets)[i].associatedTracks();
+    for(unsigned int ti=0; ti<tracks.size(); ti++){
+      TH1Dcontainer_["JetTrkPt"]->Fill(tracks[ti]->pt());
+    }
+    
+  }//close for jets
+  
+  
+  Handle<TtGenEvent> genEvt;
+  iEvent.getByLabel ("genEvt",genEvt);
+  
+  //Check if branch is available  
+  if (!genEvt.isValid()){
+    edm::LogWarning  ("NoGenEvtFound") << "JetMetCheckerWarning - NoGenEvtFound";
+  }
+  
+  bool taggerIsAvailable=false;
+  bool taggerAlreadyIn=false;
+  
+  for(unsigned int i=0;i<11;i++){
+    
+    if(  jets->size() == 0) continue;
+    
+    //test if b-tagger is available
+    for(unsigned int k=0; k<(*jets)[0].getPairDiscri().size(); k++){     
+      if( (*jets)[0].getPairDiscri()[k].first != bTaggerNames_[i]) taggerIsAvailable = true;
+      if(taggerIsAvailable==true){
+	for(unsigned int l=0; l<availableTaggers.size(); l++){
+	  if(availableTaggers[l]==bTaggerNames_[i]) taggerAlreadyIn=true;
+	}
+	if(!taggerAlreadyIn) availableTaggers.push_back(bTaggerNames_[i]);
+	taggerAlreadyIn=false;
+      }
+    }
+    if(taggerIsAvailable = false) continue;
+    
+    //fill b-tag histo's for each jet
+    for(std::vector<pat::Jet>::const_iterator iJet = jets->begin(); iJet != jets->end(); ++iJet) {
+      
+      TH1DcontainerForbTagging_[i]["Inclusive"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
+      
+      if (genEvt.isValid()){
+	//std::cout << "iJet->partonFlavour() : " << iJet->partonFlavour() << std::endl;
+	if(fabs(iJet->partonFlavour())==5){
+	  TH1DcontainerForbTagging_[i]["bjets"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
+	}
+	if(fabs(iJet->partonFlavour())==4){
+	  TH1DcontainerForbTagging_[i]["cjets"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
+	}
+	if(fabs(iJet->partonFlavour())==21){
+	  TH1DcontainerForbTagging_[i]["gjets"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
+	} 
+	if(fabs(iJet->partonFlavour())==1||fabs(iJet->partonFlavour())==2||fabs(iJet->partonFlavour())==3){
+	  TH1DcontainerForbTagging_[i]["ljets"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
+	}
+	if(fabs(iJet->partonFlavour())!=1&&fabs(iJet->partonFlavour())!=2&&fabs(iJet->partonFlavour())!=3&&fabs(iJet->partonFlavour())!=4&&fabs(iJet->partonFlavour())!=5&&fabs(iJet->partonFlavour())!=21){
+	  TH1DcontainerForbTagging_[i]["ijets"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
+	  //std::cout << "partonflavour is not a udscb or g" << std::endl;
+	}
+      }
+    }
+    //fill b-tag histo's only for jets fom top quark decay partons
+    if(  jets->size() >= 4){  
+      if (genEvt.isValid()){
+	if(genEvt->isSemiLeptonic(genEvt->kMuon)) {
+	  //make a copy of the jet collection to add the matched jets
+	  std::vector<pat::Jet> jets_clone;
+	  
+	  // Make plots only with jets from ttbar events (matched with a certain algo)
+	  // Matching index : Hadronic Q  = 0, Hadronic Q' = 1, Hadronic b  = 2, Leptonic b  = 3;
+	  std::vector<const reco::Candidate *> TopQuarks;
+	  TopQuarks.push_back(genEvt->hadronicDecayQuark());
+	  TopQuarks.push_back(genEvt->hadronicDecayQuarkBar());
+	  TopQuarks.push_back(genEvt->hadronicDecayB());
+	  TopQuarks.push_back(genEvt->leptonicDecayB());
+	  if(TopQuarks.size()==4) { 
+	    JetPartonMatching *GenMatchTopQuarks = new JetPartonMatching(TopQuarks, *jets, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
+	    for(unsigned int l=0; l<4; l++){
+	      Int_t Idx = GenMatchTopQuarks->getMatchForParton(l,0);
+	      if(Idx>=0){ jets_clone.push_back((*jets)[Idx]); }  
+	    }
+	    //fill b-tag histo's for each jet
+	    for(std::vector<pat::Jet>::const_iterator iJet = jets_clone.begin(); iJet != jets_clone.end(); ++iJet) {
+	      TH1DcontainerForbTagging_[i]["InclusiveTtSemiMu"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
+	      
+	      if (genEvt.isValid()){
+		//std::cout << "iJet->partonFlavour() : " << iJet->partonFlavour() << std::endl;
+		if(fabs(iJet->partonFlavour())==5){
+		  TH1DcontainerForbTagging_[i]["bjetsTtSemiMu"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
+		}
+		if(fabs(iJet->partonFlavour())==4){
+		  TH1DcontainerForbTagging_[i]["cjetsTtSemiMu"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
+		}
+		if(fabs(iJet->partonFlavour())==21){
+		  TH1DcontainerForbTagging_[i]["gjetsTtSemiMu"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
+		} 
+		if(fabs(iJet->partonFlavour())==1||fabs(iJet->partonFlavour())==2||fabs(iJet->partonFlavour())==3){
+		  TH1DcontainerForbTagging_[i]["ljetsTtSemiMu"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
+		}
+		if(fabs(iJet->partonFlavour())!=1&&fabs(iJet->partonFlavour())!=2&&fabs(iJet->partonFlavour())!=3&&fabs(iJet->partonFlavour())!=4&&fabs(iJet->partonFlavour())!=5&&fabs(iJet->partonFlavour())!=21){
+		   TH1DcontainerForbTagging_[i]["ijetsTtSemiMu"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
+		  //std::cout << "partonflavour is not a udscb or g" << std::endl;
+		}
+	      }
+	    }
+	  }
+	}
+      }
+    }
+  }
 }
 
 
@@ -329,12 +384,27 @@ JetMetChecker::beginJob(const edm::EventSetup&)
     TH1DcontainerForbTagging_[i]["cjets"] = subDirsbTagging[i].make<TH1D>("cjets" ,"distribution of b discriminant",nBins,lowerRanges_[i],upperRanges_[i]);
     TH1DcontainerForbTagging_[i]["ljets"] = subDirsbTagging[i].make<TH1D>("ljets" ,"distribution of b discriminant",nBins,lowerRanges_[i],upperRanges_[i]);
     TH1DcontainerForbTagging_[i]["gjets"] = subDirsbTagging[i].make<TH1D>("gjets" ,"distribution of b discriminant",nBins,lowerRanges_[i],upperRanges_[i]);
+    TH1DcontainerForbTagging_[i]["ijets"] = subDirsbTagging[i].make<TH1D>("ijets" ,"distribution of b discriminant",nBins,lowerRanges_[i],upperRanges_[i]);
 
     TH1DcontainerForbTagging_[i]["Effcjets"] = subDirsbTagging[i].make<TH1D>("Effcjets" ,"b tag efficiency versus c mistag rate",1000,0,1);
     TH1DcontainerForbTagging_[i]["Effljets"] = subDirsbTagging[i].make<TH1D>("Effljets" ,"b tag efficiency versus c mistag rate",1000,0,1);
     TH1DcontainerForbTagging_[i]["Effgjets"] = subDirsbTagging[i].make<TH1D>("Effgjets" ,"b tag efficiency versus c mistag rate",1000,0,1);
+    TH1DcontainerForbTagging_[i]["Effijets"] = subDirsbTagging[i].make<TH1D>("Effijets" ,"b tag efficiency versus c mistag rate",1000,0,1);
   }
+  
+  for(unsigned int i=0;i<11;i++){
+    TH1DcontainerForbTagging_[i]["InclusiveTtSemiMu"] = subDirsbTagging[i].make<TH1D>("InclusiveTtSemiMu" ,"distribution of b discriminant",nBins,lowerRanges_[i],upperRanges_[i]);
+    TH1DcontainerForbTagging_[i]["bjetsTtSemiMu"] = subDirsbTagging[i].make<TH1D>("bjetsTtSemiMu" ,"distribution of b discriminant (TtSemiMu)",nBins,lowerRanges_[i],upperRanges_[i]);
+    TH1DcontainerForbTagging_[i]["cjetsTtSemiMu"] = subDirsbTagging[i].make<TH1D>("cjetsTtSemiMu" ,"distribution of b discriminant (TtSemiMu)",nBins,lowerRanges_[i],upperRanges_[i]);
+    TH1DcontainerForbTagging_[i]["ljetsTtSemiMu"] = subDirsbTagging[i].make<TH1D>("ljetsTtSemiMu" ,"distribution of b discriminant (TtSemiMu)",nBins,lowerRanges_[i],upperRanges_[i]);
+    TH1DcontainerForbTagging_[i]["gjetsTtSemiMu"] = subDirsbTagging[i].make<TH1D>("gjetsTtSemiMu" ,"distribution of b discriminant (TtSemiMu)",nBins,lowerRanges_[i],upperRanges_[i]);
+    TH1DcontainerForbTagging_[i]["ijetsTtSemiMu"] = subDirsbTagging[i].make<TH1D>("ijetsTtSemiMu" ,"distribution of b discriminant (TtSemiMu)",nBins,lowerRanges_[i],upperRanges_[i]);
 
+    TH1DcontainerForbTagging_[i]["EffcjetsTtSemiMu"] = subDirsbTagging[i].make<TH1D>("EffcjetsTtSemiMu" ,"b tag efficiency versus c mistag rate (TtSemiMu)",1000,0,1);
+    TH1DcontainerForbTagging_[i]["EffljetsTtSemiMu"] = subDirsbTagging[i].make<TH1D>("EffljetsTtSemiMu" ,"b tag efficiency versus c mistag rate (TtSemiMu)",1000,0,1);
+    TH1DcontainerForbTagging_[i]["EffgjetsTtSemiMu"] = subDirsbTagging[i].make<TH1D>("EffgjetsTtSemiMu" ,"b tag efficiency versus c mistag rate (TtSemiMu)",1000,0,1);
+    TH1DcontainerForbTagging_[i]["EffijetsTtSemiMu"] = subDirsbTagging[i].make<TH1D>("EffijetsTtSemiMu" ,"b tag efficiency versus c mistag rate (TtSemiMu)",1000,0,1);
+  }
 
 }
 
@@ -343,6 +413,8 @@ void
 JetMetChecker::endJob() {
 
   //Piece of code to make b-tag efficiency as function of non-b tag efficiency
+
+  //std::cout << "start endjob" << std::endl;
 
   double xVal=0;
   int intxVal=0;
@@ -356,6 +428,9 @@ JetMetChecker::endJob() {
 
   double gVal=0;
   double gValAdder=0;
+    
+  double iVal=0;
+  double iValAdder=0;
   
   for(unsigned int i=0;i<11;i++){
     
@@ -368,23 +443,63 @@ JetMetChecker::endJob() {
     lValAdder=0;
     gVal=0;
     gValAdder=0;
+    iVal=0;
+    iValAdder=0;
     
     for(int bin=nBins+1; bin>0; bin--){//the number of bins should be the same, ALLWAYS!
       xValAdder += TH1DcontainerForbTagging_[i]["bjets"]->GetBinContent(bin);
-      xVal=xValAdder/TH1DcontainerForbTagging_[i]["bjets"]->Integral();
+      if(TH1DcontainerForbTagging_[i]["bjets"]->Integral()!=0) xVal=xValAdder/TH1DcontainerForbTagging_[i]["bjets"]->Integral();
       intxVal=int (1000*xVal);
 
       cValAdder += TH1DcontainerForbTagging_[i]["cjets"]->GetBinContent(bin);
-      cVal=cValAdder/TH1DcontainerForbTagging_[i]["cjets"]->Integral();
+      if(TH1DcontainerForbTagging_[i]["cjets"]->Integral()!=0) cVal=cValAdder/TH1DcontainerForbTagging_[i]["cjets"]->Integral();
       TH1DcontainerForbTagging_[i]["Effcjets"]->SetBinContent(intxVal,cVal);
 
       lValAdder += TH1DcontainerForbTagging_[i]["ljets"]->GetBinContent(bin);
-      lVal=lValAdder/TH1DcontainerForbTagging_[i]["ljets"]->Integral();
+      if(TH1DcontainerForbTagging_[i]["ljets"]->Integral()!=0) lVal=lValAdder/TH1DcontainerForbTagging_[i]["ljets"]->Integral();
       TH1DcontainerForbTagging_[i]["Effljets"]->SetBinContent(intxVal,lVal);
   
       gValAdder += TH1DcontainerForbTagging_[i]["gjets"]->GetBinContent(bin);
-      gVal=gValAdder/TH1DcontainerForbTagging_[i]["gjets"]->Integral();
+      if(TH1DcontainerForbTagging_[i]["gjets"]->Integral()!=0) gVal=gValAdder/TH1DcontainerForbTagging_[i]["gjets"]->Integral();
       TH1DcontainerForbTagging_[i]["Effgjets"]->SetBinContent(intxVal,gVal);
+ 
+      iValAdder += TH1DcontainerForbTagging_[i]["ijets"]->GetBinContent(bin);
+      if(TH1DcontainerForbTagging_[i]["ijets"]->Integral()!=0) iVal=iValAdder/TH1DcontainerForbTagging_[i]["ijets"]->Integral();
+      TH1DcontainerForbTagging_[i]["Effijets"]->SetBinContent(intxVal,iVal);
+    }  
+  
+    xVal=0;
+    xValAdder=0;
+    intxVal=0;
+    cVal=0;
+    cValAdder=0;
+    lVal=0;
+    lValAdder=0;
+    gVal=0;
+    gValAdder=0;
+    iVal=0;
+    iValAdder=0;
+    
+    for(int bin=nBins+1; bin>0; bin--){//the number of bins should be the same, ALLWAYS!
+      xValAdder += TH1DcontainerForbTagging_[i]["bjetsTtSemiMu"]->GetBinContent(bin);
+      if(TH1DcontainerForbTagging_[i]["bjetsTtSemiMu"]->Integral()!=0) xVal=xValAdder/TH1DcontainerForbTagging_[i]["bjetsTtSemiMu"]->Integral();
+      intxVal=int (1000*xVal);
+
+      cValAdder += TH1DcontainerForbTagging_[i]["cjetsTtSemiMu"]->GetBinContent(bin);
+      if(TH1DcontainerForbTagging_[i]["cjetsTtSemiMu"]->Integral()!=0) cVal=cValAdder/TH1DcontainerForbTagging_[i]["cjetsTtSemiMu"]->Integral();
+      TH1DcontainerForbTagging_[i]["EffcjetsTtSemiMu"]->SetBinContent(intxVal,cVal);
+
+      lValAdder += TH1DcontainerForbTagging_[i]["ljetsTtSemiMu"]->GetBinContent(bin);
+      if(TH1DcontainerForbTagging_[i]["ljetsTtSemiMu"]->Integral()!=0) lVal=lValAdder/TH1DcontainerForbTagging_[i]["ljetsTtSemiMu"]->Integral();
+      TH1DcontainerForbTagging_[i]["EffljetsTtSemiMu"]->SetBinContent(intxVal,lVal);
+  
+      gValAdder += TH1DcontainerForbTagging_[i]["gjetsTtSemiMu"]->GetBinContent(bin);
+      if(TH1DcontainerForbTagging_[i]["gjetsTtSemiMu"]->Integral()!=0) gVal=gValAdder/TH1DcontainerForbTagging_[i]["gjetsTtSemiMu"]->Integral();
+      TH1DcontainerForbTagging_[i]["EffgjetsTtSemiMu"]->SetBinContent(intxVal,gVal);
+
+      iValAdder += TH1DcontainerForbTagging_[i]["ijetsTtSemiMu"]->GetBinContent(bin);
+      if(TH1DcontainerForbTagging_[i]["ijetsTtSemiMu"]->Integral()!=0) iVal=iValAdder/TH1DcontainerForbTagging_[i]["ijetsTtSemiMu"]->Integral();
+      TH1DcontainerForbTagging_[i]["EffijetsTtSemiMu"]->SetBinContent(intxVal,iVal);
 
     }
   }  
@@ -415,6 +530,13 @@ JetMetChecker::endJob() {
     edm::LogVerbatim ("MainResults") <<  availableTaggers[l];
   } 
   edm::LogVerbatim ("MainResults") << " ";
+  //edm::LogVerbatim ("MainResults") << "b-tag efficiency vs. mistag rate at certain thresholds ";
+ 
+  /*for(unsigned int i=0;i<11;i++){
+    edm::LogVerbatim ("MainResults") << bTaggerNames_[i] << ": " <<  TH1DcontainerForbTagging_[i]["Effbjets"]->GetBinContent(500) << " " << TH1DcontainerForbTagging_[i]["Effcjets"]->GetBinContent(500) << " " << TH1DcontainerForbTagging_[i]["Effljets"]->GetBinContent(500) << " " << TH1DcontainerForbTagging_[i]["Effgjets"]->GetBinContent(500) ;
+    }*/
+
+
 }
 
 //define this as a plug-in
