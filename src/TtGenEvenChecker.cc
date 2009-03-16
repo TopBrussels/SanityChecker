@@ -13,7 +13,7 @@
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: TtGenEvenChecker.cc,v 1.3 2009/03/06 18:12:49 echabert Exp $
+// $Id: TtGenEvenChecker.cc,v 1.4 2009/03/09 12:28:10 jmmaes Exp $
 //
 //
 
@@ -47,6 +47,7 @@
 #include "TH2D.h"
 #include "TH1F.h"
 #include "TH2F.h"
+#include "TF2.h"
 
 struct LowestPt{
   bool operator()( reco::Particle::LorentzVector j1, reco::Particle::LorentzVector j2 ) const{
@@ -110,6 +111,8 @@ private:
   std::map < std::string, TH2D * > TH2Dcontainer_;		// simple map to contain all TH2D.
   std::map < std::string, TH1F * > TH1Fcontainer_;		// simple map to contain all TH1F.
   std::map < std::string, TH2F * > TH2Fcontainer_;		// simple map to contain all TH2F.
+  TF2 fit2LB_;
+  TF2 fit2LQ_;
 };
 
 //
@@ -153,14 +156,14 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
 {
   using namespace edm;
   using namespace std;
-
-
-
+  
+  
+  
 #ifdef THIS_IS_AN_EVENT_EXAMPLE
   Handle < ExampleData > pIn;
   iEvent.getByLabel ("example", pIn);
 #endif
-
+  
 #ifdef THIS_IS_AN_EVENTSETUP_EXAMPLE
   ESHandle < SetupData > pSetup;
   iSetup.get < SetupRecord > ().get (pSetup);
@@ -170,28 +173,28 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
   iEvent.getByLabel (genEventCollectionName_, TtGenEvent_);
   TtGenEvent genEvt = *TtGenEvent_;
 
-
+  
   //tree levels of message
   //no endl needed 
   //use '\n' to go to next line
   //we can use different category for the same EDAnalyser
   //ex: NoDataFound - LinkBroken - TooMuchDataFound - SummaryError - MainResults
-
+  
   //edm::LogError  ("category") << "My error message";    // or  edm::LogProblem  (not formated)
   //edm::LogWarning  ("category") << "My warning message"; // or  edm::LogPrint    (not formated)
   //edm::LogVerbatim   ("category") << "My LogVerbatim message";  // or  edm::LogVerbatim (not formated)
-
+  
   //use Warning for event by event problem 
   //edm::LogWarning ("NoDataFound") << "My warning message - NoDataFound";	// or  edm::LogPrint    (not formated)
   //edm::LogWarning ("LinkBroken") << "My warning message - LinkBroken";	// or  edm::LogPrint    (not formated)
-
+  
   bool doit = false;
   if(doit_all) doit=true; 
   if(doit_semileptonic) doit=true;
   if(doit_semileptonicMuon) doit=true;
 
   // Do only if requirement are fulfilled
- 
+  
   TH1Dcontainer_["BRatio"]->Fill(0);
   if(genEvt.isTtBar()){
     //test BR
@@ -204,19 +207,19 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
     if(genEvt.isSemiLeptonic(TtGenEvent::kTau)) TH1Dcontainer_["BRatio"]->Fill(7);
     if(genEvt.isSemiLeptonic() && genEvt.isSemiLeptonic(TtGenEvent::kNone)) TH1Dcontainer_["BRatio"]->Fill(8);
     
-  
+    
     if(!genEvt.top()) edm::LogWarning ("NoDataFound") << "No access to top in ttbar event" ;
     if(!genEvt.topBar()) edm::LogWarning ("NoDataFound") << "No access to topBar in ttbar event" ;
     if(!genEvt.b()) edm::LogWarning ("NoDataFound") << "No access to b-quark in ttbar event" ;
     if(!genEvt.bBar()) edm::LogWarning ("NoDataFound") << "No access to bBar-quark in ttbar event" ;
     if(!genEvt.wMinus()) edm::LogWarning ("NoDataFound") << "No access to W- in ttbar event" ;
     if(!genEvt.wPlus()) edm::LogWarning ("NoDataFound") << "No access to W+ in ttbar event" ;
-  
+    
   }
- 
+
   //embedded main part of the code !
   if(doit){
-
+  
   
  
   TH1Dcontainer_["NofTopsRadiation"]->Fill (genEvt.numberOfTopsRadiation ());
@@ -247,7 +250,7 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
   if (genEvt.bBar ())  TH1Fcontainer_["MassBS2"]->Fill (genEvt.bBar ()->p4 ().mass ());
   if (genEvt.hadronicDecayQuark ())  TH1Fcontainer_["MasslQuarksS2"]->Fill (genEvt.hadronicDecayQuark ()->p4 ().mass ());
   if (genEvt.hadronicDecayQuarkBar ())  TH1Fcontainer_["MasslQuarksS2"]->Fill (genEvt.hadronicDecayQuarkBar ()->p4 ().mass ());
-
+  
   // particles status 3
   genEvt.setDefaultStatus (3);
   reco::Particle::LorentzVector ttbarS3;
@@ -293,7 +296,7 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
       topComposite = genEvt.hadronicDecayQuark ()->p4 () + genEvt.hadronicDecayQuarkBar ()->p4 () + genEvt.hadronicDecayB ()->p4 ();
       TH1Fcontainer_["MassCompositeTopS4"]->Fill (topComposite.mass ());
     }
-
+  
   ///////////////////////////////////////////////// 
   // For semiLep                                 //
   ///////////////////////////////////////////////// 
@@ -320,7 +323,7 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
   if(genEvt.leptonicDecayTopRadiation().size()>0 && !genEvt.leptonicDecayTopRadiation()[0]) edm::LogWarning ("NoDataFound") << " No access to leptonicDecayTopRadiation in semileptonic event"<<endl;
   if(genEvt.hadronicDecayTopRadiation().size()>0 && !genEvt.hadronicDecayTopRadiation()[0]) edm::LogWarning ("NoDataFound") << " No access to hadronicDecayTopRadiation in semileptonic event"<<endl;
 
-
+  
   ///////////////////////////////////////////////// 
   // Kinematics                                  //
   ///////////////////////////////////////////////// 
@@ -587,34 +590,37 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
   if (genEvt.hadronicDecayQuark ())  TH1Fcontainer_["DeltaPQuarksS3S4"]->Fill (q4.P () - q3.P ());
   if (genEvt.hadronicDecayQuarkBar ())  TH1Fcontainer_["DeltaPQuarksS3S4"]->Fill (qBar4.P () - qBar3.P ());
 
-
+  
   ///////////////////////////////////////////////// 
   // Spin Correlations                           //
   ///////////////////////////////////////////////// 
-
+  
   //Helicity basis
 // build CM sytems
+  if(genEvt.isSemiLeptonic(TtGenEvent::kMuon)){
     reco::Particle::LorentzVector topsZMF(genEvt.top()->p4()+genEvt.topBar()->p4());
-
+  
   // boost particle 4-vectors to tt ZMF
     if(genEvt.leptonicDecayTop() && genEvt.hadronicDecayTop() && genEvt.singleLepton() && genEvt.hadronicDecayB() && genEvt.hadronicDecayQuark()&& genEvt.hadronicDecayQuarkBar() ){
-  reco::Particle::LorentzVector tLeptonicZMF(ROOT::Math::VectorUtil::boost(genEvt.leptonicDecayTop()->p4(), topsZMF.BoostToCM()));
-  reco::Particle::LorentzVector tHadronicZMF(ROOT::Math::VectorUtil::boost(genEvt.hadronicDecayTop()->p4(), topsZMF.BoostToCM()));
-  reco::Particle::LorentzVector lLeptonicZMF(ROOT::Math::VectorUtil::boost(genEvt.singleLepton()->p4(), topsZMF.BoostToCM()));
-  reco::Particle::LorentzVector bHadronicZMF(ROOT::Math::VectorUtil::boost(genEvt.hadronicDecayB()->p4(), topsZMF.BoostToCM()));
-  reco::Particle::LorentzVector q1HadronicZMF(ROOT::Math::VectorUtil::boost(genEvt.hadronicDecayQuark()->p4(), topsZMF.BoostToCM()));
-  reco::Particle::LorentzVector q2HadronicZMF(ROOT::Math::VectorUtil::boost(genEvt.hadronicDecayQuarkBar()->p4(), topsZMF.BoostToCM()));
-
+    
+      reco::Particle::LorentzVector tLeptonicZMF(ROOT::Math::VectorUtil::boost(genEvt.leptonicDecayTop()->p4(), topsZMF.BoostToCM()));
+      reco::Particle::LorentzVector tHadronicZMF(ROOT::Math::VectorUtil::boost(genEvt.hadronicDecayTop()->p4(), topsZMF.BoostToCM()));
+      reco::Particle::LorentzVector lLeptonicZMF(ROOT::Math::VectorUtil::boost(genEvt.singleLepton()->p4(), topsZMF.BoostToCM()));
+      reco::Particle::LorentzVector bHadronicZMF(ROOT::Math::VectorUtil::boost(genEvt.hadronicDecayB()->p4(), topsZMF.BoostToCM()));
+      reco::Particle::LorentzVector q1HadronicZMF(ROOT::Math::VectorUtil::boost(genEvt.hadronicDecayQuark()->p4(), topsZMF.BoostToCM()));
+      reco::Particle::LorentzVector q2HadronicZMF(ROOT::Math::VectorUtil::boost(genEvt.hadronicDecayQuarkBar()->p4(), topsZMF.BoostToCM()));
+     
   //--------------------------------------------------------------------------------
   // build spin basis unit vectors
-    reco::Particle::Vector leptHelZMF(tLeptonicZMF.Vect().Unit()),
-                         hadrHelZMF(tHadronicZMF.Vect().Unit()); // = -leptHelZMF
-  reco::Particle::Vector q1HadZMF(q1HadronicZMF.Vect().Unit());
-  reco::Particle::Vector q2HadZMF(q2HadronicZMF.Vect().Unit());
-  reco::Particle::Vector qHadZMF(q1HadronicZMF.energy() < q2HadronicZMF.energy() ? // only lower energy quark used
-                                               q1HadZMF :
-                                               q2HadZMF);
-
+      reco::Particle::Vector leptHelZMF(tLeptonicZMF.Vect().Unit());    
+      reco::Particle::Vector hadrHelZMF(tHadronicZMF.Vect().Unit()); // = -leptHelZMF
+      
+      reco::Particle::Vector q1HadZMF(q1HadronicZMF.Vect().Unit());
+      reco::Particle::Vector q2HadZMF(q2HadronicZMF.Vect().Unit());
+      reco::Particle::Vector qHadZMF(q1HadronicZMF.energy() < q2HadronicZMF.energy() ? // only lower energy quark used
+				     q1HadZMF :
+				     q2HadZMF);
+      
   // boost 4-vectors to t(bar) rest frames
   reco::Particle::LorentzVector lLeptonicTRest(ROOT::Math::VectorUtil::boost(lLeptonicZMF, tLeptonicZMF.BoostToCM()));
   reco::Particle::LorentzVector bHadronicTRest(ROOT::Math::VectorUtil::boost(bHadronicZMF, tHadronicZMF.BoostToCM()));
@@ -630,15 +636,18 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
   reco::Particle::Vector q1DirectionTRest(q1HadronicTRest.Vect().Unit());
   reco::Particle::Vector q2DirectionTRest(q2HadronicTRest.Vect().Unit());
   reco::Particle::Vector qDirectionTRest(qHadronicTRest.Vect().Unit());
-
+  
   TH1Dcontainer_["cosThetaTLHel"]->Fill (leptHelZMF.Dot(lDirectionTRest));
   TH1Dcontainer_["cosThetaTBHel"]->Fill (hadrHelZMF.Dot(bDirectionTRest));
   TH1Dcontainer_["cosThetaTQHel"]->Fill (hadrHelZMF.Dot(qDirectionTRest));
   TH2Dcontainer_["hCosTQCosTLHel"]->Fill ( hadrHelZMF.Dot(qDirectionTRest),leptHelZMF.Dot(lDirectionTRest) );
-  TH2Dcontainer_["hCosTQCosTBHel"]->Fill ( hadrHelZMF.Dot(qDirectionTRest),hadrHelZMF.Dot(bDirectionTRest) );
+  TH2Dcontainer_["hCosTQCosTBHel"]->Fill ( hadrHelZMF.Dot(bDirectionTRest),leptHelZMF.Dot(lDirectionTRest) );
     }// close if 
-  }
+  }//close if semilep
+  
 
+  }
+  
 
 }
 
@@ -769,8 +778,17 @@ TtGenEventChecker::beginJob (const edm::EventSetup &)
   TH1Dcontainer_["cosThetaTQHel"] = subDirSpinCorr.make < TH1D > ("cosThetaTQHel", "Pseudo-angle between t-quark and low-energy quark", 10, -1, 1);
   TH2Dcontainer_["hCosTQCosTLHel"] = subDirSpinCorr.make < TH2D > ("hCosTQCosTLHel", "Double differential distribution: t-quark and lepton/low-energy quark", 10, -1, 1, 10, -1, 1);
   TH2Dcontainer_["hCosTQCosTBHel"] = subDirSpinCorr.make < TH2D > ("hCosTQCosTBHel", "Double differential distribution: t-quark and b/low-energy quark", 10, -1, 1, 10, -1, 1);
-
-  
+  //fit the double differential distributions
+  fit2LB_ = TF2("fit2LB_", "[0]*(1.-[1]*[2]*[3]*x*y)");
+  fit2LB_.SetParameter(2,1);
+  fit2LB_.FixParameter(2,1);
+  fit2LB_.SetParameter(3,-0.41);
+  fit2LB_.FixParameter(3,-0.41); 
+  fit2LQ_ = TF2("fit2LQ_", "[0]*(1.-[1]*[2]*[3]*x*y)");
+  fit2LQ_.SetParameter(2,1);
+  fit2LQ_.FixParameter(2,1);
+  fit2LQ_.SetParameter(3,0.51);
+  fit2LQ_.FixParameter(3,0.51);
  
 }
 
@@ -778,6 +796,10 @@ TtGenEventChecker::beginJob (const edm::EventSetup &)
 void
 TtGenEventChecker::endJob ()
 {
+
+  TH2Dcontainer_["hCosTQCosTLHel"]->Fit(&fit2LQ_,"0");
+  //  TH2Dcontainer_["hCosTQCosTBHel"]->Fit(&fit2LB_,"0");
+
   //use LogError to summarise the error that happen in the execution (by example from warning) (ex: Nof where we cannot access such variable)
   //edm::LogError ("SummaryError") << "My error message \n";	// or  edm::LogProblem  (not formated)
   //use LogVerbatim to summarise information (ex: pourcentage of events matched ...)
@@ -885,6 +907,13 @@ TtGenEventChecker::endJob ()
   edm::LogVerbatim ("MainResults") << "SemiLeptonic Tau: "<<a*100<<" %";
   a = (float) (TH1Dcontainer_["BRatio"]->GetBinContent(9)/TH1Dcontainer_["BRatio"]->GetBinContent(2));
   edm::LogVerbatim ("MainResults") << "SemiLeptonic Other: "<<a*100<<" %";
+  
+  edm::LogVerbatim ("MainResults") << "-------------------- ";
+  edm::LogVerbatim ("MainResults") << " Spin Correlations ";
+  edm::LogVerbatim ("MainResults") << "-------------------- ";
+  edm::LogVerbatim ("MainResults") << " CosTQCosTL A =  " <<  fit2LQ_.GetParameter(1);;
+  //  edm::LogVerbatim ("MainResults") << " CosTLCosTB A =  " <<  fit2LB_.GetParameter(1);;
+
 
 }
 
