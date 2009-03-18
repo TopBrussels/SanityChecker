@@ -13,7 +13,7 @@
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: JetMetChecker.cc,v 1.5 2009/03/09 15:01:48 jmmaes Exp $
+// $Id: JetMetChecker.cc,v 1.6 2009/03/12 11:13:15 jmmaes Exp $
 //
 //
 
@@ -46,6 +46,8 @@
 #include "TH1F.h"
 #include "TH2F.h"
 #include "TGraph.h"
+#include "TString.h"
+#include <boost/lexical_cast.hpp>
 #include <string>
 //
 // class decleration
@@ -98,7 +100,7 @@ class JetMetChecker : public edm::EDAnalyzer {
 //
 // static data member definitions
 //
-
+std::string UncorrName[4] ={"uncorrALL","uncorrJES","uncorrMUON","uncorrMAXN"};
 //
 // constructors and destructor
 //
@@ -242,8 +244,92 @@ JetMetChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       TH1Dcontainer_["JetTrkPt"]->Fill(tracks[ti]->pt());
     }
     
-  }//close for jets
+  }
   
+   string Corrlevel[6] = { "REL","ABS","EMF","HAD", "UE", "PART" };
+   string CorrFlav[4] = {"GLU","UDS","C","B" } ;
+   string HistoName = "";
+   
+  for(std::vector<pat::Jet>::const_iterator jet_iter = jets->begin(); jet_iter!=jets->end(); ++jet_iter)
+  {
+       if(jet_iter->genJet() == 0) continue;
+       TH2Fcontainer_["JetEtaResponse_UpToL2"]         ->Fill(jet_iter->genJet()->eta(),jet_iter->correctedJet(Corrlevel[0]).eta()/jet_iter->genJet()->eta());
+       TH2Fcontainer_["JetPtResponse_UpToL3"]	       ->Fill(jet_iter->genJet()->pt(), jet_iter->correctedJet(Corrlevel[1]).pt()/jet_iter->genJet()->pt());
+       TH2Fcontainer_["JetPtResponse_UpToL4"]	       ->Fill(jet_iter->genJet()->pt(), jet_iter->correctedJet(Corrlevel[2]).pt()/jet_iter->genJet()->pt());
+       
+       for(int ii = 5; ii < 8; ii++) //Loop over L5,L6 and L7
+       {
+               Int_t jj = 0;
+               //std::cout<<"Parton flavour : "<<jet_iter->partonFlavour()<<std::endl;
+               if(fabs(jet_iter->partonFlavour()) == 21)      jj = 0;
+               else if(fabs(jet_iter->partonFlavour()) < 4)   jj = 1;
+               else if(fabs(jet_iter->partonFlavour()) == 4)  jj = 2;
+               else if(fabs(jet_iter->partonFlavour()) == 5)  jj = 3;
+               else std::cout<<"Muchas problemas, capitan!"<<std::endl; //FIXME : Of course!
+               
+	       // the jet reponse is produced according to the parton flavour : L5b, L6b and L7b for b-jets for instance
+	       HistoName  = CorrFlav[jj];
+               HistoName += "_JetPtResponse_UpToL";
+               HistoName += boost::lexical_cast<std::string>(ii);
+               HistoName += "_";
+               HistoName += CorrFlav[jj];
+               
+               TH2Fcontainer_[HistoName]->Fill(jet_iter->genJet()->pt(), jet_iter->correctedJet(Corrlevel[ii-2],CorrFlav[jj]).pt()/jet_iter->genJet()->pt());
+       }
+  }
+  //close for jets
+  
+  if(mets->size()>0)
+  {
+  	TH1Dcontainer_["CaloMETInmHF"]->Fill((*mets)[0].CaloMETInmHF());
+  	TH1Dcontainer_["CaloMETInpHF"]->Fill((*mets)[0].CaloMETInpHF());
+  	TH1Dcontainer_["CaloMETPhiInmHF"]->Fill((*mets)[0].CaloMETPhiInmHF());
+  	TH1Dcontainer_["CaloMETPhiInpHF"]->Fill((*mets)[0].CaloMETPhiInpHF());
+
+	std::string histoname;
+	Int_t Idx = 0;
+	//uncorrALL      //! uncorrect to bare bones
+	//uncorrJES,     //! uncorrect for JES only
+	//uncorrMUON,    //! uncorrect for MUON only
+	for(pat::MET::UncorrectionType i = (*mets)[0].uncorrALL ; i != (*mets)[0].uncorrMAXN ;i = pat::MET::UncorrectionType(i+1))
+  	{
+  		histoname = "CorEx_";histoname += UncorrName[Idx];
+		TH1Dcontainer_[histoname] 	->Fill((*mets)[0].corEx(i));
+ 		histoname  = "CorEy_";histoname  += UncorrName[Idx];
+  		TH1Dcontainer_[histoname]   	->Fill((*mets)[0].corEy(i));
+ 		histoname  = "CorSumEt_"; histoname  += UncorrName[Idx];
+  		TH1Dcontainer_[histoname]	->Fill((*mets)[0].corSumEt(i));
+ 		histoname  = "uncorrectedPhi_"; histoname  += UncorrName[Idx];
+  		TH1Dcontainer_[histoname]	->Fill((*mets)[0].uncorrectedPhi(i));
+ 		histoname  = "uncorrectedPt_"; histoname  += UncorrName[Idx];
+  		TH1Dcontainer_[histoname]	->Fill((*mets)[0].uncorrectedPt(i));
+		Idx++;
+  	}
+  	TH1Dcontainer_["emEtFraction"]		->Fill((*mets)[0].emEtFraction());
+  	TH1Dcontainer_["emEtInEB"] 		->Fill((*mets)[0].emEtInEB());
+  	TH1Dcontainer_["emEtInEE"] 		->Fill((*mets)[0].emEtInEE());
+  	TH1Dcontainer_["emEtInHF"] 	   	->Fill((*mets)[0].emEtInHF());
+  	TH1Dcontainer_["etFractionHadronic"]	->Fill((*mets)[0].etFractionHadronic());
+  	TH1Dcontainer_["hadEtInHB"] 		->Fill((*mets)[0].hadEtInHB());
+  	TH1Dcontainer_["hadEtInHE"] 		->Fill((*mets)[0].hadEtInHE());
+  	TH1Dcontainer_["hadEtInHF"] 		->Fill((*mets)[0].hadEtInHF());
+  	TH1Dcontainer_["hadEtInHO"] 		->Fill((*mets)[0].hadEtInHO());
+  	TH1Dcontainer_["maxEtInEmTowers"]	->Fill((*mets)[0].maxEtInEmTowers());
+  	TH1Dcontainer_["maxEtInHadTowers"]	->Fill((*mets)[0].maxEtInHadTowers());
+  	TH1Dcontainer_["metSignificance"] 	->Fill((*mets)[0].metSignificance());
+
+  	TH1Dcontainer_["genMET"] 		->Fill((*mets)[0].genMET()->et());
+  	TH1Dcontainer_["genMET_eta"] 		->Fill((*mets)[0].genMET()->eta());
+  	TH1Dcontainer_["genMET_phi"] 		->Fill((*mets)[0].genMET()->phi());
+  	TH1Dcontainer_["genMET_px"] 		->Fill((*mets)[0].genMET()->px());
+  	TH1Dcontainer_["genMET_py"] 		->Fill((*mets)[0].genMET()->py());
+  	TH1Dcontainer_["genMET_pz"] 		->Fill((*mets)[0].genMET()->pz());
+  	TH1Dcontainer_["genMET_emEnergy"] 	->Fill((*mets)[0].genMET()->emEnergy());  
+  	TH1Dcontainer_["genMET_hadEnergy"] 	->Fill((*mets)[0].genMET()->hadEnergy());  
+  	TH1Dcontainer_["genMET_auxiliaryEnergy"]->Fill((*mets)[0].genMET()->auxiliaryEnergy());
+  	TH1Dcontainer_["genMET_mEtSig"] 	->Fill((*mets)[0].genMET()->mEtSig());
+  }
+  // close for MET
   
   Handle<TtGenEvent> genEvt;
   iEvent.getByLabel ("genEvt",genEvt);
@@ -373,6 +459,23 @@ JetMetChecker::beginJob(const edm::EventSetup&)
   TH1Dcontainer_["maxEInEmTowers"]= subDir.make<TH1D>("maxEInEmTowers" ,"maximum energy deposited in ECAL towers ",nBins,0, 100);
   TH1Dcontainer_["maxEInHadTowers"]= subDir.make<TH1D>("maxEInHadTowers" ,"maximum energy deposited in HCAL towers ",nBins,0, 100);
   
+  TH2Fcontainer_["JetEtaResponse_UpToL2"]         = subDir.make<TH2F>("JetEtaResponse_UpToL2","",4000,-10,10,500,0,10);
+  TH2Fcontainer_["JetPtResponse_UpToL3"]          = subDir.make<TH2F>("JetPtResponse_UpToL3","",4000,0,800,500,0,10);
+  TH2Fcontainer_["JetPtResponse_UpToL4"]          = subDir.make<TH2F>("JetPtResponse_UpToL4","",4000,0,800,500,0,10);
+  TH2Fcontainer_["GLU_JetPtResponse_UpToL5_GLU"]  = subDir.make<TH2F>("GLU_JetPtResponse_UpToL5_GLU","",4000,0,800,500,0,10);
+  TH2Fcontainer_["GLU_JetPtResponse_UpToL6_GLU"]  = subDir.make<TH2F>("GLU_JetPtResponse_UpToL6_GLU","",4000,0,800,500,0,10);
+  TH2Fcontainer_["GLU_JetPtResponse_UpToL7_GLU"]  = subDir.make<TH2F>("GLU_JetPtResponse_UpToL7_GLU","",4000,0,800,500,0,10);
+  TH2Fcontainer_["UDS_JetPtResponse_UpToL5_UDS"]  = subDir.make<TH2F>("UDS_JetPtResponse_UpToL5_UDS","",4000,0,800,500,0,10);
+  TH2Fcontainer_["UDS_JetPtResponse_UpToL6_UDS"]  = subDir.make<TH2F>("UDS_JetPtResponse_UpToL6_UDS","",4000,0,800,500,0,10);
+  TH2Fcontainer_["UDS_JetPtResponse_UpToL7_UDS"]  = subDir.make<TH2F>("UDS_JetPtResponse_UpToL7_UDS","",4000,0,800,500,0,10);
+  TH2Fcontainer_["C_JetPtResponse_UpToL5_C"]      = subDir.make<TH2F>("C_JetPtResponse_UpToL5_C","",4000,0,800,500,0,10);
+  TH2Fcontainer_["C_JetPtResponse_UpToL6_C"]      = subDir.make<TH2F>("C_JetPtResponse_UpToL6_C","",4000,0,800,500,0,10);
+  TH2Fcontainer_["C_JetPtResponse_UpToL7_C"]      = subDir.make<TH2F>("C_JetPtResponse_UpToL7_C","",4000,0,800,500,0,10);
+  TH2Fcontainer_["B_JetPtResponse_UpToL5_B"]      = subDir.make<TH2F>("B_JetPtResponse_UpToL5_B","",4000,0,800,500,0,10);
+  TH2Fcontainer_["B_JetPtResponse_UpToL6_B"]      = subDir.make<TH2F>("B_JetPtResponse_UpToL6_B","",4000,0,800,500,0,10);
+  TH2Fcontainer_["B_JetPtResponse_UpToL7_B"]      = subDir.make<TH2F>("B_JetPtResponse_UpToL7_B","",4000,0,800,500,0,10);
+  //TH2Fcontainer_[""]= subDir.make<TH2F>("","",XX,XX,XX,XX,XX,XX);
+  //TH2Fcontainer_[""]= subDir.make<TH2F>("","",XX,XX,XX,XX,XX,XX);
   
   std::vector< TFileDirectory > subDirsbTagging;
   for(unsigned int i=0;i<11;i++) subDirsbTagging.push_back(fs->mkdir( bTaggerNames_[i] ));
@@ -405,6 +508,55 @@ JetMetChecker::beginJob(const edm::EventSetup&)
     TH1DcontainerForbTagging_[i]["EffgjetsTtSemiMu"] = subDirsbTagging[i].make<TH1D>("EffgjetsTtSemiMu" ,"b tag efficiency versus c mistag rate (TtSemiMu)",1000,0,1);
     TH1DcontainerForbTagging_[i]["EffijetsTtSemiMu"] = subDirsbTagging[i].make<TH1D>("EffijetsTtSemiMu" ,"b tag efficiency versus c mistag rate (TtSemiMu)",1000,0,1);
   }
+
+  TFileDirectory metsubDir = fs->mkdir( "PatMets" );
+  TH1Dcontainer_["CaloMETInmHF"] 		  = metsubDir.make<TH1D>("CaloMETInmHF","ME_{T} in the forward (-) hadronic calorimeter",800,0,400);
+  TH1Dcontainer_["CaloMETInpHF"]		  = metsubDir.make<TH1D>("CaloMETInpHF","ME_{T} in the forward (+) hadronic calorimeter",800,0,400);
+  TH1Dcontainer_["CaloMETPhiInmHF"]		  = metsubDir.make<TH1D>("CaloMETPhiInmHF","ME_{T} Phi in the forward (-) hadronic calorimeter",400,-4,4);
+  TH1Dcontainer_["CaloMETPhiInpHF"]		  = metsubDir.make<TH1D>("CaloMETPhiInpHF","ME_{T} Phi in the forward (+) hadronic calorimeter",400,-4,4);
+  std::string histoname, histotitle;
+  for(unsigned int i=0;i<3;i++)
+  {
+ 	histoname  = "CorEx_";                  histoname  += UncorrName[i];
+ 	histotitle = "Uncorrected ME_{x} : ";   histotitle += UncorrName[i];
+  	TH1Dcontainer_[histoname]  = metsubDir.make<TH1D>(histoname.c_str(),histotitle.c_str(),400,0,200);
+ 	histoname  = "CorEy_";                  histoname  += UncorrName[i];
+ 	histotitle = "Uncorrected ME_{y} : ";   histotitle += UncorrName[i];
+  	TH1Dcontainer_[histoname]  = metsubDir.make<TH1D>(histoname.c_str(),histotitle.c_str(),400,0,200);
+ 	histoname  = "CorSumEt_";               histoname  += UncorrName[i];
+ 	histotitle = "Uncorrected E_{T} sum : ";histotitle += UncorrName[i];
+  	TH1Dcontainer_[histoname]  = metsubDir.make<TH1D>(histoname.c_str(),histotitle.c_str(),800,0,400);
+ 	histoname  = "uncorrectedPhi_";          histoname  += UncorrName[i];
+ 	histotitle = "Uncorrected ME_{T} phi : ";histotitle += UncorrName[i];
+  	TH1Dcontainer_[histoname] = metsubDir.make<TH1D>(histoname.c_str(),histotitle.c_str(),400,-4,4);
+ 	histoname  = "uncorrectedPt_";          histoname  += UncorrName[i];
+ 	histotitle = "Uncorrected ME_{T} pt : ";histotitle += UncorrName[i];
+  	TH1Dcontainer_[histoname] = metsubDir.make<TH1D>(histoname.c_str(),histotitle.c_str(),800,0,400);
+  }
+
+  TH1Dcontainer_["emEtFraction"] 	  = metsubDir.make<TH1D>("emEtFraction","Event electromagnetic energy fraction",100,0,1);
+  TH1Dcontainer_["emEtInEB"] 		  = metsubDir.make<TH1D>("emEtInEB","Event electromagnetic energy in the ECAL barrel",800,0,400);
+  TH1Dcontainer_["emEtInEE"] 		  = metsubDir.make<TH1D>("emEtInEE","Event electromagnetic energy in the ECAL end-cap",800,0,400);
+  TH1Dcontainer_["emEtInHF"] 		  = metsubDir.make<TH1D>("emEtInHF","Event electromagnetic energy extracted from the forward HCAL",800,0,400);
+  TH1Dcontainer_["etFractionHadronic"]    = metsubDir.make<TH1D>("etFractionHadronic","Event hadronic energy fraction",100,0,1);
+  TH1Dcontainer_["hadEtInHB"] 		  = metsubDir.make<TH1D>("hadEtInHB","Event hadronic energy in the HCAL barrel",800,0,400);
+  TH1Dcontainer_["hadEtInHE"] 		  = metsubDir.make<TH1D>("hadEtInHE","Event hadronic energy in the HCAL end-cap",800,0,400);
+  TH1Dcontainer_["hadEtInHF"] 		  = metsubDir.make<TH1D>("hadEtInHF","Event hadronic energy in the forward HCAL",800,0,400);
+  TH1Dcontainer_["hadEtInHO"] 		  = metsubDir.make<TH1D>("hadEtInHO","Event hadronic energy in the forward HCAL",800,0,400);
+  TH1Dcontainer_["maxEtInEmTowers"] 	  = metsubDir.make<TH1D>("maxEtInEmTowers","Maximum energy deposited in ECAL towers",800,0,400);
+  TH1Dcontainer_["maxEtInHadTowers"] 	  = metsubDir.make<TH1D>("maxEtInHadTowers","Maximum energy deposited in HCAL towers",800,0,400);
+  TH1Dcontainer_["metSignificance"] 	  = metsubDir.make<TH1D>("metSignificance","Missing transverse energy significance (MET/sqrt(SumEt))",200,-20,20);
+
+  TH1Dcontainer_["genMET"] 		  = metsubDir.make<TH1D>("genMET","Generated missing transverse energy",800,0,400);
+  TH1Dcontainer_["genMET_eta"] 		  = metsubDir.make<TH1D>("genMET_eta","Generated missing transverse energy",500,-5,5);
+  TH1Dcontainer_["genMET_phi"] 		  = metsubDir.make<TH1D>("genMET_phi","Generated missing  energy phi",400,-4,4);
+  TH1Dcontainer_["genMET_px"] 		  = metsubDir.make<TH1D>("genMET_px","Generated missing energy px",800,0,400);
+  TH1Dcontainer_["genMET_py"] 		  = metsubDir.make<TH1D>("genMET_py","Generated missing energy py",800,0,400);
+  TH1Dcontainer_["genMET_pz"] 		  = metsubDir.make<TH1D>("genMET_pz","Generated missing energy pz",800,0,400);
+  TH1Dcontainer_["genMET_emEnergy"] 	  = metsubDir.make<TH1D>("genMET_emEnergy","Energy of electromagnetic particles",800,0,400);
+  TH1Dcontainer_["genMET_hadEnergy"] 	  = metsubDir.make<TH1D>("genMET_hadEnergy","Energy of hadronic particles",800,0,400);
+  TH1Dcontainer_["genMET_auxiliaryEnergy"]= metsubDir.make<TH1D>("genMET_auxiliaryEnergy","Other energy (undecayed Sigmas etc.)",800,0,400);
+  TH1Dcontainer_["genMET_mEtSig"] 	  = metsubDir.make<TH1D>("genMET_mEtSig","Generated missing transverse energy significance (MET/sqrt(SumEt))",200,-20,20);
 
 }
 
