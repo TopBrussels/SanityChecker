@@ -13,7 +13,7 @@
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: TtGenEvenChecker.cc,v 1.4 2009/03/09 12:28:10 jmmaes Exp $
+// $Id: TtGenEvenChecker.cc,v 1.5 2009/03/16 18:25:02 villella Exp $
 //
 //
 
@@ -54,12 +54,12 @@ struct LowestPt{
     return j1.pt() < j2.pt() ;
   }
 };
-struct HightestPt{
+struct HighestPt{
   bool operator()( reco::Particle::LorentzVector j1, reco::Particle::LorentzVector j2 ) const{
     return j1.pt() > j2.pt() ;
   }
 };
-struct HightestEta{
+struct HighestEta{
   bool operator()( reco::Particle::LorentzVector j1, reco::Particle::LorentzVector j2 ) const{
     return fabs(j1.eta()) > fabs(j2.eta()) ;
   }
@@ -69,7 +69,7 @@ struct Lowest{
     return j1 < j2 ;
   }
 };
-struct Hightest{
+struct Highest{
   bool operator()( float j1, float j2 ) const{
     return j1 > j2 ;
   }
@@ -255,7 +255,7 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
   genEvt.setDefaultStatus (3);
   reco::Particle::LorentzVector ttbarS3;
   if(genEvt.top () && genEvt.topBar ()){
-    ttbarS2 = genEvt.top ()->p4 ()+ genEvt.topBar ()->p4 ();
+    ttbarS3 = genEvt.top ()->p4 ()+ genEvt.topBar ()->p4 ();
     TH1Fcontainer_["MttS3"]->Fill(ttbarS3.mass());
     TH1Fcontainer_["PtTtbarS3"]->Fill(ttbarS3.pt());
     TH1Fcontainer_["EtaTtbarS3"]->Fill(ttbarS3.eta());
@@ -390,10 +390,10 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
     TH1Fcontainer_["LowestPtQuark"]->Fill(vec[0].pt());
     TH1Fcontainer_["2ndPtQuark"]->Fill(vec[1].pt());
     TH1Fcontainer_["3ndPtQuark"]->Fill(vec[2].pt());
-    TH1Fcontainer_["HightestPtQuark"]->Fill(vec[3].pt());
+    TH1Fcontainer_["HighestPtQuark"]->Fill(vec[3].pt());
     
-    std::sort(vec.begin(),vec.end(),HightestEta());
-    TH1Fcontainer_["HightestEtaQuark"]->Fill(abs(vec[0].eta())); 
+    std::sort(vec.begin(),vec.end(),HighestEta());
+    TH1Fcontainer_["HighestEtaQuark"]->Fill(abs(vec[0].eta())); 
     //check if methods to sort are correct
    
     TH1Fcontainer_["DeltaRlQuarks"]->Fill(ROOT::Math::VectorUtil::DeltaR(genEvt.hadronicDecayQuark()->p4(),genEvt.hadronicDecayQuarkBar()->p4()));
@@ -441,26 +441,26 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
     }
    }
    std::sort(DeltaR.begin(),DeltaR.end(),Lowest());
-   std::sort(PtRad.begin(),PtRad.end(),Hightest());
+   std::sort(PtRad.begin(),PtRad.end(),Highest());
    if(DeltaR.size()>0) TH1Fcontainer_["DeltaRISRQuark"]->Fill(DeltaR[0]);
-   std::sort(vec.begin(),vec.end(),HightestPt());
+   std::sort(vec.begin(),vec.end(),HighestPt());
    if(PtRad.size()>0){
      bool found = false;
      for(unsigned int x=0;x<vec.size();x++)
        if(PtRad[0]>vec[x].pt()){
-         TH1Dcontainer_["RankHightestISR"]->Fill(x+1);
+         TH1Dcontainer_["RankHighestISR"]->Fill(x+1);
          found = true;
 	 break;
        }
-     if(!found) TH1Dcontainer_["RankHightestISR"]->Fill(vec.size()+1);
+     if(!found) TH1Dcontainer_["RankHighestISR"]->Fill(vec.size()+1);
    }
-   else TH1Dcontainer_["RankHightestISR"]->Fill(999);
+   else TH1Dcontainer_["RankHighestISR"]->Fill(999);
    
    std::sort(vec.begin(),vec.end(),LowestPt());
    int nof = 0;
    for(unsigned int x=0;x<PtRad.size();x++)
      if(PtRad[x]>vec[0].pt()) nof++;
-   TH1Dcontainer_["NofISRWithHightestPtThanQuarks"]->Fill(nof);
+   TH1Dcontainer_["NofISRWithHighestPtThanQuarks"]->Fill(nof);
    DeltaR.clear();
    PtRad.clear();
    for(unsigned int x=0;x<genEvt.leptonicDecayTopRadiation().size();x++){
@@ -486,25 +486,25 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
      }
    }
    std::sort(DeltaR.begin(),DeltaR.end(),Lowest());
-   std::sort(PtRad.begin(),PtRad.end(),Hightest());
+   std::sort(PtRad.begin(),PtRad.end(),Highest());
    if(DeltaR.size()>0) TH1Fcontainer_["DeltaRTopRadiationQuark"]->Fill(DeltaR[0]);
-   std::sort(vec.begin(),vec.end(),HightestPt());
+   std::sort(vec.begin(),vec.end(),HighestPt());
    if(PtRad.size()>0){
      bool found = false;
      for(unsigned int x=0;x<vec.size();x++)
        if(PtRad[0]>vec[x].pt()){
-         TH1Dcontainer_["RankHightestTopRadiation"]->Fill(x+1);
+         TH1Dcontainer_["RankHighestTopRadiation"]->Fill(x+1);
          found = true;
 	 break;
        }
-     if(!found) TH1Dcontainer_["RankHightestTopRadiation"]->Fill(vec.size()+1);
+     if(!found) TH1Dcontainer_["RankHighestTopRadiation"]->Fill(vec.size()+1);
    }
-   else TH1Dcontainer_["RankHightestTopRadiation"]->Fill(999);
+   else TH1Dcontainer_["RankHighestTopRadiation"]->Fill(999);
    nof=0;
    std::sort(vec.begin(),vec.end(),LowestPt());
    for(unsigned int x=0;x<PtRad.size();x++)
      if(PtRad[x]>vec[0].pt()) nof++;
-   TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->Fill(nof);
+   TH1Dcontainer_["NofTopRadiationWithHighestPtThanQuarks"]->Fill(nof);
    
  
   }
@@ -703,10 +703,10 @@ TtGenEventChecker::beginJob (const edm::EventSetup &)
   TH1Fcontainer_["LeptonEta"] = subDirKin.make <TH1F> ("LeptonEta","Eta of lepton Status 4",100,0,5);
   TH1Fcontainer_["NeutrinoEta"] = subDirKin.make <TH1F> ("NeutrinoEta","Eta of neutrino Status 4",100,0,5);
   TH1Fcontainer_["LowestPtQuark"] = subDirKin.make <TH1F> ("LowestPtQuark","Pt of lowest Pt quark Status 4",500,0,500);
-  TH1Fcontainer_["HightestPtQuark"] = subDirKin.make <TH1F> ("HightestPtQuark","Pt of hightest Pt quark Status 4",500,0,500);
+  TH1Fcontainer_["HighestPtQuark"] = subDirKin.make <TH1F> ("HighestPtQuark","Pt of hightest Pt quark Status 4",500,0,500);
   TH1Fcontainer_["2ndPtQuark"] = subDirKin.make <TH1F> ("2ndPtQuark","Pt of 2nd Pt quark Status 4",500,0,500);
   TH1Fcontainer_["3ndPtQuark"] = subDirKin.make <TH1F> ("3ndPtQuark","Pt of 3nd Pt quark Status 4",500,0,500);
-  TH1Fcontainer_["HightestEtaQuark"] = subDirKin.make <TH1F> ("HightestEtaQuark","Eta of hightest Eta quark Status 4",500,0,5);
+  TH1Fcontainer_["HighestEtaQuark"] = subDirKin.make <TH1F> ("HighestEtaQuark","Eta of hightest Eta quark Status 4",500,0,5);
   TH1Fcontainer_["DeltaRlQuarks"] = subDirKin.make <TH1F> ("DeltaRlQuarks","#Delta(R) between l-Quarks",500,0,5);
   TH1Fcontainer_["DeltaRBClosestlQuarksSame"] = subDirKin.make <TH1F> ("DeltaRBClosestlQuarksSame","#Delta(R) between B and closest l-Quarks (same top) ",500,0,5);
   TH1Fcontainer_["DeltaRBClosestlQuarks"] = subDirKin.make <TH1F> ("DeltaRBClosestlQuarks","#Delta(R) between B and closest l-Quarks ",500,0,5);
@@ -714,16 +714,16 @@ TtGenEventChecker::beginJob (const edm::EventSetup &)
   TH1Fcontainer_["MinimalDeltaRQuarksLepton"] = subDirKin.make <TH1F> ("MinimalDeltaRQuarksLepton","Minimal #Delta(R) between quarks and lepton ",500,0,5);
   
   //Radiations
-  TH1Dcontainer_["RankHightestISR"] = subDirRad.make < TH1D > ("RankHightestISR", "Rank of the hightest ISR", 10, 0, 10);
-  TH1Dcontainer_["RankHightestTopRadiation"] = subDirRad.make < TH1D > ("RankHightestTopRadiation", "Rank of the hightest TopRadiation", 10, 0, 10);
+  TH1Dcontainer_["RankHighestISR"] = subDirRad.make < TH1D > ("RankHighestISR", "Rank of the hightest ISR", 10, 0, 10);
+  TH1Dcontainer_["RankHighestTopRadiation"] = subDirRad.make < TH1D > ("RankHighestTopRadiation", "Rank of the hightest TopRadiation", 10, 0, 10);
   TH1Fcontainer_["ISRPt"] = subDirRad.make <TH1F> ("ISRPt","Pt of ISR",50,0,100);
   TH1Fcontainer_["TopRadiationPt"] = subDirRad.make <TH1F> ("TopRadiationPt","Pt of Top Radiation",50,0,100);
   TH1Fcontainer_["ISREta"] = subDirRad.make <TH1F> ("ISREta","Eta of ISR",500,0,5);
   TH1Fcontainer_["TopRadiationEta"] = subDirRad.make <TH1F> ("TopRadiationEta","Eta of Top Radiation",50,-5,5);
   TH1Fcontainer_["DeltaRISRQuark"] = subDirRad.make <TH1F> ("DeltaRISRQuark","#Delta(R) between ISR and closest quark",500,0,5);
   TH1Fcontainer_["DeltaRTopRadiationQuark"] = subDirRad.make <TH1F> ("DeltaRTopRadiationQuark","#Delta(R) between Top radiation and closest quark",500,0,5);
-  TH1Dcontainer_["NofISRWithHightestPtThanQuarks"] = subDirRad.make < TH1D > ("NofISRWithHightestPtThanQuarks", "Nof ISR with Hightest Pt than quarks", 10, 0, 10);
-  TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"] = subDirRad.make < TH1D > ("NofTopRadiationWithHightestPtThanQuarks", "Nof Top radiation with Hightest Pt than quarks", 10, 0, 10);
+  TH1Dcontainer_["NofISRWithHighestPtThanQuarks"] = subDirRad.make < TH1D > ("NofISRWithHighestPtThanQuarks", "Nof ISR with Highest Pt than quarks", 10, 0, 10);
+  TH1Dcontainer_["NofTopRadiationWithHighestPtThanQuarks"] = subDirRad.make < TH1D > ("NofTopRadiationWithHighestPtThanQuarks", "Nof Top radiation with Highest Pt than quarks", 10, 0, 10);
    
 
   //Mtt
@@ -756,13 +756,13 @@ TtGenEventChecker::beginJob (const edm::EventSetup &)
   TH1Fcontainer_["MassCompositeTopS4"] = subDirComp.make < TH1F > ("MassCompositeTopS4", "Mass of CompositeTop Status 4", 100, 0, 300);
   //DeltaX
   TH1Fcontainer_["DeltaPLeptonS2S3"] = subDirComp.make < TH1F > ("DeltaPLeptonS2S3", "#Delta(P) Lepton S2S3 ", 80, -10, 10);
-  TH1Fcontainer_["DeltaPQuarksS2S3"] = subDirComp.make < TH1F > ("DeltaPQuarksS2S3", "#Delta(P) Quarks S2S3", 160, -40, 40);
-  TH1Fcontainer_["DeltaPWsS2S3"] = subDirComp.make < TH1F > ("DeltaPWsS2S3", "#Delta(P) W S2S3", 160, -40, 40);
-  TH1Fcontainer_["DeltaPTopsS2S3"] = subDirComp.make < TH1F > ("DeltaPTopsS2S3", "#Delta(P) Top S2S3", 160, -40, 40);
+  TH1Fcontainer_["DeltaPQuarksS2S3"] = subDirComp.make < TH1F > ("DeltaPQuarksS2S3", "#Delta(P) Quarks S2S3", 400, -100, 100);
+  TH1Fcontainer_["DeltaPWsS2S3"] = subDirComp.make < TH1F > ("DeltaPWsS2S3", "#Delta(P) W S2S3", 400, -100, 100);
+  TH1Fcontainer_["DeltaPTopsS2S3"] = subDirComp.make < TH1F > ("DeltaPTopsS2S3", "#Delta(P) Top S2S3", 400, -100, 100);
   TH1Fcontainer_["DeltaPLeptonS3S4"] = subDirComp.make < TH1F > ("DeltaPLeptonS3S4", "#Delta(P) Lepton S3S4", 80, -10, 10);
-  TH1Fcontainer_["DeltaPQuarksS3S4"] = subDirComp.make < TH1F > ("DeltaPQuarksS3S4", "#Delta(P) Quarks S3S4", 160, -40, 40);
-  TH1Fcontainer_["DeltaPWsS3S4"] = subDirComp.make < TH1F > ("DeltaPWsS3S4", "#Delta(P) Ws S3S4", 160, -40, 40);
-  TH1Fcontainer_["DeltaPTopsS3S4"] = subDirComp.make < TH1F > ("DeltaPTopsS3S4", "#Delta(P) Tops S3S4", 160, -40, 40);
+  TH1Fcontainer_["DeltaPQuarksS3S4"] = subDirComp.make < TH1F > ("DeltaPQuarksS3S4", "#Delta(P) Quarks S3S4", 400, -100, 100);
+  TH1Fcontainer_["DeltaPWsS3S4"] = subDirComp.make < TH1F > ("DeltaPWsS3S4", "#Delta(P) Ws S3S4", 400, -100, 100);
+  TH1Fcontainer_["DeltaPTopsS3S4"] = subDirComp.make < TH1F > ("DeltaPTopsS3S4", "#Delta(P) Tops S3S4", 400, -100, 100);
   TH1Fcontainer_["DeltaRLeptonS2S3"] = subDirComp.make < TH1F > ("DeltaRLeptonS2S3", "#Delta(R) Lepton S2S3", 60, 0, 0.3);
   TH1Fcontainer_["DeltaRQuarksS2S3"] = subDirComp.make < TH1F > ("DeltaRQuarksS2S3", "#Delta(R) Quarks S2S3", 100, 0, 1);
   TH1Fcontainer_["DeltaRWsS2S3"] = subDirComp.make < TH1F > ("DeltaRWsS2S3", "#Delta(R) Ws S2S3", 100, 0, 1);
@@ -825,11 +825,11 @@ TtGenEventChecker::endJob ()
   edm::LogVerbatim ("MainResults") << " Quark with Pt < 25 GeV: "<<a*100<<" %";
   a = TH1Fcontainer_["LowestPtQuark"]->Integral(0,30)/ TH1Fcontainer_["LowestPtQuark"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " Quark with Pt < 30 GeV: "<<a*100<<" %";
-  a = TH1Fcontainer_["HightestEtaQuark"]->Integral(0,240)/TH1Fcontainer_["HightestEtaQuark"]->GetEntries();
+  a = TH1Fcontainer_["HighestEtaQuark"]->Integral(0,240)/TH1Fcontainer_["HighestEtaQuark"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " Quark with Eta > 2.4: "<<(1-a)*100<<" %";
-  a = TH1Fcontainer_["HightestEtaQuark"]->Integral(0,300)/TH1Fcontainer_["HightestEtaQuark"]->GetEntries();
+  a = TH1Fcontainer_["HighestEtaQuark"]->Integral(0,300)/TH1Fcontainer_["HighestEtaQuark"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " Quark with Eta > 3: "<<(1-a)*100<<" %";
-  a = TH1Fcontainer_["HightestEtaQuark"]->Integral(0,400)/TH1Fcontainer_["HightestEtaQuark"]->GetEntries();
+  a = TH1Fcontainer_["HighestEtaQuark"]->Integral(0,400)/TH1Fcontainer_["HighestEtaQuark"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " Quark with Eta > 4: "<<(1-a)*100<<" %";
   a = TH1Fcontainer_["DeltaRlQuarks"]->Integral(0,50)/TH1Fcontainer_["DeltaRlQuarks"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " l-Quarks with DeltaR < 0.5: "<<a*100<<" %";
@@ -848,9 +848,9 @@ TtGenEventChecker::endJob ()
   //Radiations
   //take care
   //here born of integral are hard coded and depend on the numberOfbins !!
-  a = TH1Dcontainer_["RankHightestISR"]->Integral(0,5)/TH1Dcontainer_["RankHightestISR"]->GetEntries();
+  a = TH1Dcontainer_["RankHighestISR"]->Integral(0,5)/TH1Dcontainer_["RankHighestISR"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " ISR with Pt > quarks: "<<a*100<<" %";
-  a = TH1Dcontainer_["RankHightestTopRadiation"]->Integral(0,5)/TH1Dcontainer_["RankHightestTopRadiation"]->GetEntries();
+  a = TH1Dcontainer_["RankHighestTopRadiation"]->Integral(0,5)/TH1Dcontainer_["RankHighestTopRadiation"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " Top Radiation with Pt > quarks: "<<a*100<<" %";
   a = TH1Fcontainer_["ISRPt"]->Integral(0,30)/TH1Fcontainer_["ISRPt"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " ISR  with Pt > 30 GeV: "<<(1-a)*100<<" %";
@@ -858,21 +858,21 @@ TtGenEventChecker::endJob ()
   edm::LogVerbatim ("MainResults") << " TopRadiation  with Pt > 30 GeV: "<<(1-a)*100<<" %";
   //
  
-  a = TH1Dcontainer_["NofISRWithHightestPtThanQuarks"]->Integral(0,1)/TH1Dcontainer_["NofISRWithHightestPtThanQuarks"]->GetEntries();
+  a = TH1Dcontainer_["NofISRWithHighestPtThanQuarks"]->Integral(0,1)/TH1Dcontainer_["NofISRWithHighestPtThanQuarks"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " At least one ISR  with Pt > Quarks: "<<(1-a)*100<<" %";
-  a = TH1Dcontainer_["NofISRWithHightestPtThanQuarks"]->Integral(0,2)/TH1Dcontainer_["NofISRWithHightestPtThanQuarks"]->GetEntries();
+  a = TH1Dcontainer_["NofISRWithHighestPtThanQuarks"]->Integral(0,2)/TH1Dcontainer_["NofISRWithHighestPtThanQuarks"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " At least 2 ISR  with Pt > Quarks: "<<(1-a)*100<<" %";
-  a = TH1Dcontainer_["NofISRWithHightestPtThanQuarks"]->Integral(0,3)/TH1Dcontainer_["NofISRWithHightestPtThanQuarks"]->GetEntries();
+  a = TH1Dcontainer_["NofISRWithHighestPtThanQuarks"]->Integral(0,3)/TH1Dcontainer_["NofISRWithHighestPtThanQuarks"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " At least 3 ISR  with Pt > Quarks: "<<(1-a)*100<<" %";
-  a = TH1Dcontainer_["NofISRWithHightestPtThanQuarks"]->Integral(0,4)/TH1Dcontainer_["NofISRWithHightestPtThanQuarks"]->GetEntries();
+  a = TH1Dcontainer_["NofISRWithHighestPtThanQuarks"]->Integral(0,4)/TH1Dcontainer_["NofISRWithHighestPtThanQuarks"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " At least 4 ISR  with Pt > Quarks: "<<(1-a)*100<<" %";
-  a = TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->Integral(0,1)/TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->GetEntries();
+  a = TH1Dcontainer_["NofTopRadiationWithHighestPtThanQuarks"]->Integral(0,1)/TH1Dcontainer_["NofTopRadiationWithHighestPtThanQuarks"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " At least one TopRadiation  with Pt > Quarks: "<<(1-a)*100<<" %";
-  a = TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->Integral(0,2)/TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->GetEntries();
+  a = TH1Dcontainer_["NofTopRadiationWithHighestPtThanQuarks"]->Integral(0,2)/TH1Dcontainer_["NofTopRadiationWithHighestPtThanQuarks"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " At least 2 TopRadiation  with Pt > Quarks: "<<(1-a)*100<<" %";
-  a = TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->Integral(0,3)/TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->GetEntries();
+  a = TH1Dcontainer_["NofTopRadiationWithHighestPtThanQuarks"]->Integral(0,3)/TH1Dcontainer_["NofTopRadiationWithHighestPtThanQuarks"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " At least 3 TopRadiation  with Pt > Quarks: "<<(1-a)*100<<" %";
-  a = TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->Integral(0,4)/TH1Dcontainer_["NofTopRadiationWithHightestPtThanQuarks"]->GetEntries();
+  a = TH1Dcontainer_["NofTopRadiationWithHighestPtThanQuarks"]->Integral(0,4)/TH1Dcontainer_["NofTopRadiationWithHighestPtThanQuarks"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " At least 4 TopRadiation  with Pt > Quarks: "<<(1-a)*100<<" %";
    
   // Bquarks
