@@ -130,14 +130,13 @@ VertexChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    //Check if branches are available
    if (!vertex.isValid()){
      edm::LogWarning  ("LinkBroken") << "My warning message - NoVertexFound"; 
-     throw cms::Exception("ProductNotFound") <<"Primary vertex collection not found"<<std::endl;
+     return;//   throw cms::Exception("ProductNotFound") <<"Primary vertex collection not found"<<std::endl;
    }
    
    double pt2_vtx =0;
    double sumpt2_vtx =0;
    double ptAssTrk = -100;
    int prim_vtxidx = -2;
-   int sec_vtxidx = -2;
    double sumpt =0;
    double sumpt_prim =0;
    double pt2_primvtx =  0;
