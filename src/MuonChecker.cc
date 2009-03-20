@@ -340,7 +340,8 @@ MuonChecker::endJob()
   edm::LogVerbatim ("MainResults") << " Nb of semi-muonic events :"<<NbOfSemiMuEvents;
   edm::LogVerbatim ("MainResults") << " Nb of NoGen muon found : "<<NbOfNoGenMu;
   edm::LogVerbatim ("MainResults") << " Nb of muons found :"<<NbOfMu;
-  edm::LogVerbatim ("MainResults") << " -- average : "<<NbOfMu/NbOfSemiMuEvents;
+  edm::LogVerbatim ("MainResults") << " -- per event : "<<(NbOfEvents > 0 ? NbOfMu/NbOfEvents : 0 );
+  edm::LogVerbatim ("MainResults") << " -- per semi-mu event : "<<(NbOfSemiMuEvents > 0 ? NbOfMu/NbOfSemiMuEvents : 0 );
   edm::LogVerbatim ("MainResults") << " -- Composition : ";
   edm::LogVerbatim ("MainResults") << " ---- W bosons : "<<MuonsOrigin[0];
   edm::LogVerbatim ("MainResults") << " ---- Light mesons (I=1) (Pions, rho, etc...): "<<MuonsOrigin[1];
