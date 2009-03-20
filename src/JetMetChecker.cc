@@ -13,7 +13,7 @@
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: JetMetChecker.cc,v 1.6 2009/03/12 11:13:15 jmmaes Exp $
+// $Id: JetMetChecker.cc,v 1.7 2009/03/18 14:58:25 ghammad Exp $
 //
 //
 
@@ -78,8 +78,10 @@ class JetMetChecker : public edm::EDAnalyzer {
   //Histograms are booked in the beginJob() method
   std::map<std::string,TDirectory*> TDirectorycontainer_; // simple map to contain all TDirectory.
   std::map<std::string,TH1D*> TH1Dcontainer_; // simple map to contain all TH1D.
+  std::map<std::string,TH1D*> TH1DcontainerMatchedJets_[2];
   std::map<std::string,TH1F*> TH1Fcontainer_; // simple map to contain all TH1F.
   std::map<std::string,TH2F*> TH2Fcontainer_; // simple map to contain all TH2F.
+  std::map<std::string,TH2D*> TH2Dcontainer_[2]; // simple map to contain all TH2F.
   std::map<std::string,TH1D*> TH1DcontainerForbTagging_[11]; // simple map to contain all TH1D.
   //std::map<std::string,TGraph*> TGraphcontainerForbTagging_[11]; // simple map to contain all TGraph.
 
@@ -88,6 +90,8 @@ class JetMetChecker : public edm::EDAnalyzer {
   double lowerRanges_[11];
   double upperRanges_[11];
   int nBins;
+  std::string PatJetsNames_[2]; 
+
 
   std::vector< std::string > availableTaggers;
 
@@ -159,6 +163,9 @@ JetMetChecker::JetMetChecker(const edm::ParameterSet& iConfig)
   upperRanges_[10]=1;
 
   nBins=50;
+
+  PatJetsNames_[0] = "PatJetsAll";
+  PatJetsNames_[1] = "MatchedTopJets";
 }
 
 
@@ -206,43 +213,57 @@ JetMetChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   //Check if branches are available
   if (!jets.isValid()){
     edm::LogWarning  ("NoJetsFound") << "JetMetCheckerWarning - NoJetsFound"; 
-    throw cms::Exception("ProductNotFound") <<"jet collection not found"<<std::endl;
+    return; //  throw cms::Exception("ProductNotFound") <<"jet collection not found"<<std::endl;
   }
   if (!mets.isValid()){
     edm::LogWarning  ("NoMetsFound") << "JetMetCheckerWarning - NoMetsFound";
-    throw cms::Exception("ProductNotFound") <<"MET collection not found"<<std::endl;
+    return;// throw cms::Exception("ProductNotFound") <<"MET collection not found"<<std::endl;
   }
   
   vector <CaloTowerPtr> jettowers;
-  
-  
+  double sumtrkpt;
+  double sumtwrpt; 
   for( unsigned int i=0;i<jets->size();i++) {
-    
-    TH1Dcontainer_["Jetn90"]->Fill((*jets)[i].n90());
-    TH1Dcontainer_["JetTowersArea"]->Fill((*jets)[i].towersArea());
-    TH1Dcontainer_["emEnergyFraction"]->Fill((*jets)[i].emEnergyFraction());
-    TH1Dcontainer_["energyFractionHadronic"]->Fill((*jets)[i].energyFractionHadronic());
-    TH1Dcontainer_["maxEInEmTowers"]->Fill((*jets)[i].maxEInEmTowers());
-    TH1Dcontainer_["maxEInHadTowers"]->Fill((*jets)[i].maxEInHadTowers());
-    
+ 
+
+    TH1DcontainerMatchedJets_[0]["Jetn90"]->Fill((*jets)[i].n90());
+    TH1DcontainerMatchedJets_[0]["JetTowersArea"]->Fill((*jets)[i].towersArea());
+    TH1DcontainerMatchedJets_[0]["emEnergyFraction"]->Fill((*jets)[i].emEnergyFraction());
+    TH1DcontainerMatchedJets_[0]["energyFractionHadronic"]->Fill((*jets)[i].energyFractionHadronic());
+    TH1DcontainerMatchedJets_[0]["maxEInEmTowers"]->Fill((*jets)[i].maxEInEmTowers());
+    TH1DcontainerMatchedJets_[0]["maxEInHadTowers"]->Fill((*jets)[i].maxEInHadTowers());
+
+   
     JetCorrName = (*jets)[i].jetCorrName();   
     
     //towers infos
-    jettowers = (*jets)[i].getCaloConstituents();
+    sumtwrpt   =0;
+    jettowers = (*jets)[i].getCaloConstituents(); 
     std::vector <CaloTowerPtr>::const_iterator caloiter;
     for(caloiter=jettowers.begin();caloiter!=jettowers.end();caloiter++){
       //       double caloet=(*caloiter)->et();
       TH1Dcontainer_["JetTwrEt"]->Fill((*caloiter)->et());
       TH1Dcontainer_["JetTwrPhi"]->Fill((*caloiter)->phi());
       TH1Dcontainer_["JetTwrEta"]->Fill((*caloiter)->eta());
+      sumtwrpt   +=(*caloiter)->pt();
     }
-    
+     TH1Dcontainer_["JetTwrSumPt"]->Fill( sumtwrpt);
+     TH1Dcontainer_["JetdiffTwrSumPt"]->Fill( fabs(sumtwrpt- (*jets)[i].pt()));
+ 
+     double diff =  jettowers.size() - (*jets)[i].n90();
+     TH2Dcontainer_[0]["Jetn90vsE-n90"]->Fill((*jets)[i].n90(), diff  );
+	
+
     //tracks infos
+    sumtrkpt   =0;
     edm::RefVector< reco::TrackCollection > tracks;
     tracks = (*jets)[i].associatedTracks();
     for(unsigned int ti=0; ti<tracks.size(); ti++){
       TH1Dcontainer_["JetTrkPt"]->Fill(tracks[ti]->pt());
+      sumtrkpt+=tracks[ti]->pt();
     }
+    TH1Dcontainer_["JetTrkSumPt"]->Fill( sumtrkpt);
+    TH1Dcontainer_["JetdiffTrkSumPt"]->Fill( fabs(sumtrkpt- (*jets)[i].pt()));
     
   }
   
@@ -338,10 +359,37 @@ JetMetChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   if (!genEvt.isValid()){
     edm::LogWarning  ("NoGenEvtFound") << "JetMetCheckerWarning - NoGenEvtFound";
   }
+
   
   bool taggerIsAvailable=false;
   bool taggerAlreadyIn=false;
+  std::vector<pat::Jet> jets_clone;
+
   
+  if(  jets->size() >= 4){  
+    if (genEvt.isValid()){
+      if(genEvt->isSemiLeptonic(genEvt->kMuon)) {
+	//make a copy of the jet collection to add the matched jets
+	///////	  std::vector<pat::Jet> jets_clone;
+	
+	// Make plots only with jets from ttbar events (matched with a certain algo)
+	// Matching index : Hadronic Q  = 0, Hadronic Q' = 1, Hadronic b  = 2, Leptonic b  = 3;
+	std::vector<const reco::Candidate *> TopQuarks;
+	TopQuarks.push_back(genEvt->hadronicDecayQuark());
+	TopQuarks.push_back(genEvt->hadronicDecayQuarkBar());
+	TopQuarks.push_back(genEvt->hadronicDecayB());
+	TopQuarks.push_back(genEvt->leptonicDecayB());
+	if(TopQuarks.size()==4) { 
+	  JetPartonMatching *GenMatchTopQuarks = new JetPartonMatching(TopQuarks, *jets, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
+	  for(unsigned int l=0; l<4; l++){
+	    Int_t Idx = GenMatchTopQuarks->getMatchForParton(l,0);
+	    if(Idx>=0){ jets_clone.push_back((*jets)[Idx]); }  
+	  }
+	}
+      }
+    }
+  }
+
   for(unsigned int i=0;i<11;i++){
     
     if(  jets->size() == 0) continue;
@@ -385,54 +433,46 @@ JetMetChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       }
     }
     //fill b-tag histo's only for jets fom top quark decay partons
-    if(  jets->size() >= 4){  
+
+    //fill b-tag histo's for each jet
+    for(std::vector<pat::Jet>::const_iterator iJet = jets_clone.begin(); iJet != jets_clone.end(); ++iJet) {
+      TH1DcontainerForbTagging_[i]["InclusiveTtSemiMu"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
+      
       if (genEvt.isValid()){
-	if(genEvt->isSemiLeptonic(genEvt->kMuon)) {
-	  //make a copy of the jet collection to add the matched jets
-	  std::vector<pat::Jet> jets_clone;
-	  
-	  // Make plots only with jets from ttbar events (matched with a certain algo)
-	  // Matching index : Hadronic Q  = 0, Hadronic Q' = 1, Hadronic b  = 2, Leptonic b  = 3;
-	  std::vector<const reco::Candidate *> TopQuarks;
-	  TopQuarks.push_back(genEvt->hadronicDecayQuark());
-	  TopQuarks.push_back(genEvt->hadronicDecayQuarkBar());
-	  TopQuarks.push_back(genEvt->hadronicDecayB());
-	  TopQuarks.push_back(genEvt->leptonicDecayB());
-	  if(TopQuarks.size()==4) { 
-	    JetPartonMatching *GenMatchTopQuarks = new JetPartonMatching(TopQuarks, *jets, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
-	    for(unsigned int l=0; l<4; l++){
-	      Int_t Idx = GenMatchTopQuarks->getMatchForParton(l,0);
-	      if(Idx>=0){ jets_clone.push_back((*jets)[Idx]); }  
-	    }
-	    //fill b-tag histo's for each jet
-	    for(std::vector<pat::Jet>::const_iterator iJet = jets_clone.begin(); iJet != jets_clone.end(); ++iJet) {
-	      TH1DcontainerForbTagging_[i]["InclusiveTtSemiMu"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
-	      
-	      if (genEvt.isValid()){
-		//std::cout << "iJet->partonFlavour() : " << iJet->partonFlavour() << std::endl;
-		if(fabs(iJet->partonFlavour())==5){
-		  TH1DcontainerForbTagging_[i]["bjetsTtSemiMu"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
-		}
-		if(fabs(iJet->partonFlavour())==4){
-		  TH1DcontainerForbTagging_[i]["cjetsTtSemiMu"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
-		}
-		if(fabs(iJet->partonFlavour())==21){
-		  TH1DcontainerForbTagging_[i]["gjetsTtSemiMu"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
-		} 
-		if(fabs(iJet->partonFlavour())==1||fabs(iJet->partonFlavour())==2||fabs(iJet->partonFlavour())==3){
-		  TH1DcontainerForbTagging_[i]["ljetsTtSemiMu"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
-		}
-		if(fabs(iJet->partonFlavour())!=1&&fabs(iJet->partonFlavour())!=2&&fabs(iJet->partonFlavour())!=3&&fabs(iJet->partonFlavour())!=4&&fabs(iJet->partonFlavour())!=5&&fabs(iJet->partonFlavour())!=21){
-		   TH1DcontainerForbTagging_[i]["ijetsTtSemiMu"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
-		  //std::cout << "partonflavour is not a udscb or g" << std::endl;
-		}
-	      }
-	    }
-	  }
+	//std::cout << "iJet->partonFlavour() : " << iJet->partonFlavour() << std::endl;
+	if(fabs(iJet->partonFlavour())==5){
+	  TH1DcontainerForbTagging_[i]["bjetsTtSemiMu"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
+	}
+	if(fabs(iJet->partonFlavour())==4){
+	  TH1DcontainerForbTagging_[i]["cjetsTtSemiMu"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
+	}
+	if(fabs(iJet->partonFlavour())==21){
+	  TH1DcontainerForbTagging_[i]["gjetsTtSemiMu"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
+	} 
+	if(fabs(iJet->partonFlavour())==1||fabs(iJet->partonFlavour())==2||fabs(iJet->partonFlavour())==3){
+	  TH1DcontainerForbTagging_[i]["ljetsTtSemiMu"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
+	}
+	if(fabs(iJet->partonFlavour())!=1&&fabs(iJet->partonFlavour())!=2&&fabs(iJet->partonFlavour())!=3&&fabs(iJet->partonFlavour())!=4&&fabs(iJet->partonFlavour())!=5&&fabs(iJet->partonFlavour())!=21){
+	  TH1DcontainerForbTagging_[i]["ijetsTtSemiMu"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
+	  //std::cout << "partonflavour is not a udscb or g" << std::endl;
 	}
       }
     }
   }
+
+  vector <CaloTowerPtr> jettowers_match; 
+  for(std::vector<pat::Jet>::const_iterator iJet = jets_clone.begin(); iJet != jets_clone.end(); ++iJet) {
+    
+    TH1DcontainerMatchedJets_[1]["Jetn90"]->Fill( iJet->n90());
+    TH1DcontainerMatchedJets_[1]["JetTowersArea"]->Fill(iJet->towersArea());
+    TH1DcontainerMatchedJets_[1]["emEnergyFraction"]->Fill(iJet->emEnergyFraction());
+    TH1DcontainerMatchedJets_[1]["energyFractionHadronic"]->Fill(iJet->energyFractionHadronic());
+    TH1DcontainerMatchedJets_[1]["maxEInEmTowers"]->Fill(iJet->maxEInEmTowers());
+    TH1DcontainerMatchedJets_[1]["maxEInHadTowers"]->Fill(iJet->maxEInHadTowers());
+    jettowers_match = iJet->getCaloConstituents(); 
+    TH2Dcontainer_[1]["Jetn90vsE-n90"]->Fill(iJet->n90(), jettowers_match.size() - iJet->n90());
+  }
+
 }
 
 
@@ -442,22 +482,32 @@ JetMetChecker::beginJob(const edm::EventSetup&)
 {
   edm::Service<TFileService> fs;
   if (!fs) throw edm::Exception(edm::errors::Configuration, "TFileService missing from configuration!");
+ 
+  std::vector< TFileDirectory > subDirsPatJets;
+  for(unsigned int i=0;i<2;i++) subDirsPatJets.push_back(fs->mkdir( PatJetsNames_[i] ));
   
   TFileDirectory subDir = fs->mkdir( "PatJets" );
   // TFileDirectory subsubDir = subDir.mkdir( "PatJets" );
   
   
   //  TH1Dcontainer_["JetTwrEt"] = fs->make<TH1D>("JetTwrEt" ,"jet towers Et ",100,0,1000);// wrote in main directory
-  TH1Dcontainer_["Jetn90"] = subDir.make<TH1D>("Jetn90" ,"n90 ",10,0,10);
-  TH1Dcontainer_["JetTowersArea"] = subDir.make<TH1D>("JetTowersArea" ," Jet Towers Area ",nBins,0,1);
+  for(unsigned int i=0;i<2;i++){
+    TH1DcontainerMatchedJets_[i]["Jetn90"] = subDirsPatJets[i].make<TH1D>("Jetn90" ,"n90 ",10,0,10);
+    TH1DcontainerMatchedJets_[i]["JetTowersArea"] = subDirsPatJets[i].make<TH1D>("JetTowersArea" ," Jet Towers Area ",nBins,0,1);
+    TH1DcontainerMatchedJets_[i]["emEnergyFraction"] = subDirsPatJets[i].make<TH1D>("emEnergyFraction" ,"jet electomagnetic energy fraction ",nBins,0, 1);
+    TH1DcontainerMatchedJets_[i]["energyFractionHadronic"]= subDirsPatJets[i].make<TH1D>("energyFractionHadronic" ,"jet hadronic energy fraction ",nBins,0, 1);
+    TH1DcontainerMatchedJets_[i]["maxEInEmTowers"]= subDirsPatJets[i].make<TH1D>("maxEInEmTowers" ,"maximum energy deposited in ECAL towers ",nBins,0, 100);
+    TH1DcontainerMatchedJets_[i]["maxEInHadTowers"]= subDirsPatJets[i].make<TH1D>("maxEInHadTowers" ,"maximum energy deposited in HCAL towers ",nBins,0, 100);
+    TH2Dcontainer_[i]["Jetn90vsE-n90"]= subDirsPatJets[i].make<TH2D>("Jetn90vsE-n90" ,"n90 vs jet n-n90 ",10,0, 10, 10, 0, 10);
+  }
   TH1Dcontainer_["JetTwrEt"] = subDir.make<TH1D>("JetTwrEt" ,"jet towers Et ",nBins,0,100);
   TH1Dcontainer_["JetTwrEta"] = subDir.make<TH1D>("JetTwrEta" ,"jet towers Eta ",nBins,-6, 6);
-  TH1Dcontainer_["JetTwrPhi"] = subDir.make<TH1D>("JetTwrPhi" ,"jet towers Phi ",nBins,-3.2, 3.2);
+  TH1Dcontainer_["JetTwrPhi"] = subDir.make<TH1D>("JetTwrPhi" ,"jet towers Phi ",25,-3.2, 3.2);
   TH1Dcontainer_["JetTrkPt"] = subDir.make<TH1D>("JetTrkPt" ,"jet tracks Pt ",nBins,0, 100);
-  TH1Dcontainer_["emEnergyFraction"] = subDir.make<TH1D>("emEnergyFraction" ,"jet electomagnetic energy fraction ",nBins,0, 100);
-  TH1Dcontainer_["energyFractionHadronic"]= subDir.make<TH1D>("energyFractionHadronic" ,"jet hadronic energy fraction ",nBins,0, 100);
-  TH1Dcontainer_["maxEInEmTowers"]= subDir.make<TH1D>("maxEInEmTowers" ,"maximum energy deposited in ECAL towers ",nBins,0, 100);
-  TH1Dcontainer_["maxEInHadTowers"]= subDir.make<TH1D>("maxEInHadTowers" ,"maximum energy deposited in HCAL towers ",nBins,0, 100);
+  TH1Dcontainer_["JetTwrSumPt"] = subDir.make<TH1D>("JetTwrSumPt" ,"Sum of Pt towers",nBins,0, 100);
+  TH1Dcontainer_["JetdiffTwrSumPt"] = subDir.make<TH1D>("JetdiffTwrSumPt" ,"Diff between Sum of Pt towers and Pt Jet",nBins,0, 50);
+  TH1Dcontainer_["JetTrkSumPt"] = subDir.make<TH1D>("JetTrkSumPt" ,"Sum of Pt tracks",nBins,0, 100);
+  TH1Dcontainer_["JetdiffTrkSumPt"] = subDir.make<TH1D>("JetdiffTrkSumPt" ,"Diff between Sum of Pt tracks and Pt Jet",nBins,0, 50);
   
   TH2Fcontainer_["JetEtaResponse_UpToL2"]         = subDir.make<TH2F>("JetEtaResponse_UpToL2","",4000,-10,10,500,0,10);
   TH2Fcontainer_["JetPtResponse_UpToL3"]          = subDir.make<TH2F>("JetPtResponse_UpToL3","",4000,0,800,500,0,10);
