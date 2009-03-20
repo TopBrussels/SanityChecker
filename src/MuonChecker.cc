@@ -154,7 +154,7 @@ MuonChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    if (!muonHandle.isValid())
    {
      edm::LogWarning  ("NoDataFound") << "--- NoMuonsFound ---";
-     throw cms::Exception("ProductNotFound") <<"Muon collection not found"<<std::endl;
+     return; //throw cms::Exception("ProductNotFound") <<"Muon collection not found"<<std::endl;
    }
    const std::vector<pat::Muon> & muons = *muonHandle;
 
