@@ -180,10 +180,11 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	NrAnalyzed++;
 
 	if(verbose_) cout << "analyzing event number " << NrAnalyzed << endl;
-
 	
 	if(genEvt.isSemiLeptonic(genEvt.kMuon)) NbSemiMuGenEvents++;
 	if(jets.size()>3 && muons.size()>0 && mets.size()>0) NbSemiMuRecoEvents++;
+
+	if(verbose_) cout << "counters done " << endl;
 	
 	bool allok = true;
 	bool muonselected = true;
@@ -207,12 +208,15 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 		NrNot1MET++;
 		allok = false;		
 	}
-	
+
+	if(verbose_) cout << "some checks done " << endl;
+
   std::vector<pat::Jet> myjetsetagood;
   std::vector<pat::Jet> myselectedjets;
   for(unsigned int i =0;i<jets.size();i++) {if(fabs(jets[i].eta())<jetEta_) myjetsetagood.push_back(jets[i]);}
 	for(unsigned int i =0;i<myjetsetagood.size();i++) {if(jets[i].pt()>jetPt_ ) myselectedjets.push_back(myjetsetagood[i]);}		
 
+	if(verbose_) cout << "new jet collection filled " << endl;
 	
 	//check if at least 4 jets with eta ok and pT exceeding jetPt threshold!
 	if(myselectedjets.size()<(unsigned)NJets_ ){ 
@@ -222,6 +226,8 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 		edm::LogWarning  ("NoDataFound") << "Less then 4 jets with p_{T}>"<<jetPt_<<"GeV and |#eta| <"<<jetEta_<<"\n"; 
 	}
 
+	if(verbose_) cout << "check if 4 jets " << endl;
+
 	//check if muon passes eta/pT cut!
 	if( jetsselected && (muons.size()<1 || muons[0].pt()<muonPt_ || fabs(muons[0].eta())>muonEta_)){
 		NrNot1SelMu++;
@@ -230,19 +236,34 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 		edm::LogWarning  ("NoDataFound") << "The leading muon has no p_{T}>"<<muonPt_<<"GeV or |#eta| >"<<muonEta_<<"\n"; 
 	}
 
+	if(verbose_) cout << "check muon kinematics " << endl;
+
 	double RelIsoMuon = 0.;
-	RelIsoMuon = muons[0].pt()/(muons[0].pt()+muons[0].isolationR03().sumPt+muons[0].isolationR03().emEt+muons[0].isolationR03().hadEt);
-	
+ 	if(muons.size()>0){
+ 		RelIsoMuon = muons[0].pt()/(muons[0].pt()+muons[0].isolationR03().sumPt+muons[0].isolationR03().emEt+muons[0].isolationR03().hadEt);
+	}
+	if(verbose_) cout << "calculated reliso " << endl;
+
 	//veto cone size is 0.07 in ECAL and 0.1 in HCAL, proposed ET cuts are resp 4 and 6
-	const reco::IsoDeposit * ecalIsoDep = (muons)[0].ecalIsoDeposit();
-	const reco::IsoDeposit * hcalIsoDep = (muons)[0].hcalIsoDeposit();
+	const reco::IsoDeposit * ecalIsoDep;
+	const reco::IsoDeposit * hcalIsoDep;
+ 	if(muons.size()>0){
+		ecalIsoDep = (muons)[0].ecalIsoDeposit();
+		hcalIsoDep = (muons)[0].hcalIsoDeposit();
+	}
+
+	if(verbose_) cout << "calculated veto isolation " << endl;
 	
 	//if muonisolation is required check if muon passes reliso and veto cone energy requirements!
-	if(doMuonIsolation_ && jetsselected &&  muonselected && (RelIsoMuon<muonRelIso_ || ecalIsoDep->candEnergy()>muonECALVetoConeEt_ || hcalIsoDep->candEnergy()>muonHCALVetoConeEt_)){
-		NrNot1SelIsoMu++;
-		allok = false;			
-		edm::LogWarning  ("NoDataFound") << "The leading muon does not pass the isolation requirements \n"; 
+	if(doMuonIsolation_ && jetsselected && muons.size()>0){
+	  if(muonselected && (RelIsoMuon<muonRelIso_ || ecalIsoDep->candEnergy()>muonECALVetoConeEt_ || hcalIsoDep->candEnergy()>muonHCALVetoConeEt_)){
+			NrNot1SelIsoMu++;
+			allok = false;			
+			edm::LogWarning  ("NoDataFound") << "The leading muon does not pass the isolation requirements \n"; 
+		}
 	}
+
+	if(verbose_) cout << "check isolation criteria " << endl;
 
 	
 	if(!useMatchingFromPAT_ && allok){ 
@@ -2362,15 +2383,15 @@ TruthReco::endJob() {
  double eff6b = ((double)EventNotMatched/(double)NrAnalyzed) * 100;
  double eff6c = ((double)recoEventsPassed/(double)NrAnalyzed) * 100;
  double eff7 = ((double)NrNotSemiMu/(double)NrAnalyzed) * 100;
- double eff8 = ((double)MatchedQuarks/(double)NrAnalyzed) * 100;
+ double eff8 = ((double)MatchedQuarks/(double)recoEventsPassed) * 100;
  double eff9 = ((double)MatchedQuarksRadiation/(double)MatchedQuarks) * 100;
  double eff10 = ((double)MatchedQuarksNoISR/(double)MatchedQuarks) * 100;
  double eff11 = ((double)MatchedQuarksNoTopRadiation/(double)MatchedQuarks) * 100;
  double eff12 = ((double)MatchedQuarksNoRadiation/(double)MatchedQuarks) * 100;
- double eff13 = ((double)QuarksMatchedMatchedISR/(double)recoEventsPassed) * 100;
- double eff14 = ((double)QuarksMatchedUnmatchedISR/(double)recoEventsPassed) * 100;
- double eff15 = ((double)QuarksMatchedMatchedTopRadiation/(double)recoEventsPassed) * 100;
- double eff16 = ((double)QuarksMatchedUnmatchedTopRadiation/(double)recoEventsPassed) * 100;
+ double eff13 = ((double)QuarksMatchedMatchedISR/(double)MatchedQuarks) * 100;
+ double eff14 = ((double)QuarksMatchedUnmatchedISR/(double)MatchedQuarks) * 100;
+ double eff15 = ((double)QuarksMatchedMatchedTopRadiation/(double)MatchedQuarks) * 100;
+ double eff16 = ((double)QuarksMatchedUnmatchedTopRadiation/(double)MatchedQuarks) * 100;
  double eff17 = ((double)QuarksMatchedNoTopRadiation/(double)MatchedQuarks) * 100;
  double eff18 = ((double)QuarksMatchedISRTopRadiation/(double)MatchedQuarks) * 100;
  double eff19 = ((double)QuarksMatchedTopRadiationNoISR/(double)MatchedQuarks) * 100;
@@ -2390,14 +2411,14 @@ TruthReco::endJob() {
  double eff33 = ((double)Only1UnmatchedQuarkCategoryPt/(double)Only1UnmatchedQuarks) * 100;
  double eff34 = ((double)Only1UnmatchedQuarkCategoryDR/(double)Only1UnmatchedQuarks) * 100;
  double eff35 = ((double)Only1UnmatchedQuarkNotCategorized/(double)Only1UnmatchedQuarks) * 100;
- double eff36 = ((double)MatchedISR/(double)recoEventsPassed) * 100;
- double eff37 = ((double)UnmatchedISR/(double)recoEventsPassed) * 100;
- double eff38 = ((double)MatchedTopRadiation/(double)recoEventsPassed) * 100;
- double eff39 = ((double)UnmatchedTopRadiation/(double)recoEventsPassed) * 100;
- double eff40 = ((double)NoTopRadiation/(double)recoEventsPassed) * 100;
- double eff41 = ((double)ISRTopRadiation/(double)recoEventsPassed) * 100;
- double eff42 = ((double)TopRadiationNoISR/(double)recoEventsPassed) * 100;
- double eff43 = ((double)NoRadiation/(double)recoEventsPassed) * 100;
+ double eff36 = ((double)MatchedISR/(double)UnmatchedQuarks) * 100;
+ double eff37 = ((double)UnmatchedISR/(double)UnmatchedQuarks) * 100;
+ double eff38 = ((double)MatchedTopRadiation/(double)UnmatchedQuarks) * 100;
+ double eff39 = ((double)UnmatchedTopRadiation/(double)UnmatchedQuarks) * 100;
+ double eff40 = ((double)NoTopRadiation/(double)UnmatchedQuarks) * 100;
+ double eff41 = ((double)ISRTopRadiation/(double)UnmatchedQuarks) * 100;
+ double eff42 = ((double)TopRadiationNoISR/(double)UnmatchedQuarks) * 100;
+ double eff43 = ((double)NoRadiation/(double)UnmatchedQuarks) * 100;
  double eff44 = ((double)UnmatchedQuark1NoRadCategoryEta/(double)NoRadiation) * 100;
  double eff45 = ((double)UnmatchedQuark1NoRadCategoryPt/(double)NoRadiation) * 100;
  double eff46 = ((double)UnmatchedQuark1NoRadCategoryDR/(double)NoRadiation) * 100;
@@ -2461,25 +2482,27 @@ TruthReco::endJob() {
 	edm::LogVerbatim  ("MainResults") << "  (27) \t" <<"of which (27)/(25) " <<eff10<< "% or " <<MatchedQuarksNoISR << " events where there is only top radiation";	
 	edm::LogVerbatim  ("MainResults") << "  (28) \t" <<"of which (28)/(25) " <<eff11<< "% or " <<MatchedQuarksNoTopRadiation << " events where there is only ISR";	
 	edm::LogVerbatim  ("MainResults") << "  (29) \t" <<"of which (29)/(25) " <<eff12<< "% or " <<MatchedQuarksNoRadiation << " events where there is both ISR and	top radiation";	
-	edm::LogVerbatim  ("MainResults") << "  (30) \t\t(30)/(11) "<< eff13<< "% or "  <<QuarksMatchedMatchedISR << " events where all ISR partons are matched";	
-	edm::LogVerbatim  ("MainResults") << "  (31a) \t\t(31a)/(11) "<< eff14<< "% or "  <<QuarksMatchedUnmatchedISR << " events where not all ISR partons are matched (there can be more than 1	unmatched parton)";
+	edm::LogVerbatim  ("MainResults") << "  (30) \t\t(30)/(25) "<< eff13<< "% or "  <<QuarksMatchedMatchedISR << " events where all ISR partons are matched";	
+	edm::LogVerbatim  ("MainResults") << "  (31a) \t\t(31a)/(25) "<< eff14<< "% or "  <<QuarksMatchedUnmatchedISR << " events where not all ISR partons are matched (there can be more than 1	unmatched parton)";
 	edm::LogVerbatim  ("MainResults") << "  (31b) \t\t "<< QuarksMatchedUnmatchedISRtotal << " total	unmatched ISR partons";
 	edm::LogVerbatim  ("MainResults") << "  (32) \t\t\t" <<"of which " << QuarksMatchedUnmatchedISRCategoryEta << " because of the eta requirement";
 	edm::LogVerbatim  ("MainResults") << "  (33) \t\t\t" <<"of which " << QuarksMatchedUnmatchedISRCategoryPt << " because of the p_{T} requirement";
 	edm::LogVerbatim  ("MainResults") << "  (34) \t\t\t" <<"of which " << QuarksMatchedUnmatchedISRCategoryDR << " because of the DR requirement";
 	edm::LogVerbatim  ("MainResults") << "  (35) \t\t\t" <<"of which " << QuarksMatchedUnmatchedISRNotCategorized << " not categorized\n";	
-	edm::LogVerbatim  ("MainResults") << "  (36) \t\t(36)/(11) "<< eff15<< "% or " << QuarksMatchedMatchedTopRadiation << " events where all top-radiated partons are matched";
-	edm::LogVerbatim  ("MainResults") << "  (37) \t\t(37)/(11) "<< eff16<< "% or " << QuarksMatchedUnmatchedTopRadiation << " events where not all top-radiated partons are matched (there can be more than 1 unmatched parton)";
-	edm::LogVerbatim  ("MainResults") << "  (37b) \t\t(37b)/(11) "<< QuarksMatchedUnmatchedTopRadiationtotal << "	total unmatched TopRadiation partons";
+	edm::LogVerbatim  ("MainResults") << "  (36) \t\t(36)/(25) "<< eff15<< "% or " << QuarksMatchedMatchedTopRadiation << " events where all top-radiated partons are matched";
+	edm::LogVerbatim  ("MainResults") << "  (37) \t\t(37)/(25) "<< eff16<< "% or " << QuarksMatchedUnmatchedTopRadiation << " events where not all top-radiated partons are matched (there can be more than 1 unmatched parton)";
+	edm::LogVerbatim  ("MainResults") << "  (37b) \t\t"<< QuarksMatchedUnmatchedTopRadiationtotal << "	total unmatched TopRadiation partons";
 	edm::LogVerbatim  ("MainResults") << "  (38) \t\t\t" <<"of which " << QuarksMatchedUnmatchedRadCategoryEta << " because of the eta requirement";
 	edm::LogVerbatim  ("MainResults") << "  (39) \t\t\t" <<"of which " << QuarksMatchedUnmatchedRadCategoryPt << " because of the p_{T} requirement";
 	edm::LogVerbatim  ("MainResults") << "  (40) \t\t\t" <<"of which " << QuarksMatchedUnmatchedRadCategoryDR << " because of the DR requirement";
 	edm::LogVerbatim  ("MainResults") << "  (41) \t\t\t" <<"of which " << QuarksMatchedUnmatchedRadNotCategorized << " not categorized";		
 	edm::LogVerbatim  ("MainResults") << "  events with matched quarks";
+	edm::LogVerbatim  ("MainResults") << "  first 4 numbers should be the same as (26)-(30)";
 	edm::LogVerbatim  ("MainResults") << "  (42) \t (42)/(25) " <<eff17<< "% or " <<QuarksMatchedNoTopRadiation << " events with ISR but without top radiation";
 	edm::LogVerbatim  ("MainResults") << "  (43) \t (43)/(25) " <<eff18<< "% or " <<QuarksMatchedISRTopRadiation << " events with ISR and top radiation ";
 	edm::LogVerbatim  ("MainResults") << "  (44) \t (44)/(25) " <<eff19<< "% or " <<QuarksMatchedTopRadiationNoISR << " events with top radiation but without ISR ";
 	edm::LogVerbatim  ("MainResults") << "  (45) \t (45)/(25) " <<eff20<< "% or " <<QuarksMatchedNoRadiation << " events without ISR or top radiation";
+	edm::LogVerbatim  ("MainResults") << "  if there is radiation and more then 4 jets: ";
 	edm::LogVerbatim  ("MainResults") << "  (46) \t (46)/(25) " <<eff21<< "% or " <<QuarksMatchedHighest4NoRad << " events in which the 4 highest pT jets are not matched with partons from	radiation";
 	edm::LogVerbatim  ("MainResults") << "  (47) \t (47)/(25) " <<eff22<< "% or " <<QuarksMatchedHighest4AtLeast1Rad << " events in which at least 1 of the 4 highest pT jets are matched with partons from	radiation";
 	edm::LogVerbatim  ("MainResults") << "  (48) \t (48)/(25) " <<eff23<< "% or " <<QuarksMatchedHighest4AtLeast2Rad << " events in which at least 2 of the 4 highest pT jets are matched with partons from	radiation";
@@ -2501,23 +2524,23 @@ TruthReco::endJob() {
 	edm::LogVerbatim  ("MainResults") << "  (62) \t(62)/(60) " <<"of which " << eff33<< "% or "  <<Only1UnmatchedQuarkCategoryPt << " because of the p_{T} requirement";
 	edm::LogVerbatim  ("MainResults") << "  (63) \t(63)/(60) " <<"of which " << eff34<< "% or "  <<Only1UnmatchedQuarkCategoryDR << " because of the DR requirement";
 	edm::LogVerbatim  ("MainResults") << "  (64) \t(64)/(60) " <<"of which " << eff35<< "% or "  <<Only1UnmatchedQuarkNotCategorized	<< " not categorized\n";
-	edm::LogVerbatim  ("MainResults") << "  (65) \t\t(65)/(11) " << eff36<< "% or " << MatchedISR << " events where all ISR partons are matched";	
-	edm::LogVerbatim  ("MainResults") << "  (66) \t\t(66)/(11) " << eff37<< "% or " <<  UnmatchedISR << " events where not all ISR partons are matched (there can be more than 1	unmatched parton)";
+	edm::LogVerbatim  ("MainResults") << "  (65) \t\t(65)/(51) " << eff36<< "% or " << MatchedISR << " events where all ISR partons are matched";	
+	edm::LogVerbatim  ("MainResults") << "  (66) \t\t(66)/(51) " << eff37<< "% or " <<  UnmatchedISR << " events where not all ISR partons are matched (there can be more than 1	unmatched parton)";
 	edm::LogVerbatim  ("MainResults") << "  (67) \t\t\t" <<"of which " << UnmatchedISRCategoryEta << " because of the eta requirement";
 	edm::LogVerbatim  ("MainResults") << "  (68) \t\t\t" <<"of which " << UnmatchedISRCategoryPt << " because of the p_{T} requirement";
 	edm::LogVerbatim  ("MainResults") << "  (69) \t\t\t" <<"of which " << UnmatchedISRCategoryDR << " because of the DR requirement";
 	edm::LogVerbatim  ("MainResults") << "  (70) \t\t\t" <<"of which " << UnmatchedISRNotCategorized << " not categorized\n";	
-	edm::LogVerbatim  ("MainResults") << "  (71) \t\t(71)/(11) " <<eff38<< "% or " <<  MatchedTopRadiation << " events where all top-radiated partons are matched";
-	edm::LogVerbatim  ("MainResults") << "  (72) \t\t(72)/(11) " <<eff39<< "% or " <<  UnmatchedTopRadiation << " events where not all top-radiated partons are matched (there can be more than 1 unmatched parton)";
+	edm::LogVerbatim  ("MainResults") << "  (71) \t\t(71)/(51) " <<eff38<< "% or " <<  MatchedTopRadiation << " events where all top-radiated partons are matched";
+	edm::LogVerbatim  ("MainResults") << "  (72) \t\t(72)/(51) " <<eff39<< "% or " <<  UnmatchedTopRadiation << " events where not all top-radiated partons are matched (there can be more than 1 unmatched parton)";
 	edm::LogVerbatim  ("MainResults") << "  (73) \t\t\t" <<"of which " << UnmatchedRadCategoryEta << " because of the eta requirement";
 	edm::LogVerbatim  ("MainResults") << "  (74) \t\t\t" <<"of which " << UnmatchedRadCategoryPt << " because of the p_{T} requirement";
 	edm::LogVerbatim  ("MainResults") << "  (75) \t\t\t" <<"of which " << UnmatchedRadCategoryDR << " because of the DR requirement";
 	edm::LogVerbatim  ("MainResults") << "  (76) \t\t\t" <<"of which " << UnmatchedRadNotCategorized << " not categorized";		
 	edm::LogVerbatim  ("MainResults") << "  events with unmatched quarks";
-	edm::LogVerbatim  ("MainResults") << "  (77) \t(77)/(11) " <<eff40<< "% or " <<  NoTopRadiation << " events with ISR but without top radiation";
-	edm::LogVerbatim  ("MainResults") << "  (78) \t(78)/(11) " <<eff41<< "% or " <<  ISRTopRadiation << " events with ISR and top radiation ";
-	edm::LogVerbatim  ("MainResults") << "  (79) \t(79)/(11) " <<eff42<< "% or " <<  TopRadiationNoISR << " events with top radiation but without ISR ";
-	edm::LogVerbatim  ("MainResults") << "  (80) \t(80)/(11) " <<eff43<< "% or " <<  NoRadiation << " events without ISR or top radiation";
+	edm::LogVerbatim  ("MainResults") << "  (77) \t(77)/(51) " <<eff40<< "% or " <<  NoTopRadiation << " events with ISR but without top radiation";
+	edm::LogVerbatim  ("MainResults") << "  (78) \t(78)/(51) " <<eff41<< "% or " <<  ISRTopRadiation << " events with ISR and top radiation ";
+	edm::LogVerbatim  ("MainResults") << "  (79) \t(79)/(51) " <<eff42<< "% or " <<  TopRadiationNoISR << " events with top radiation but without ISR ";
+	edm::LogVerbatim  ("MainResults") << "  (80) \t(80)/(51) " <<eff43<< "% or " <<  NoRadiation << " events without ISR or top radiation";
 	edm::LogVerbatim  ("MainResults") << "  (81) \t\t of which (81)/(80) " <<eff44<< "% or " <<  UnmatchedQuark1NoRadCategoryEta << " because of eta requirement (look	at 1 of the unmatched quarks)";
 	edm::LogVerbatim  ("MainResults") << "  (82) \t\t of which (82)/(80) " <<eff45<< "% or " <<  UnmatchedQuark1NoRadCategoryPt << " because of p_{T} requirement (look	at 1 of the unmatched quarks)";
 	edm::LogVerbatim  ("MainResults") << "  (83) \t\t of which (83)/(80) " <<eff46<< "% or " <<  UnmatchedQuark1NoRadCategoryDR << " because of DR requirement (look	at 1 of the unmatched quarks)";
