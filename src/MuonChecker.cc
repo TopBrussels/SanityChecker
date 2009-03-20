@@ -161,12 +161,13 @@ MuonChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    edm::Handle<TtGenEvent> genEvtHandle;
    iEvent.getByLabel ("genEvt",genEvtHandle);
 
-   //Check if branch is available  
+   //Check if branch is available
+   const TtGenEvent *genEvt = new TtGenEvent();
    if (!genEvtHandle.isValid())
    {
      edm::LogWarning  ("NoDataFound") << "--- NoGenEvtFound ---";
    }
-   const TtGenEvent & genEvt = *genEvtHandle;
+   else  genEvt = &(*genEvtHandle);
 
    bool GenLeplMatch = false;
    //OverlapChecker MyChecker;
@@ -184,7 +185,7 @@ MuonChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	}
 	else if( muon_iter->genParticle()->numberOfMothers() != 0 )
 	{
-		Int_t PDG = fabs(muon_iter->genParticle()->mother(0)->pdgId());
+		Int_t PDG = (Int_t)fabs(muon_iter->genParticle()->mother(0)->pdgId());
 		if(PDG<100)
 		{
 			if(PDG == 24) {histocontainer_["GenMuonMotherPid"]->Fill(MesonsPdgId[0],1);MuonsOrigin[0]++;}
@@ -195,7 +196,7 @@ MuonChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 					histocontainer_["GenMuonMotherPid"]->Fill(MesonsPdgId[0],1);MuonsOrigin[0]++;
 					if(genEvtHandle.isValid())//->isNonnull())
 					{
-						if( genEvt.isSemiLeptonic(genEvt.kMuon) && muon_iter->genParticle()->mother(0)->mother(0)->numberOfMothers() != 0 )
+						if( genEvt->isSemiLeptonic(genEvt->kMuon) && muon_iter->genParticle()->mother(0)->mother(0)->numberOfMothers() != 0 )
 						{
 							NbOfSemiMuEvents++;
 							if(fabs(muon_iter->genParticle()->mother(0)->mother(0)->mother(0)->pdgId()) == 6) GenLeplMatch = true;
