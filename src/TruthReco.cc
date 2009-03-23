@@ -191,7 +191,7 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	bool jetsselected = true;
 	
 	if(!genEvt.isSemiLeptonic(genEvt.kMuon)) {
-		edm::LogWarning  ("NoDataFound") << "Not a semi-muonic event..."; 
+		edm::LogWarning  ("NoDataFound_NotSemiMu") << "Not a semi-muonic event..."; 
 		NrNotSemiMu++;
 		allok = false;		
 	}
@@ -223,7 +223,7 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 		NrNot4SelJets++;
 		jetsselected = false;
 		allok = false;		
-		edm::LogWarning  ("NoDataFound") << "Less then 4 jets with p_{T}>"<<jetPt_<<"GeV and |#eta| <"<<jetEta_<<"\n"; 
+		edm::LogWarning  ("NoDataFound_LessThen4SelJets") << "Less then 4 jets with p_{T}>"<<jetPt_<<"GeV and |#eta| <"<<jetEta_<<"\n"; 
 	}
 
 	if(verbose_) cout << "check if 4 jets " << endl;
@@ -233,7 +233,7 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 		NrNot1SelMu++;
 		allok = false;			
 		muonselected = false;
-		edm::LogWarning  ("NoDataFound") << "The leading muon has no p_{T}>"<<muonPt_<<"GeV or |#eta| >"<<muonEta_<<"\n"; 
+		edm::LogWarning  ("NoDataFound_LessThen1SelMuon") << "The leading muon has no p_{T}>"<<muonPt_<<"GeV or |#eta| >"<<muonEta_<<"\n"; 
 	}
 
 	if(verbose_) cout << "check muon kinematics " << endl;
@@ -259,7 +259,7 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  if(muonselected && (RelIsoMuon<muonRelIso_ || ecalIsoDep->candEnergy()>muonECALVetoConeEt_ || hcalIsoDep->candEnergy()>muonHCALVetoConeEt_)){
 			NrNot1SelIsoMu++;
 			allok = false;			
-			edm::LogWarning  ("NoDataFound") << "The leading muon does not pass the isolation requirements \n"; 
+			edm::LogWarning  ("NoDataFound_LessThen1IsoMuon") << "The leading muon does not pass the isolation requirements \n"; 
 		}
 	}
 
@@ -292,7 +292,7 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 			if((deltaR(muon->p4(),muons[0].p4()) > muonMinDR_)){
 				EventNotMatched++;
 	 			if(verbose_) cout << "the reco muon is not matched with the generated muon within "<< muonMinDR_ << endl;		
-				edm::LogWarning  ("NoDataFound") << "The muon is not matched!!! \n"; 
+				edm::LogWarning  ("NoDataFound_MuonUnmatched") << "The muon is not matched!!! \n"; 
 	 		}
    	
 			std::vector< double > matchjetpt;
@@ -1230,16 +1230,8 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 					if(count >= 4)QuarksMatchedHighest4AtLeast4Rad++;
 
 				}else{
-					edm::LogInfo("NoDataFound") << "all quarks matched, no radiation, so no related plots are filled \n";
+					edm::LogInfo("NoDataFound_NoRadiation") << "all quarks matched, no radiation, so no related plots are filled \n";
 				}
-
-
-
-
-
-
-
-
 			
 			//check if unmatched quarks ---> if so, categorize, look at radiation
 			}else{ //unmatched quarks
@@ -2125,7 +2117,7 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 					if(count >= 4)Highest4AtLeast4Rad++;
 
 				}else{
-					edm::LogInfo("NoDataFound") << "no radiation, so no related plots are filled \n";
+					edm::LogInfo("NoDataFound_NoRadiation2") << "no radiation, so no related plots are filled \n";
 				}
 			}
 		}else{
@@ -2133,7 +2125,7 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 		}
 
 	}else if(useMatchingFromPAT_ && allok){
-		edm::LogError ("NoDataFound") << "useMatchingFromPAT_ = true, but unfortunately this part of the code is not implemented \n";
+		edm::LogError ("NoDataFound_usePATMatching") << "useMatchingFromPAT_ = true, but unfortunately this part of the code is not implemented \n";
 	}
 }
 
