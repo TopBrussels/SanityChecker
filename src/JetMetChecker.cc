@@ -13,7 +13,7 @@
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: JetMetChecker.cc,v 1.7 2009/03/18 14:58:25 ghammad Exp $
+// $Id: JetMetChecker.cc,v 1.8 2009/03/20 16:47:26 villella Exp $
 //
 //
 
@@ -412,24 +412,22 @@ JetMetChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       
       TH1DcontainerForbTagging_[i]["Inclusive"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
       
-      if (genEvt.isValid()){
-	//std::cout << "iJet->partonFlavour() : " << iJet->partonFlavour() << std::endl;
-	if(fabs(iJet->partonFlavour())==5){
-	  TH1DcontainerForbTagging_[i]["bjets"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
-	}
-	if(fabs(iJet->partonFlavour())==4){
-	  TH1DcontainerForbTagging_[i]["cjets"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
-	}
-	if(fabs(iJet->partonFlavour())==21){
-	  TH1DcontainerForbTagging_[i]["gjets"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
-	} 
-	if(fabs(iJet->partonFlavour())==1||fabs(iJet->partonFlavour())==2||fabs(iJet->partonFlavour())==3){
-	  TH1DcontainerForbTagging_[i]["ljets"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
-	}
-	if(fabs(iJet->partonFlavour())!=1&&fabs(iJet->partonFlavour())!=2&&fabs(iJet->partonFlavour())!=3&&fabs(iJet->partonFlavour())!=4&&fabs(iJet->partonFlavour())!=5&&fabs(iJet->partonFlavour())!=21){
-	  TH1DcontainerForbTagging_[i]["ijets"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
-	  //std::cout << "partonflavour is not a udscb or g" << std::endl;
-	}
+      //std::cout << "iJet->partonFlavour() : " << iJet->partonFlavour() << std::endl;
+      if(fabs(iJet->partonFlavour())==5){
+	TH1DcontainerForbTagging_[i]["bjets"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
+      }
+      if(fabs(iJet->partonFlavour())==4){
+	TH1DcontainerForbTagging_[i]["cjets"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
+      }
+      if(fabs(iJet->partonFlavour())==21){
+	TH1DcontainerForbTagging_[i]["gjets"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
+      } 
+      if(fabs(iJet->partonFlavour())==1||fabs(iJet->partonFlavour())==2||fabs(iJet->partonFlavour())==3){
+	TH1DcontainerForbTagging_[i]["ljets"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
+      }
+      if(fabs(iJet->partonFlavour())!=1&&fabs(iJet->partonFlavour())!=2&&fabs(iJet->partonFlavour())!=3&&fabs(iJet->partonFlavour())!=4&&fabs(iJet->partonFlavour())!=5&&fabs(iJet->partonFlavour())!=21){
+	TH1DcontainerForbTagging_[i]["ijets"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
+	//std::cout << "partonflavour is not a udscb or g" << std::endl;
       }
     }
     //fill b-tag histo's only for jets fom top quark decay partons
@@ -438,24 +436,22 @@ JetMetChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     for(std::vector<pat::Jet>::const_iterator iJet = jets_clone.begin(); iJet != jets_clone.end(); ++iJet) {
       TH1DcontainerForbTagging_[i]["InclusiveTtSemiMu"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
       
-      if (genEvt.isValid()){
-	//std::cout << "iJet->partonFlavour() : " << iJet->partonFlavour() << std::endl;
-	if(fabs(iJet->partonFlavour())==5){
-	  TH1DcontainerForbTagging_[i]["bjetsTtSemiMu"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
-	}
-	if(fabs(iJet->partonFlavour())==4){
-	  TH1DcontainerForbTagging_[i]["cjetsTtSemiMu"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
-	}
-	if(fabs(iJet->partonFlavour())==21){
-	  TH1DcontainerForbTagging_[i]["gjetsTtSemiMu"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
-	} 
-	if(fabs(iJet->partonFlavour())==1||fabs(iJet->partonFlavour())==2||fabs(iJet->partonFlavour())==3){
-	  TH1DcontainerForbTagging_[i]["ljetsTtSemiMu"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
-	}
-	if(fabs(iJet->partonFlavour())!=1&&fabs(iJet->partonFlavour())!=2&&fabs(iJet->partonFlavour())!=3&&fabs(iJet->partonFlavour())!=4&&fabs(iJet->partonFlavour())!=5&&fabs(iJet->partonFlavour())!=21){
-	  TH1DcontainerForbTagging_[i]["ijetsTtSemiMu"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
-	  //std::cout << "partonflavour is not a udscb or g" << std::endl;
-	}
+      //std::cout << "iJet->partonFlavour() : " << iJet->partonFlavour() << std::endl;
+      if(fabs(iJet->partonFlavour())==5){
+	TH1DcontainerForbTagging_[i]["bjetsTtSemiMu"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
+      }
+      if(fabs(iJet->partonFlavour())==4){
+	TH1DcontainerForbTagging_[i]["cjetsTtSemiMu"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
+      }
+      if(fabs(iJet->partonFlavour())==21){
+	TH1DcontainerForbTagging_[i]["gjetsTtSemiMu"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
+      } 
+      if(fabs(iJet->partonFlavour())==1||fabs(iJet->partonFlavour())==2||fabs(iJet->partonFlavour())==3){
+	TH1DcontainerForbTagging_[i]["ljetsTtSemiMu"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
+      }
+      if(fabs(iJet->partonFlavour())!=1&&fabs(iJet->partonFlavour())!=2&&fabs(iJet->partonFlavour())!=3&&fabs(iJet->partonFlavour())!=4&&fabs(iJet->partonFlavour())!=5&&fabs(iJet->partonFlavour())!=21){
+	TH1DcontainerForbTagging_[i]["ijetsTtSemiMu"]->Fill(iJet->bDiscriminator(bTaggerNames_[i]));
+	//std::cout << "partonflavour is not a udscb or g" << std::endl;
       }
     }
   }
