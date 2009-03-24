@@ -153,7 +153,7 @@ MuonChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    //Check if branch is available  
    if (!muonHandle.isValid())
    {
-     edm::LogWarning  ("NoDataFound") << "--- NoMuonsFound ---";
+     edm::LogWarning  ("NoDataFound_MC_noMuon") << "--- NoMuonsFound ---";
      return; //throw cms::Exception("ProductNotFound") <<"Muon collection not found"<<std::endl;
    }
    const std::vector<pat::Muon> & muons = *muonHandle;
@@ -165,7 +165,7 @@ MuonChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    const TtGenEvent *genEvt = new TtGenEvent();
    if (!genEvtHandle.isValid())
    {
-     edm::LogWarning  ("NoDataFound") << "--- NoGenEvtFound ---";
+     edm::LogWarning  ("NoDataFound_MC_noGenEvt") << "--- NoGenEvtFound ---";
    }
    else  genEvt = &(*genEvtHandle);
 
@@ -180,7 +180,7 @@ MuonChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	
 	if(muon_iter->genParticle() == 0)
 	{
-		edm::LogWarning ("LinkBroken") << "--- NoGenMuonFound ---";
+		edm::LogWarning ("LinkBroken_MC_noGenMuon") << "--- NoGenMuonFound ---";
 		NbOfNoGenMu++;
 	}
 	else if( muon_iter->genParticle()->numberOfMothers() != 0 )
