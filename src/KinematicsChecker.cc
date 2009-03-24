@@ -13,7 +13,7 @@ Implementation:
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: KinematicsChecker.cc,v 1.7 2009/03/11 19:40:56 jmmaes Exp $
+// $Id: KinematicsChecker.cc,v 1.8 2009/03/20 19:23:49 jmmaes Exp $
 //
 //
 
@@ -237,10 +237,12 @@ KinematicsChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 	// Make plots only with jets from ttbar events (matched with a certain algo)
 	// Matching index : Hadronic Q  = 0, Hadronic Q' = 1, Hadronic b  = 2, Leptonic b  = 3;
 	std::vector<const reco::Candidate *> TopQuarks;
-	TopQuarks.push_back(genEvt->hadronicDecayQuark());
-	TopQuarks.push_back(genEvt->hadronicDecayQuarkBar());
-	TopQuarks.push_back(genEvt->hadronicDecayB());
-	TopQuarks.push_back(genEvt->leptonicDecayB());
+	if(genEvt->b() && genEvt->bBar() && genEvt->hadronicDecayQuark() && genEvt->hadronicDecayQuarkBar()){
+	  TopQuarks.push_back(genEvt->hadronicDecayQuark());
+	  TopQuarks.push_back(genEvt->hadronicDecayQuarkBar());
+	  TopQuarks.push_back(genEvt->hadronicDecayB());
+	  TopQuarks.push_back(genEvt->leptonicDecayB());
+	}
 	if(TopQuarks.size()==4) { 
 
 	  JetPartonMatching *GenMatchTopQuarks = new JetPartonMatching(TopQuarks, jets_clone, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
