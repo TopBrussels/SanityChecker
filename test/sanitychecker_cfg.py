@@ -10,13 +10,14 @@ process.MessageLogger = cms.Service("MessageLogger",
     debugModules = cms.untracked.vstring('*'), #for all modules
 
     categories = cms.untracked.vstring("inputChain","decayChain","NoDataFound",
-																			"NoDataFound_NotSemiMu","NoDataFound_LessThen4SelJets","NoDataFound_LessThen1SelMuon",
-																			"NoDataFound_LessThen1IsoMuon","NoDataFound_MuonUnmatched","NoDataFound_NoRadiation",
-																			"NoDataFound_NoRadiation2","NoDataFound_usePATMatching","LinkBroken_noJetsFound",
-																			"LinkBroken_noMuonsFound","LinkBroken_noMetsFound","LinkBroken_noGenEvtFound",
-																			"LinkBroken_ISRJets","LinkBroken_TopRadJets","SummaryError","MainResults"), # list of categories
-                                                                                                  # inputChain and decayChain come from the TopDecaySubsetModule and need to be suppressedin warning- and info-summary
-
+                                       "NoDataFound_NotSemiMu","NoDataFound_LessThen4SelJets","NoDataFound_LessThen1SelMuon",
+                                       "NoDataFound_LessThen1IsoMuon","NoDataFound_MuonUnmatched","NoDataFound_NoRadiation",
+                                       "NoDataFound_NoRadiation2","NoDataFound_usePATMatching","LinkBroken_noJetsFound",
+                                       "LinkBroken_noMuonsFound","LinkBroken_noMetsFound","LinkBroken_noGenEvtFound",
+                                       "NoDataFound_MC_noMuon","NoDataFound_MC_noGenEvt","LinkBroken_MC_noGenMuon",
+                                       "LinkBroken_ISRJets","LinkBroken_TopRadJets","SummaryError","MainResults"), # list of categories
+                                    # inputChain and decayChain come from the TopDecaySubsetModule and need to be suppressedin warning- and info-summary
+                                    
     Warning_SC = cms.untracked.PSet( threshold = cms.untracked.string("DEBUG"), 
                                      NoDataFound = cms.untracked.PSet(reportEvery = cms.untracked.int32(10)), 
                                      #LinkBroken = cms.untracked.PSet(reportEvery = cms.untracked.int32(2)),
@@ -32,29 +33,40 @@ process.MessageLogger = cms.Service("MessageLogger",
                                      NoDataFound_NoRadiation = cms.untracked.PSet(limit = cms.untracked.int32(5)),
                                      NoDataFound_NoRadiation2 = cms.untracked.PSet(limit = cms.untracked.int32(5)),
                                      NoDataFound_usePATMatching = cms.untracked.PSet(limit = cms.untracked.int32(5)),
+                                     LinkBroken_noMuonsFound = cms.untracked.PSet(limit = cms.untracked.int32(5)),
+                                     NoDataFound_MC_noGenEvt = cms.untracked.PSet(limit = cms.untracked.int32(5)),
+                                     LinkBroken_MC_noGenMuon = cms.untracked.PSet(limit = cms.untracked.int32(5)),
                                      inputChain = cms.untracked.PSet(limit = cms.untracked.int32(0)),
                                      decayChain = cms.untracked.PSet(limit = cms.untracked.int32(0))
 				     ),
     ErrorSummary_SC = cms.untracked.PSet( threshold = cms.untracked.string("ERROR"), categories = cms.untracked.vstring("SummaryError") ),
     InfoSummary_SC = cms.untracked.PSet( 	threshold = cms.untracked.string("INFO"), categories = cms.untracked.vstring("MainResults"),
+                                                NoDataFound = cms.untracked.PSet(reportEvery = cms.untracked.int32(10)),
+                                                LinkBroken = cms.untracked.PSet(limit = cms.untracked.int32(5)),
                                          	LinkBroken_noGenEvt = cms.untracked.PSet(limit = cms.untracked.int32(5)),
                                          	LinkBroken_ISRJets = cms.untracked.PSet(limit = cms.untracked.int32(5)),
                                          	LinkBroken_TopRadJets = cms.untracked.PSet(limit = cms.untracked.int32(5)),
-                                     			NoDataFound_NotSemiMu = cms.untracked.PSet(limit = cms.untracked.int32(5)),
-                                     			NoDataFound_LessThen4SelJets = cms.untracked.PSet(limit = cms.untracked.int32(5)),
-                                     			NoDataFound_LessThen1SelMuon = cms.untracked.PSet(limit = cms.untracked.int32(5)),
-                                     			NoDataFound_LessThen1IsoMuon = cms.untracked.PSet(limit = cms.untracked.int32(5)),
-                                     			NoDataFound_MuonUnmatched = cms.untracked.PSet(limit = cms.untracked.int32(5)),
-                                     			NoDataFound_NoRadiation = cms.untracked.PSet(limit = cms.untracked.int32(5)),
-                                     			NoDataFound_NoRadiation2 = cms.untracked.PSet(limit = cms.untracked.int32(5)),
-                                     			NoDataFound_usePATMatching = cms.untracked.PSet(limit = cms.untracked.int32(5)),
+                                                NoDataFound_NotSemiMu = cms.untracked.PSet(limit = cms.untracked.int32(5)),
+                                                NoDataFound_LessThen4SelJets = cms.untracked.PSet(limit = cms.untracked.int32(5)),
+                                                NoDataFound_LessThen1SelMuon = cms.untracked.PSet(limit = cms.untracked.int32(5)),
+                                                NoDataFound_LessThen1IsoMuon = cms.untracked.PSet(limit = cms.untracked.int32(5)),
+                                                NoDataFound_MuonUnmatched = cms.untracked.PSet(limit = cms.untracked.int32(5)),
+                                                NoDataFound_NoRadiation = cms.untracked.PSet(limit = cms.untracked.int32(5)),
+                                                NoDataFound_NoRadiation2 = cms.untracked.PSet(limit = cms.untracked.int32(5)),
+                                                NoDataFound_usePATMatching = cms.untracked.PSet(limit = cms.untracked.int32(5)),
+                                                LinkBroken_noMuonsFound = cms.untracked.PSet(limit = cms.untracked.int32(5)),
+                                                NoDataFound_MC_noGenEvt = cms.untracked.PSet(limit = cms.untracked.int32(5)),
+                                                LinkBroken_MC_noGenMuon = cms.untracked.PSet(limit = cms.untracked.int32(5)),
                                          	inputChain = cms.untracked.PSet(limit = cms.untracked.int32(0)),
                                          	decayChain = cms.untracked.PSet(limit = cms.untracked.int32(0))),
     #Statistics_SC = cms.untracked.PSet(threshold = cms.untracked.string("DEBUG"))
 )
 
 #process.load("TopBrussels.SanityChecker.PATLayer1_Ttjets_MG_input_cfi")
-process.load("TopBrussels.SanityChecker.PATLayer1_Ttjets_MG_NoSel_input_cfi")
+#process.load("TopBrussels.SanityChecker.PATLayer1_Ttjets_MG_NoSel_input_cfi")
+#process.load("TopBrussels.SanityChecker.PATLayer1_R1_QCD100to250_MG_input_cfi")
+process.load("TopBrussels.SanityChecker.PATLayer1_R1_TTJets_MG_input_cfi")
+#process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1000) )
 
 ## std sequence to produce the ttGenEvt
 process.load("TopQuarkAnalysis.TopEventProducers.sequences.ttGenEvent_cff")
