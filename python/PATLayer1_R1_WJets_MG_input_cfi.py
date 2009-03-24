@@ -1,6 +1,8 @@
 import FWCore.ParameterSet.Config as cms
-
-readFiles = cms.untracked.vstring(
+readFiles = cms.untracked.vstring()
+source = cms.Source ("PoolSource",fileNames = readFiles)
+readFiles.extend( [
+#readFiles = cms.untracked.vstring(
 'dcap://maite.iihe.ac.be/pnfs/iihe/cms/store/user/ghammad/CMSSW223/Common/PATLayer1/WJets-madgraph/PATLayer1_1000.root',
 'dcap://maite.iihe.ac.be/pnfs/iihe/cms/store/user/ghammad/CMSSW223/Common/PATLayer1/WJets-madgraph/PATLayer1_1001.root',
 'dcap://maite.iihe.ac.be/pnfs/iihe/cms/store/user/ghammad/CMSSW223/Common/PATLayer1/WJets-madgraph/PATLayer1_1002.root',
@@ -2024,8 +2026,8 @@ readFiles = cms.untracked.vstring(
 'dcap://maite.iihe.ac.be/pnfs/iihe/cms/store/user/ghammad/CMSSW223/Common/PATLayer1/WJets-madgraph/PATLayer1_998.root',
 'dcap://maite.iihe.ac.be/pnfs/iihe/cms/store/user/ghammad/CMSSW223/Common/PATLayer1/WJets-madgraph/PATLayer1_999.root',
 'dcap://maite.iihe.ac.be/pnfs/iihe/cms/store/user/ghammad/CMSSW223/Common/PATLayer1/WJets-madgraph/PATLayer1_99.root',
-'dcap://maite.iihe.ac.be/pnfs/iihe/cms/store/user/ghammad/CMSSW223/Common/PATLayer1/WJets-madgraph/PATLayer1_9.root'
-)
+'dcap://maite.iihe.ac.be/pnfs/iihe/cms/store/user/ghammad/CMSSW223/Common/PATLayer1/WJets-madgraph/PATLayer1_9.root']
+);
 secFiles = cms.untracked.vstring() 
 source = cms.Source ("PoolSource",duplicateCheckMode = cms.untracked.string('noDuplicateCheck') ,fileNames = readFiles#,
 )

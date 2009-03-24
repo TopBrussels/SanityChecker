@@ -1,6 +1,9 @@
 import FWCore.ParameterSet.Config as cms
-
-readFiles = cms.untracked.vstring(
+readFiles = cms.untracked.vstring()
+secFiles = cms.untracked.vstring() 
+source = cms.Source ("PoolSource",fileNames = readFiles)
+readFiles.extend( [
+#readFiles = cms.untracked.vstring(
 'dcap://maite.iihe.ac.be/pnfs/iihe/cms/store/user/pvmulder/CMSSW223/Common/PATLayer1/Ttjets-madgraph/PATLayer1_100.root',
 'dcap://maite.iihe.ac.be/pnfs/iihe/cms/store/user/pvmulder/CMSSW223/Common/PATLayer1/Ttjets-madgraph/PATLayer1_101.root',
 'dcap://maite.iihe.ac.be/pnfs/iihe/cms/store/user/pvmulder/CMSSW223/Common/PATLayer1/Ttjets-madgraph/PATLayer1_102.root',
@@ -407,7 +410,7 @@ readFiles = cms.untracked.vstring(
 'dcap://maite.iihe.ac.be/pnfs/iihe/cms/store/user/pvmulder/CMSSW223/Common/PATLayer1/Ttjets-madgraph/PATLayer1_nocuts_98.root',
 'dcap://maite.iihe.ac.be/pnfs/iihe/cms/store/user/pvmulder/CMSSW223/Common/PATLayer1/Ttjets-madgraph/PATLayer1_nocuts_99.root',
 'dcap://maite.iihe.ac.be/pnfs/iihe/cms/store/user/pvmulder/CMSSW223/Common/PATLayer1/Ttjets-madgraph/PATLayer1_nocuts_9.root' 
-)
+]);
 secFiles = cms.untracked.vstring() 
 source = cms.Source ("PoolSource",duplicateCheckMode = cms.untracked.string('noDuplicateCheck') ,fileNames = readFiles#,
 )
