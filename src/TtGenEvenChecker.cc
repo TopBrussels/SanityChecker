@@ -13,7 +13,7 @@
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: TtGenEvenChecker.cc,v 1.5 2009/03/16 18:25:02 villella Exp $
+// $Id: TtGenEvenChecker.cc,v 1.6 2009/03/19 16:59:46 echabert Exp $
 //
 //
 
@@ -208,12 +208,12 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
     if(genEvt.isSemiLeptonic() && genEvt.isSemiLeptonic(TtGenEvent::kNone)) TH1Dcontainer_["BRatio"]->Fill(8);
     
     
-    if(!genEvt.top()) edm::LogWarning ("NoDataFound") << "No access to top in ttbar event" ;
-    if(!genEvt.topBar()) edm::LogWarning ("NoDataFound") << "No access to topBar in ttbar event" ;
-    if(!genEvt.b()) edm::LogWarning ("NoDataFound") << "No access to b-quark in ttbar event" ;
-    if(!genEvt.bBar()) edm::LogWarning ("NoDataFound") << "No access to bBar-quark in ttbar event" ;
-    if(!genEvt.wMinus()) edm::LogWarning ("NoDataFound") << "No access to W- in ttbar event" ;
-    if(!genEvt.wPlus()) edm::LogWarning ("NoDataFound") << "No access to W+ in ttbar event" ;
+    if(!genEvt.top()) edm::LogWarning ("NoDataFound_top") << "No access to top in ttbar event" ;
+    if(!genEvt.topBar()) edm::LogWarning ("NoDataFound_top") << "No access to topBar in ttbar event" ;
+    if(!genEvt.b()) edm::LogWarning ("NoDataFound_b") << "No access to b-quark in ttbar event" ;
+    if(!genEvt.bBar()) edm::LogWarning ("NoDataFound_b") << "No access to bBar-quark in ttbar event" ;
+    if(!genEvt.wMinus()) edm::LogWarning ("NoDataFound_w") << "No access to W- in ttbar event" ;
+    if(!genEvt.wPlus()) edm::LogWarning ("NoDataFound_w") << "No access to W+ in ttbar event" ;
     
   }
 
@@ -307,21 +307,21 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
   // Debug                                       //
   ///////////////////////////////////////////////// 
   
-  if(genEvt.numberOfBQuarksFromTop()!=2) edm::LogWarning ("NoDataFound") << genEvt.numberOfBQuarksFromTop()<< " b-quarks coming from Top instead of 1 in semileptonic event" ;
-  if(genEvt.numberOfLeptonsFromW()!=1) edm::LogWarning ("NoDataFound") << genEvt.numberOfLeptonsFromW()<< " leptons coming from W instead of 1 in semileptonic event" ;
-  if(!genEvt.singleLepton()) edm::LogWarning ("NoDataFound") << "No access to singleLepton in semileptonic event" ;
-  if(!genEvt.singleNeutrino()) edm::LogWarning ("NoDataFound") << "No access to singleNeutrino in semileptonic event" ;
+  if(genEvt.numberOfBQuarksFromTop()!=2) edm::LogWarning ("NoDataFound_Not2B") << genEvt.numberOfBQuarksFromTop()<< " b-quarks coming from Top instead of 1 in semileptonic event" ;
+  if(genEvt.numberOfLeptonsFromW()!=1) edm::LogWarning ("NoDataFound_Not1LepFromW") << genEvt.numberOfLeptonsFromW()<< " leptons coming from W instead of 1 in semileptonic event" ;
+  if(!genEvt.singleLepton()) edm::LogWarning ("NoDataFound_Lepton") << "No access to singleLepton in semileptonic event" ;
+  if(!genEvt.singleNeutrino()) edm::LogWarning ("NoDataFound_Neutrino") << "No access to singleNeutrino in semileptonic event" ;
 
-  if(!genEvt.hadronicDecayTop()) edm::LogWarning ("NoDataFound") << "No access to hadronicDecayTop in semileptonic event" ;
-  if(!genEvt.hadronicDecayW()) edm::LogWarning ("NoDataFound") << "No access to hadronicDecayW in semileptonic event" ;
-  if(!genEvt.hadronicDecayB()) edm::LogWarning ("NoDataFound") << "No access to hadronicDecayB in semileptonic event" ;
-  if(!genEvt.hadronicDecayQuark()) edm::LogWarning ("NoDataFound") << "No access to hadronicDecayQuark in semileptonic event" ;
-  if(!genEvt.hadronicDecayQuarkBar()) edm::LogWarning ("NoDataFound") << "No access to hadronicDecayQuarkBar in semileptonic event" ;
-  if(!genEvt.leptonicDecayB()) edm::LogWarning ("NoDataFound") << "No access to leptonicDecayB in semileptonic event" ;
+  if(!genEvt.hadronicDecayTop()) edm::LogWarning ("NoDataFound_HadTop") << "No access to hadronicDecayTop in semileptonic event" ;
+  if(!genEvt.hadronicDecayW()) edm::LogWarning ("NoDataFound_HadW") << "No access to hadronicDecayW in semileptonic event" ;
+  if(!genEvt.hadronicDecayB()) edm::LogWarning ("NoDataFound_HadB") << "No access to hadronicDecayB in semileptonic event" ;
+  if(!genEvt.hadronicDecayQuark()) edm::LogWarning ("NoDataFound_HadQ") << "No access to hadronicDecayQuark in semileptonic event" ;
+  if(!genEvt.hadronicDecayQuarkBar()) edm::LogWarning ("NoDataFound_HadQBar") << "No access to hadronicDecayQuarkBar in semileptonic event" ;
+  if(!genEvt.leptonicDecayB()) edm::LogWarning ("NoDataFound_LepB") << "No access to leptonicDecayB in semileptonic event" ;
 
-  if(genEvt.ISR().size()>0 && !genEvt.ISR()[0]) edm::LogWarning ("NoDataFound") << " No access to ISR in semileptonic event" ;
-  if(genEvt.leptonicDecayTopRadiation().size()>0 && !genEvt.leptonicDecayTopRadiation()[0]) edm::LogWarning ("NoDataFound") << " No access to leptonicDecayTopRadiation in semileptonic event"<<endl;
-  if(genEvt.hadronicDecayTopRadiation().size()>0 && !genEvt.hadronicDecayTopRadiation()[0]) edm::LogWarning ("NoDataFound") << " No access to hadronicDecayTopRadiation in semileptonic event"<<endl;
+  if(genEvt.ISR().size()>0 && !genEvt.ISR()[0]) edm::LogWarning ("NoAcess_ISR") << " No access to ISR in semileptonic event" ;
+  if(genEvt.leptonicDecayTopRadiation().size()>0 && !genEvt.leptonicDecayTopRadiation()[0]) edm::LogWarning ("NoAccess_LepRad") << " No access to leptonicDecayTopRadiation in semileptonic event"<<endl;
+  if(genEvt.hadronicDecayTopRadiation().size()>0 && !genEvt.hadronicDecayTopRadiation()[0]) edm::LogWarning ("NoAccess_HadRad") << " No access to hadronicDecayTopRadiation in semileptonic event"<<endl;
 
   
   ///////////////////////////////////////////////// 
@@ -350,7 +350,7 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
    }
    if(genEvt.b()){
     TH1Fcontainer_["BQuarksPt"]->Fill(genEvt.b()->pt());
-    TH1Fcontainer_["BQuarksEta"]->Fill(genEvt.bBar()->eta());
+    TH1Fcontainer_["BQuarksEta"]->Fill(genEvt.b()->eta());
    }
    if(genEvt.bBar()){
     TH1Fcontainer_["BQuarksPt"]->Fill(genEvt.bBar()->pt());

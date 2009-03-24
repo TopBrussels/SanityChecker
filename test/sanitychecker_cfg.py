@@ -15,7 +15,13 @@ process.MessageLogger = cms.Service("MessageLogger",
                                        "NoDataFound_NoRadiation2","NoDataFound_usePATMatching","LinkBroken_noJetsFound",
                                        "LinkBroken_noMuonsFound","LinkBroken_noMetsFound","LinkBroken_noGenEvtFound",
                                        "NoDataFound_MC_noMuon","NoDataFound_MC_noGenEvt","LinkBroken_MC_noGenMuon",
-                                       "LinkBroken_ISRJets","LinkBroken_TopRadJets","SummaryError","MainResults"), # list of categories
+                                       "LinkBroken_ISRJets","LinkBroken_TopRadJets","SummaryError","MainResults",
+				       #TtGenEventChecker
+				       "NoDataFound_top","NoDataFound_b","NoDataFound_w","NoDataFound_Not2B","NoDataFound_Not1LepFromW",
+				       "NoDataFound_Lepton","NoDataFound_Neutrino","NoDataFound_HadTop","NoDataFound_HadW",
+				       "NoDataFound_HadB","NoDataFound_HadQ","NoDataFound_HadQBar","NoDataFound_LepB",
+				       "NoAcess_ISR","NoAccess_LepRad","NoAccess_HadRad"
+				       ), # list of categories
                                     # inputChain and decayChain come from the TopDecaySubsetModule and need to be suppressedin warning- and info-summary
                                     
     Warning_SC = cms.untracked.PSet( threshold = cms.untracked.string("DEBUG"), 
@@ -36,7 +42,24 @@ process.MessageLogger = cms.Service("MessageLogger",
                                      LinkBroken_noMuonsFound = cms.untracked.PSet(limit = cms.untracked.int32(5)),
                                      NoDataFound_MC_noGenEvt = cms.untracked.PSet(limit = cms.untracked.int32(5)),
                                      LinkBroken_MC_noGenMuon = cms.untracked.PSet(limit = cms.untracked.int32(5)),
-                                     inputChain = cms.untracked.PSet(limit = cms.untracked.int32(0)),
+				     #TtGenEventChecker
+				     NoDataFound_top = cms.untracked.PSet(limit = cms.untracked.int32(5)),
+				     NoDataFound_b = cms.untracked.PSet(limit = cms.untracked.int32(5)),
+				     NoDataFound_w = cms.untracked.PSet(limit = cms.untracked.int32(5)),
+				     NoDataFound_Not2B = cms.untracked.PSet(limit = cms.untracked.int32(5)),
+				     NoDataFound_Not1LepFromW = cms.untracked.PSet(limit = cms.untracked.int32(5)),
+				     NoDataFound_Lepton = cms.untracked.PSet(limit = cms.untracked.int32(5)),
+				     NoDataFound_Neutrino = cms.untracked.PSet(limit = cms.untracked.int32(5)),
+				     NoDataFound_HadTop = cms.untracked.PSet(limit = cms.untracked.int32(5)),
+				     NoDataFound_HadW = cms.untracked.PSet(limit = cms.untracked.int32(5)),
+				     NoDataFound_HadB = cms.untracked.PSet(limit = cms.untracked.int32(5)),
+				     NoDataFound_HadQ = cms.untracked.PSet(limit = cms.untracked.int32(5)),
+				     NoDataFound_HadQBar = cms.untracked.PSet(limit = cms.untracked.int32(5)),
+				     NoDataFound_LepB = cms.untracked.PSet(limit = cms.untracked.int32(5)),
+				     NoAcess_ISR = cms.untracked.PSet(limit = cms.untracked.int32(5)),
+				     NoAccess_LepRad = cms.untracked.PSet(limit = cms.untracked.int32(5)),
+				     NoAccess_HadRad = cms.untracked.PSet(limit = cms.untracked.int32(5)),
+				     inputChain = cms.untracked.PSet(limit = cms.untracked.int32(0)),
                                      decayChain = cms.untracked.PSet(limit = cms.untracked.int32(0))
 				     ),
     ErrorSummary_SC = cms.untracked.PSet( threshold = cms.untracked.string("ERROR"), categories = cms.untracked.vstring("SummaryError") ),
@@ -65,8 +88,9 @@ process.MessageLogger = cms.Service("MessageLogger",
 #process.load("TopBrussels.SanityChecker.PATLayer1_Ttjets_MG_input_cfi")
 #process.load("TopBrussels.SanityChecker.PATLayer1_Ttjets_MG_NoSel_input_cfi")
 #process.load("TopBrussels.SanityChecker.PATLayer1_R1_QCD100to250_MG_input_cfi")
-process.load("TopBrussels.SanityChecker.PATLayer1_R1_TTJets_MG_input_cfi")
-#process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1000) )
+#process.load("TopBrussels.SanityChecker.PATLayer1_R1_TTJets_MG_input_cfi")
+process.load("TopBrussels.SanityChecker.PATLayer1_R1_TauolaTTbar_input_cfi")
+#process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(2000) )
 
 ## std sequence to produce the ttGenEvt
 process.load("TopQuarkAnalysis.TopEventProducers.sequences.ttGenEvent_cff")
