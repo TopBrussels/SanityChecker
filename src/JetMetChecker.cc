@@ -13,7 +13,7 @@
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: JetMetChecker.cc,v 1.9 2009/03/23 15:11:57 jmmaes Exp $
+// $Id: JetMetChecker.cc,v 1.10 2009/03/24 14:09:21 jmmaes Exp $
 //
 //
 
@@ -274,7 +274,8 @@ JetMetChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   for(std::vector<pat::Jet>::const_iterator jet_iter = jets->begin(); jet_iter!=jets->end(); ++jet_iter)
   {
        if(jet_iter->genJet() == 0) continue;
-       TH2Fcontainer_["JetEtaResponse_UpToL2"]         ->Fill(jet_iter->genJet()->eta(),jet_iter->correctedJet(Corrlevel[0]).eta()/jet_iter->genJet()->eta());
+       TH2Fcontainer_["JetEtaResponse_UpToL2"]         ->Fill(jet_iter->genJet()->eta(),jet_iter->correctedJet(Corrlevel[0]).pt()/jet_iter->genJet()->pt());
+       TH2Fcontainer_["JetEtaResponse_UpToL3"]         ->Fill(jet_iter->genJet()->eta(),jet_iter->correctedJet(Corrlevel[1]).pt()/jet_iter->genJet()->pt());
        TH2Fcontainer_["JetPtResponse_UpToL3"]	       ->Fill(jet_iter->genJet()->pt(), jet_iter->correctedJet(Corrlevel[1]).pt()/jet_iter->genJet()->pt());
        TH2Fcontainer_["JetPtResponse_UpToL4"]	       ->Fill(jet_iter->genJet()->pt(), jet_iter->correctedJet(Corrlevel[2]).pt()/jet_iter->genJet()->pt());
        
@@ -286,7 +287,7 @@ JetMetChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
                else if(fabs(jet_iter->partonFlavour()) < 4)   jj = 1;
                else if(fabs(jet_iter->partonFlavour()) == 4)  jj = 2;
                else if(fabs(jet_iter->partonFlavour()) == 5)  jj = 3;
-               else std::cout<<"Muchas problemas, capitan!"<<std::endl; //FIXME : Of course!
+               else std::cout<<"Muchas problemas, capitan! Flavour Id = "<<fabs(jet_iter->partonFlavour())<<std::endl; //FIXME : Of course!
                
 	       // the jet reponse is produced according to the parton flavour : L5b, L6b and L7b for b-jets for instance
 	       HistoName  = CorrFlav[jj];
@@ -507,7 +508,8 @@ JetMetChecker::beginJob(const edm::EventSetup&)
   TH1Dcontainer_["JetTrkSumPt"] = subDir.make<TH1D>("JetTrkSumPt" ,"Sum of Pt tracks",nBins,0, 100);
   TH1Dcontainer_["JetdiffTrkSumPt"] = subDir.make<TH1D>("JetdiffTrkSumPt" ,"Diff between Sum of Pt tracks and Pt Jet",nBins,0, 50);
   
-  TH2Fcontainer_["JetEtaResponse_UpToL2"]         = subDir.make<TH2F>("JetEtaResponse_UpToL2","",4000,-10,10,500,0,10);
+  TH2Fcontainer_["JetEtaResponse_UpToL2"]         = subDir.make<TH2F>("JetEtaResponse_UpToL2","",1000,-5,5,500,0,10);
+  TH2Fcontainer_["JetEtaResponse_UpToL3"]         = subDir.make<TH2F>("JetEtaResponse_UpToL3","",1000,-5,5,500,0,10);
   TH2Fcontainer_["JetPtResponse_UpToL3"]          = subDir.make<TH2F>("JetPtResponse_UpToL3","",4000,0,800,500,0,10);
   TH2Fcontainer_["JetPtResponse_UpToL4"]          = subDir.make<TH2F>("JetPtResponse_UpToL4","",4000,0,800,500,0,10);
   TH2Fcontainer_["GLU_JetPtResponse_UpToL5_GLU"]  = subDir.make<TH2F>("GLU_JetPtResponse_UpToL5_GLU","",4000,0,800,500,0,10);
