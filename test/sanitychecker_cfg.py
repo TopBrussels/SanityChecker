@@ -89,7 +89,7 @@ process.MessageLogger = cms.Service("MessageLogger",
 #process.load("TopBrussels.SanityChecker.PATLayer1_Ttjets_MG_NoSel_input_cfi")
 #process.load("TopBrussels.SanityChecker.PATLayer1_R1_QCD100to250_MG_input_cfi")
 #process.load("TopBrussels.SanityChecker.PATLayer1_R1_TTJets_MG_input_cfi")
-process.load("TopBrussels.SanityChecker.PATLayer1_R1_TauolaTTbar_input_cfi")
+#process.load("TopBrussels.SanityChecker.PATLayer1_R1_TauolaTTbar_input_cfi")
 #process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(2000) )
 
 ## std sequence to produce the ttGenEvt
@@ -111,16 +111,15 @@ process.TFileService = cms.Service("TFileService",
 	
 process.p = cms.Path(
     process.makeGenEvt  
-    + process.TtGenEventChecker 				#this line should be commented when not running over ttbar
-    + process.Resolutions_lJets 				#this line should be commented when not running over ttbar
-    + process.Resolutions_bJets 				#this line should be commented when not running over ttbar
-		+ process.Resolutions_muons  				#this line should be commented when not running over ttbar  
-		+ process.Resolutions_electrons    	#this line should be commented when not running over ttbar
-		+ process.Resolutions_met   				#this line should be commented when not running over ttbar 
-		+ process.jetmet 
+    + process.TtGenEventChecker 		#this line should be commented when not running over ttbar
+    + process.Resolutions_lJets 		#this line should be commented when not running over ttbar
+    + process.Resolutions_bJets 		#this line should be commented when not running over ttbar
+    + process.Resolutions_muons  		#this line should be commented when not running over ttbar  
+    + process.Resolutions_electrons    		#this line should be commented when not running over ttbar
+    + process.Resolutions_met   		#this line should be commented when not running over ttbar 
+    + process.jetmet 
     + process.muonchecker 
     + process.vertex 
-    + process.jetmet 
     + process.kinematics 
     + (process.ttDecaySelection + process.TruthReco) # This line should be commented in case of not running on ttbar events
                                                      # because the ttDecaySelection will throw an edm exception thrown if no genevent is there
