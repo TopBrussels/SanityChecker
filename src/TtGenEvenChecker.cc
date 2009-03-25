@@ -13,7 +13,7 @@
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: TtGenEvenChecker.cc,v 1.6 2009/03/19 16:59:46 echabert Exp $
+// $Id: TtGenEvenChecker.cc,v 1.7 2009/03/24 13:16:17 echabert Exp $
 //
 //
 
@@ -296,7 +296,7 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
       topComposite = genEvt.hadronicDecayQuark ()->p4 () + genEvt.hadronicDecayQuarkBar ()->p4 () + genEvt.hadronicDecayB ()->p4 ();
       TH1Fcontainer_["MassCompositeTopS4"]->Fill (topComposite.mass ());
     }
-  
+
   ///////////////////////////////////////////////// 
   // For semiLep                                 //
   ///////////////////////////////////////////////// 
@@ -372,9 +372,9 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
     TH1Fcontainer_["NeutrinoPt"]->Fill(genEvt.singleNeutrino()->pt()); 
     TH1Fcontainer_["NeutrinoEta"]->Fill(genEvt.singleNeutrino()->eta());
    }
-   
+
    bool allquarks = false;
-   if(genEvt.b() && genEvt.bBar() && genEvt.hadronicDecayQuark() && genEvt.hadronicDecayQuarkBar()) allquarks = true;
+   if(genEvt.b() && genEvt.bBar() && genEvt.hadronicDecayQuark() && genEvt.hadronicDecayQuarkBar() && genEvt.hadronicDecayB() && genEvt.leptonicDecayB() ) allquarks = true;
    
    //Declaration of vectors used
    std::vector<reco::Particle::LorentzVector> vec;
@@ -423,7 +423,7 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
   //   Radiations                                //
   ///////////////////////////////////////////////// 
  
-   
+
    DeltaR.clear(); 
    vector<float> PtRad;
    if(genEvt.ISR().size()==0){
@@ -440,6 +440,7 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
       DeltaR.push_back(ROOT::Math::VectorUtil::DeltaR(genEvt.ISR()[x]->p4(),genEvt.leptonicDecayB()->p4()));
     }
    }
+
    std::sort(DeltaR.begin(),DeltaR.end(),Lowest());
    std::sort(PtRad.begin(),PtRad.end(),Highest());
    if(DeltaR.size()>0) TH1Fcontainer_["DeltaRISRQuark"]->Fill(DeltaR[0]);
@@ -455,7 +456,7 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
      if(!found) TH1Dcontainer_["RankHighestISR"]->Fill(vec.size()+1);
    }
    else TH1Dcontainer_["RankHighestISR"]->Fill(999);
-   
+
    std::sort(vec.begin(),vec.end(),LowestPt());
    int nof = 0;
    for(unsigned int x=0;x<PtRad.size();x++)
@@ -485,9 +486,11 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
       DeltaR.push_back(ROOT::Math::VectorUtil::DeltaR(genEvt.hadronicDecayTopRadiation()[x]->p4(),genEvt.hadronicDecayB()->p4()));
      }
    }
+
    std::sort(DeltaR.begin(),DeltaR.end(),Lowest());
    std::sort(PtRad.begin(),PtRad.end(),Highest());
    if(DeltaR.size()>0) TH1Fcontainer_["DeltaRTopRadiationQuark"]->Fill(DeltaR[0]);
+ 
    std::sort(vec.begin(),vec.end(),HighestPt());
    if(PtRad.size()>0){
      bool found = false;
@@ -503,11 +506,9 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
    nof=0;
    std::sort(vec.begin(),vec.end(),LowestPt());
    for(unsigned int x=0;x<PtRad.size();x++)
-     if(PtRad[x]>vec[0].pt()) nof++;
+     if(vec.size()>0 && PtRad[x]>vec[0].pt()) nof++;
    TH1Dcontainer_["NofTopRadiationWithHighestPtThanQuarks"]->Fill(nof);
-   
- 
-  }
+   }
   ///////////////////////////////////////////////// 
   //Compare particles with different status      //
   ///////////////////////////////////////////////// 
@@ -594,7 +595,7 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
   ///////////////////////////////////////////////// 
   // Spin Correlations                           //
   ///////////////////////////////////////////////// 
-  
+ 
   //Helicity basis
 // build CM sytems
   if(genEvt.isSemiLeptonic(TtGenEvent::kMuon)){
@@ -687,7 +688,7 @@ TtGenEventChecker::beginJob (const edm::EventSetup &)
   TH1Dcontainer_["NofBFromTop"] = subDirNof.make < TH1D > ("NofBFromTop", "Nof B quarks from Top decay ", 10, 0, 10);
   TH1Dcontainer_["NofTopsRadiation"] = subDirNof.make < TH1D > ("NofTopRadiation", "Nof Top Radiation", 10, 0, 10);
   TH1Dcontainer_["NofISR"] = subDirNof.make < TH1D > ("NofISR", "Nof ISR", 10, 0, 10);
-  
+
   //Kinematics
 
   TH1Fcontainer_["TopPt"] = subDirKin.make <TH1F> ("TopPt","Pt of Top Status 4",100,0,500);
@@ -789,7 +790,7 @@ TtGenEventChecker::beginJob (const edm::EventSetup &)
   fit2LQ_.FixParameter(2,1);
   fit2LQ_.SetParameter(3,0.51);
   fit2LQ_.FixParameter(3,0.51);
- 
+
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
@@ -844,7 +845,7 @@ TtGenEventChecker::endJob ()
   a = TH1Fcontainer_["MinimalDeltaRQuarksLepton"]->Integral(0,30)/TH1Fcontainer_["MinimalDeltaRQuarksLepton"]->GetEntries();
   edm::LogVerbatim ("MainResults") << " DeltaR(quarks, muon) < 0.3: "<<a*100<<" %";
   //
- 
+
   //Radiations
   //take care
   //here born of integral are hard coded and depend on the numberOfbins !!
