@@ -341,10 +341,10 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
  			if(verbose_) cout << "will match quarks " << endl;		
 			//match the quarks
-			JetPartonMatching *GenMatchQuarks = new JetPartonMatching(quarks, myselectedjets, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
+			JetPartonMatching GenMatchQuarks(quarks, myselectedjets, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
 			
 			//check if all quarks are matched ---> if so, we are not interested in radiation
-			if(GenMatchQuarks->getNumberOfUnmatchedPartons(0)== 0){
+			if(GenMatchQuarks.getNumberOfUnmatchedPartons(0)== 0){
 				MatchedQuarks++;				
  				
 				if(NumberISR != 0 && NumberRadiation != 0) MatchedQuarksRadiation++;
@@ -357,7 +357,7 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 					///////////////////// ---start --- calculating expected JEC /////////////////////
 					if(verbose_) cout << "start calculating expected jet energy corrections"<< endl;		
 					double quarkEnergy   = quarks[i]->energy(); 
-    			double jetEnergy     = myselectedjets[GenMatchQuarks->getMatchForParton(i,0)].energy(); 
+    			double jetEnergy     = myselectedjets[GenMatchQuarks.getMatchForParton(i,0)].energy(); 
       		if(i<2)hExpLightJECIncl -> Fill((quarkEnergy-jetEnergy)/jetEnergy);
       		if(i>=2)hExpBJECIncl -> Fill((quarkEnergy-jetEnergy)/jetEnergy);
   		
@@ -367,19 +367,19 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       			int etabin  =  0;
       			if(etanrbins > 1){
         			for(unsigned int b=0; b<etabinVals_.size()-1; b++) {
-          			if(fabs(myselectedjets[GenMatchQuarks->getMatchForParton(i,0)].eta()) > etabinVals_[b]) etabin = b;
+          			if(fabs(myselectedjets[GenMatchQuarks.getMatchForParton(i,0)].eta()) > etabinVals_[b]) etabin = b;
         			}
       			}	 	    
       			int ptbin  =  0;
       			for(unsigned int b=0; b<pTbinVals_.size()-1; b++) {
-        			if(myselectedjets[GenMatchQuarks->getMatchForParton(i,0)].pt() > pTbinVals_[b]) ptbin = b;
+        			if(myselectedjets[GenMatchQuarks.getMatchForParton(i,0)].pt() > pTbinVals_[b]) ptbin = b;
       			}
       			if(i<2)hExpLightJECPtEtaBin[etabin][ptbin] -> Fill((quarkEnergy-jetEnergy)/jetEnergy);
       			if(i>=2)hExpBJECPtEtaBin[etabin][ptbin] -> Fill((quarkEnergy-jetEnergy)/jetEnergy);
 					}
 					///////////////////// ---done--- calculating expected JEC /////////////////////
 					if(verbose_) cout << "corresponding indexes of jets matched with quarks"<< endl;		
-					int IdxQuarkJets = GenMatchQuarks->getMatchForParton(i,0);
+					int IdxQuarkJets = GenMatchQuarks.getMatchForParton(i,0);
 					double jetpt = myselectedjets[IdxQuarkJets].pt();
 					matchjetpt.push_back(jetpt);
 					matchquarkjetidx.push_back(IdxQuarkJets);
@@ -400,10 +400,10 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 				math::XYZTLorentzVector WLepGen = muon->p4()+neutrino->p4();
 				math::XYZTLorentzVector tHadGen = quarks[0]->p4()+quarks[1]->p4()+quarks[2]->p4();
 				math::XYZTLorentzVector tLepGen = muon->p4()+neutrino->p4()+quarks[3]->p4();
-				math::XYZTLorentzVector WHadRec = myselectedjets[GenMatchQuarks->getMatchForParton(0,0)].p4()+myselectedjets[GenMatchQuarks->getMatchForParton(1,0)].p4();
+				math::XYZTLorentzVector WHadRec = myselectedjets[GenMatchQuarks.getMatchForParton(0,0)].p4()+myselectedjets[GenMatchQuarks.getMatchForParton(1,0)].p4();
 				math::XYZTLorentzVector WLepRec = muons[0].p4()+mets[0].p4();
-				math::XYZTLorentzVector tHadRec = myselectedjets[GenMatchQuarks->getMatchForParton(0,0)].p4()+myselectedjets[GenMatchQuarks->getMatchForParton(1,0)].p4()+myselectedjets[GenMatchQuarks->getMatchForParton(2,0)].p4();
-				math::XYZTLorentzVector tLepRec = muons[0].p4()+mets[0].p4()+myselectedjets[GenMatchQuarks->getMatchForParton(3,0)].p4();
+				math::XYZTLorentzVector tHadRec = myselectedjets[GenMatchQuarks.getMatchForParton(0,0)].p4()+myselectedjets[GenMatchQuarks.getMatchForParton(1,0)].p4()+myselectedjets[GenMatchQuarks.getMatchForParton(2,0)].p4();
+				math::XYZTLorentzVector tLepRec = muons[0].p4()+mets[0].p4()+myselectedjets[GenMatchQuarks.getMatchForParton(3,0)].p4();
 				mWHad_Gen -> Fill(WHadGen.mass());
 				mWLep_Gen -> Fill(WLepGen.mass());
 				mtHad_Gen -> Fill(tHadGen.mass());
@@ -431,7 +431,7 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 				double smallestDRquarkmu = 1000.; 
 				double DRquarkmu[4];
 				for(int i = 0; i<4; i++){
-					DRjetmu[i] = deltaR(myselectedjets[GenMatchQuarks->getMatchForParton(i,0)].p4(),muons[0].p4());
+					DRjetmu[i] = deltaR(myselectedjets[GenMatchQuarks.getMatchForParton(i,0)].p4(),muons[0].p4());
 					DRquarkmu[i] = deltaR(quarks[i]->p4(),muon->p4());
 	  			if(DRjetmu[i] < smallestDRjetmu) smallestDRjetmu = DRjetmu[i];
 	  			if(DRquarkmu[i] < smallestDRquarkmu) smallestDRquarkmu = DRquarkmu[i];
@@ -445,7 +445,7 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 				int k = 0;
 				for(int i = 0; i<3; i++){
 					for(int j = 3; j>i;j--){
-						DRjets[k] = deltaR(myselectedjets[GenMatchQuarks->getMatchForParton(i,0)].p4(),myselectedjets[GenMatchQuarks->getMatchForParton(j,0)].p4());
+						DRjets[k] = deltaR(myselectedjets[GenMatchQuarks.getMatchForParton(i,0)].p4(),myselectedjets[GenMatchQuarks.getMatchForParton(j,0)].p4());
 						DRquarks[k] = deltaR(quarks[i]->p4(),quarks[j]->p4());
 	  				if(DRjets[k] < smallestDRjets) smallestDRjets = DRjets[k];
 	  				if(DRquarks[k] < smallestDRquarks) smallestDRquarks = DRquarks[k];
@@ -497,31 +497,31 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 						}
 						// 3. do JetPartonMatching using only the highest pT ISR partons						
 						if(verbose_) cout << "do matching"<< endl;							
-						JetPartonMatching *GenMatchISR = new JetPartonMatching(NfirstpTISR, myselectedjetsISR, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
+						JetPartonMatching GenMatchISR(NfirstpTISR, myselectedjetsISR, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
 					
 						//check if all partons are matched ---> if so, just store jet ranks, nothing else (no jets left)
-						if(GenMatchISR->getNumberOfUnmatchedPartons(0)== 0){
+						if(GenMatchISR.getNumberOfUnmatchedPartons(0)== 0){
 							QuarksMatchedMatchedISR++;				
 							if(verbose_) cout << "all partons coming from ISR are matched"<< endl;							
 							
 							//store the rank of the jet for later use (if parton is unmatched ---> rank is negative)
 							if(verbose_) cout << "store the rank of the jets matched with the partons"<< endl;							
  							for(unsigned int i = 0; i < NfirstpTISR.size(); i++){			
-								int IdxISRJets = GenMatchISR->getMatchForParton(i,0);
+								int IdxISRJets = GenMatchISR.getMatchForParton(i,0);
 								matchISRjetidx.push_back(IdxISRJets);
 								if(IdxISRJets>=0) originalrankjetsISR.push_back(originalrankjetsISRinput[IdxISRJets]);
 								else originalrankjetsISR.push_back(IdxISRJets);
 							}
 							
 						//check if unmatched partons ---> if so, categorize, store jet ranks, nothing else (no jets left)
-						}else if(GenMatchISR->getNumberOfUnmatchedPartons(0)!= 0){ //unmatched quarks
+						}else if(GenMatchISR.getNumberOfUnmatchedPartons(0)!= 0){ //unmatched quarks
 							QuarksMatchedUnmatchedISR++;
 							if(verbose_) cout << "not all partons coming from ISR are matched"<< endl;							
 						
 							//find parton which is not matched -> check eta/pT/DR ---> count different possibilities
 							for(unsigned int i = 0; i<NfirstpTISR.size(); i++){
 								if(verbose_) cout << "check which ISR partons are not matched and categorize"<< endl;							
-								int Idx = GenMatchISR->getMatchForParton(i,0);
+								int Idx = GenMatchISR.getMatchForParton(i,0);
 								if(Idx<0){
 									QuarksMatchedUnmatchedISRtotal++;
 									smallestDRISRi = 1000.;
@@ -547,7 +547,7 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
  							//store the rank of the jet for later use (if parton is unmatched ---> rank is negative)
 							if(verbose_) cout << "store the rank of the jets matched with the partons"<< endl;							
  							for(unsigned int i = 0; i < NfirstpTISR.size(); i++){			
-								int IdxISRJets = GenMatchISR->getMatchForParton(i,0);
+								int IdxISRJets = GenMatchISR.getMatchForParton(i,0);
 								matchISRjetidx.push_back(IdxISRJets);
 								if(IdxISRJets>=0) originalrankjetsISR.push_back(originalrankjetsISRinput[IdxISRJets]);
 								else originalrankjetsISR.push_back(IdxISRJets);
@@ -557,17 +557,17 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 				  ///////////////////// #ISR <= myselectedjetsISR.size() /////////////////////					
           }else if( NumberISR <= myselectedjetsISR.size()){
 						if(verbose_) cout << "less or as much partons from ISR compared to the number of jets"<< endl;							
-						JetPartonMatching *GenMatchISR = new JetPartonMatching(vectorISR, myselectedjetsISR, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
+						JetPartonMatching GenMatchISR(vectorISR, myselectedjetsISR, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
 						
 						//check if unmatched ISR  ---> if so, categorize, store jet ranks, look at radiation (still jets left)
-						if(GenMatchISR->getNumberOfUnmatchedPartons(0)!= 0){
+						if(GenMatchISR.getNumberOfUnmatchedPartons(0)!= 0){
 							if(verbose_) cout << "not all partons are matched"<< endl;							
 							QuarksMatchedUnmatchedISR++; 
 
 							//find parton which is not matched -> check eta/pT/DR ---> count different possibilities
 							for(unsigned int i = 0; i<NumberISR; i++){
 								if(verbose_) cout << "check which ISR partons are not matched and categorize"<< endl;							
-								int Idx = GenMatchISR->getMatchForParton(i,0);
+								int Idx = GenMatchISR.getMatchForParton(i,0);
 								if(Idx<0){
 									QuarksMatchedUnmatchedISRtotal++;
 									smallestDRISRi = 1000.;
@@ -594,7 +594,7 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 							//store the rank of the jet for later use (if parton is unmatched ---> rank is negative)
 							if(verbose_) cout << "store the rank of the jets matched with the partons"<< endl;							
  							for(unsigned int i = 0; i < NumberISR; i++){			
-								int IdxISRJets = GenMatchISR->getMatchForParton(i,0);
+								int IdxISRJets = GenMatchISR.getMatchForParton(i,0);
 								matchISRjetidx.push_back(IdxISRJets);
 								if(IdxISRJets >=0) originalrankjetsISR.push_back(originalrankjetsISRinput[IdxISRJets]);
 								else originalrankjetsISR.push_back(IdxISRJets);
@@ -644,31 +644,31 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 									}
 									// 3. do JetPartonMatching using only the highest pT top radiation partons						
 									if(verbose_) cout << "do matching"<< endl;		
-									JetPartonMatching *GenMatchRadiation = new JetPartonMatching(NfirstpTradiation, myselectedjetsradiation, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
+									JetPartonMatching GenMatchRadiation(NfirstpTradiation, myselectedjetsradiation, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
 
 									//check if all partons are matched ---> if so, just store jet ranks, nothing else (no jets left)
-									if(GenMatchRadiation->getNumberOfUnmatchedPartons(0)== 0){
+									if(GenMatchRadiation.getNumberOfUnmatchedPartons(0)== 0){
 										if(verbose_) cout << "all partons are matched"<< endl;		
 										QuarksMatchedMatchedTopRadiation++;				
 						
 										//store the rank of the jet for later use (if parton is unmatched ---> rank is negative)
 										if(verbose_) cout << "store the ranks of the jets matched to the partons"<< endl;		
  										for(unsigned int i = 0; i < NfirstpTradiation.size(); i++){			
-											int IdxRadJets = GenMatchRadiation->getMatchForParton(i,0);
+											int IdxRadJets = GenMatchRadiation.getMatchForParton(i,0);
 											matchRadiationjetidx.push_back(IdxRadJets);
 											if(IdxRadJets>=0) originalrankjetsradiation.push_back(originalrankjetsradiationinput[IdxRadJets]);
 											else originalrankjetsradiation.push_back(IdxRadJets);
 										}
 							
 									//check if unmatched partons ---> if so, categorize, store jet ranks, nothing else (no jets left)
-									}else if(GenMatchRadiation->getNumberOfUnmatchedPartons(0)!= 0){ 
+									}else if(GenMatchRadiation.getNumberOfUnmatchedPartons(0)!= 0){ 
 										if(verbose_) cout << "not all partons matched"<< endl;		
 										QuarksMatchedUnmatchedTopRadiation++;
 					
 										//find parton which is not matched -> check eta/pT/DR ---> count different possibilities
 										for(unsigned int i = 0; i<NfirstpTradiation.size(); i++){
 											if(verbose_) cout << "find the partons which are not matched and categorize"<< endl;		
-											int Idx = GenMatchRadiation->getMatchForParton(i,0);
+											int Idx = GenMatchRadiation.getMatchForParton(i,0);
 											if(Idx<0){
 												QuarksMatchedUnmatchedTopRadiationtotal++;
 												smallestDRRadi = 1000.;
@@ -694,7 +694,7 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
  										//store the rank of the jet for later use (if parton is unmatched ---> rank is negative)
  										if(verbose_) cout << "store the ranks of the jets matched top the partons"<< endl;		
 										for(unsigned int i = 0; i < NfirstpTradiation.size(); i++){			
-											int IdxRadJets = GenMatchRadiation->getMatchForParton(i,0);
+											int IdxRadJets = GenMatchRadiation.getMatchForParton(i,0);
 											matchRadiationjetidx.push_back(IdxRadJets);
 											if(IdxRadJets>=0)originalrankjetsradiation.push_back(originalrankjetsradiationinput[IdxRadJets]);
 											else originalrankjetsradiation.push_back(IdxRadJets);
@@ -704,17 +704,17 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 				  			///////////////////// #top radiation <= myselectedjetsradiation.size() /////////////////////
           			}else if( NumberRadiation <= myselectedjetsradiation.size()){
  									if(verbose_) cout << "less or equal number of partons compared to the number of jets"<< endl;		
-									JetPartonMatching *GenMatchRadiation = new JetPartonMatching(TopRadiation, myselectedjetsradiation, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
+									JetPartonMatching GenMatchRadiation(TopRadiation, myselectedjetsradiation, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
 									
 									//check if unmatched top radiation  ---> if so, categorize, store jet ranks 
-									if(GenMatchRadiation->getNumberOfUnmatchedPartons(0)!= 0){
+									if(GenMatchRadiation.getNumberOfUnmatchedPartons(0)!= 0){
  										if(verbose_) cout << "not all partons matched"<< endl;		
 										QuarksMatchedUnmatchedTopRadiation++;
 
 										//find parton which is not matched -> check eta/pT/DR ---> count different possibilities
 										for(unsigned int i = 0; i<NumberRadiation; i++){
  											if(verbose_) cout << "check which partons are not matched and categorize"<< endl;		
-											int Idx = GenMatchRadiation->getMatchForParton(i,0);
+											int Idx = GenMatchRadiation.getMatchForParton(i,0);
 											if(Idx<0){
 												QuarksMatchedUnmatchedTopRadiationtotal++;
 												smallestDRRadi = 1000.;
@@ -740,19 +740,19 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 										//store the rank of the jet for later use (if parton is unmatched ---> rank is negative)
  										if(verbose_) cout << "store the rank of the jets matched with the partons"<< endl;		
  										for(unsigned int i = 0; i < NumberRadiation; i++){			
-											int IdxRadJets = GenMatchRadiation->getMatchForParton(i,0);
+											int IdxRadJets = GenMatchRadiation.getMatchForParton(i,0);
 											matchRadiationjetidx.push_back(IdxRadJets);
 											if(IdxRadJets>=0)originalrankjetsradiation.push_back(originalrankjetsradiationinput[IdxRadJets]);
 											else originalrankjetsradiation.push_back(IdxRadJets);
 										}
 							
 									//check if all top radiation partons are matched ---> if so, store jet ranks 
-									}else if(GenMatchRadiation->getNumberOfUnmatchedPartons(0)== 0){
+									}else if(GenMatchRadiation.getNumberOfUnmatchedPartons(0)== 0){
  										if(verbose_) cout << "all partons matched"<< endl;		
 										QuarksMatchedMatchedTopRadiation++;
 										
 										for(unsigned int i = 0; i < NumberRadiation; i++){			
-											int IdxRadJets = GenMatchRadiation->getMatchForParton(i,0);
+											int IdxRadJets = GenMatchRadiation.getMatchForParton(i,0);
 											matchRadiationjetidx.push_back(IdxRadJets);
 											if(IdxRadJets>=0)originalrankjetsradiation.push_back(originalrankjetsradiationinput[IdxRadJets]);
 											else originalrankjetsradiation.push_back(IdxRadJets);
@@ -766,12 +766,12 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 							}
 			
 						//check if all ISR partons are matched ---> if so, store jet ranks, look at radiation (still jets left)
-						}else if(GenMatchISR->getNumberOfUnmatchedPartons(0)== 0){ 
+						}else if(GenMatchISR.getNumberOfUnmatchedPartons(0)== 0){ 
  							if(verbose_) cout << "all ISR partons are matched"<< endl;									
 							QuarksMatchedMatchedISR++;
 
 							for(unsigned int i = 0; i < NumberISR; i++){			
-								int IdxISRjets = GenMatchISR->getMatchForParton(i,0);
+								int IdxISRjets = GenMatchISR.getMatchForParton(i,0);
 								matchISRjetidx.push_back(IdxISRjets);
 								if(IdxISRjets>=0) originalrankjetsISR.push_back(originalrankjetsISRinput[IdxISRjets]);
 								else originalrankjetsISR.push_back(IdxISRjets);
@@ -820,16 +820,16 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 									}
 									// 3. do JetPartonMatching using only the highest pT top radiation partons						
  									if(verbose_) cout << "do matching"<< endl;									
-									JetPartonMatching *GenMatchRadiation = new JetPartonMatching(NfirstpTradiation, myselectedjetsradiation, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
+									JetPartonMatching GenMatchRadiation(NfirstpTradiation, myselectedjetsradiation, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
 
 									//check if all partons are matched ---> if so, just store jet ranks, nothing else (no jets left)
-									if(GenMatchRadiation->getNumberOfUnmatchedPartons(0)== 0){
+									if(GenMatchRadiation.getNumberOfUnmatchedPartons(0)== 0){
 										QuarksMatchedMatchedTopRadiation++;				
 							
  										if(verbose_) cout << "store the rank of the jets matched to the partons"<< endl;									
 										//store the rank of the jet for later use (if parton is unmatched ---> rank is negative)
  										for(unsigned int i = 0; i < NfirstpTradiation.size(); i++){			
-											int IdxRadJets = GenMatchRadiation->getMatchForParton(i,0);
+											int IdxRadJets = GenMatchRadiation.getMatchForParton(i,0);
 											matchRadiationjetidx.push_back(IdxRadJets);
 											if(IdxRadJets>=0)originalrankjetsradiation.push_back(originalrankjetsradiationinput[IdxRadJets]);
 											else originalrankjetsradiation.push_back(IdxRadJets);
@@ -837,14 +837,14 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 							
  									if(verbose_) cout << "check if all partons are matched to the jets"<< endl;									
 									//check if unmatched partons ---> if so, categorize, store jet ranks, nothing else (no jets left)
-									}else if(GenMatchRadiation->getNumberOfUnmatchedPartons(0)!= 0){ 
+									}else if(GenMatchRadiation.getNumberOfUnmatchedPartons(0)!= 0){ 
  										if(verbose_) cout << "not all partons are matched to the quarks"<< endl;									
 										QuarksMatchedUnmatchedTopRadiation++;
 						
 										//find parton which is not matched -> check eta/pT/DR ---> count different possibilities
 										for(unsigned int i = 0; i<NfirstpTradiation.size(); i++){
  											if(verbose_) cout << "check which partons are not matched and categorize"<< endl;									
-											int Idx = GenMatchRadiation->getMatchForParton(i,0);
+											int Idx = GenMatchRadiation.getMatchForParton(i,0);
 											if(Idx<0){
 												QuarksMatchedUnmatchedTopRadiationtotal++;
 												smallestDRRadi = 1000.;
@@ -870,7 +870,7 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
  										if(verbose_) cout << "store the rank of the jets matched with the partons"<< endl;									
  										//store the rank of the jet for later use (if parton is unmatched ---> rank is negative)
  										for(unsigned int i = 0; i < NfirstpTradiation.size(); i++){			
-											int IdxRadJets = GenMatchRadiation->getMatchForParton(i,0);
+											int IdxRadJets = GenMatchRadiation.getMatchForParton(i,0);
 											matchRadiationjetidx.push_back(IdxRadJets);
 											if(IdxRadJets>=0)originalrankjetsradiation.push_back(originalrankjetsradiationinput[IdxRadJets]);
 											else originalrankjetsradiation.push_back(IdxRadJets);
@@ -880,17 +880,17 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 				  			///////////////////// #top radiation <= myselectedjetsradiation.size() /////////////////////
           			}else if( NumberRadiation <= myselectedjetsradiation.size()){
  									if(verbose_) cout << "less or equal number of partons compared to the number of jets"<< endl;									
-									JetPartonMatching *GenMatchRadiation = new JetPartonMatching(TopRadiation, myselectedjetsradiation, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
+									JetPartonMatching GenMatchRadiation(TopRadiation, myselectedjetsradiation, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
 									
 									//check if unmatched top radiation  ---> if so, categorize, store jet ranks 
-									if(GenMatchRadiation->getNumberOfUnmatchedPartons(0)!= 0){
+									if(GenMatchRadiation.getNumberOfUnmatchedPartons(0)!= 0){
  										if(verbose_) cout << "not all partons are matched"<< endl;									
 										QuarksMatchedUnmatchedTopRadiation++;
 
 										//find parton which is not matched -> check eta/pT/DR ---> count different possibilities
 										for(unsigned int i = 0; i<NumberRadiation; i++){
  											if(verbose_) cout << "find partons which are not matched and categorize"<< endl;									
-											int Idx = GenMatchRadiation->getMatchForParton(i,0);
+											int Idx = GenMatchRadiation.getMatchForParton(i,0);
 											if(Idx<0){
 												QuarksMatchedUnmatchedTopRadiationtotal++;
 												smallestDRRadi = 1000.;
@@ -916,19 +916,19 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
  										if(verbose_) cout << "store the ranks of the jets matched to the partons"<< endl;									
 										//store the rank of the jet for later use (if parton is unmatched ---> rank is negative)
  										for(unsigned int i = 0; i < NumberRadiation; i++){			
-											int IdxRadJets = GenMatchRadiation->getMatchForParton(i,0);
+											int IdxRadJets = GenMatchRadiation.getMatchForParton(i,0);
 											matchRadiationjetidx.push_back(IdxRadJets);
 											if(IdxRadJets>=0)originalrankjetsradiation.push_back(originalrankjetsradiationinput[IdxRadJets]);
 											else originalrankjetsradiation.push_back(IdxRadJets);
 										}
 							
 									//check if all top radiation partons are matched ---> if so, store jet ranks 
-									}else if(GenMatchRadiation->getNumberOfUnmatchedPartons(0)== 0){
+									}else if(GenMatchRadiation.getNumberOfUnmatchedPartons(0)== 0){
  										if(verbose_) cout << "all partons are matched"<< endl;									
 										QuarksMatchedMatchedTopRadiation++;
 										
 										for(unsigned int i = 0; i < NumberRadiation; i++){			
-											int IdxRadJets = GenMatchRadiation->getMatchForParton(i,0);
+											int IdxRadJets = GenMatchRadiation.getMatchForParton(i,0);
 											matchRadiationjetidx.push_back(IdxRadJets);
 											if(IdxRadJets>=0)originalrankjetsradiation.push_back(originalrankjetsradiationinput[IdxRadJets]);
 											else originalrankjetsradiation.push_back(IdxRadJets);
@@ -989,31 +989,31 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 							}
  							if(verbose_) cout << "do matching"<< endl;									
 							// 3. do JetPartonMatching using only the highest pT top radiation partons						
-							JetPartonMatching *GenMatchRadiation = new JetPartonMatching(NfirstpTradiation, myselectedjetsradiation, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
+							JetPartonMatching GenMatchRadiation(NfirstpTradiation, myselectedjetsradiation, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
 
 							//check if all partons are matched ---> if so, just store jet ranks, nothing else (no jets left)
-							if(GenMatchRadiation->getNumberOfUnmatchedPartons(0)== 0){
+							if(GenMatchRadiation.getNumberOfUnmatchedPartons(0)== 0){
  								if(verbose_) cout << "all partons are matched"<< endl;									
 								QuarksMatchedMatchedTopRadiation++;				
 						
  								if(verbose_) cout << "store the ranks of the jets matched with the partons"<< endl;									
 								//store the rank of the jet for later use (if parton is unmatched ---> rank is negative)
  								for(unsigned int i = 0; i < NfirstpTradiation.size(); i++){			
-									int IdxRadJets = GenMatchRadiation->getMatchForParton(i,0);
+									int IdxRadJets = GenMatchRadiation.getMatchForParton(i,0);
 									matchRadiationjetidx.push_back(IdxRadJets);
 									if(IdxRadJets>=0)originalrankjetsradiation.push_back(originalrankjetsradiationinput[IdxRadJets]);
 									else originalrankjetsradiation.push_back(IdxRadJets);
 								}
 							
 							//check if unmatched partons ---> if so, categorize, store jet ranks, nothing else (no jets left)
-							}else if(GenMatchRadiation->getNumberOfUnmatchedPartons(0)!= 0){ 
+							}else if(GenMatchRadiation.getNumberOfUnmatchedPartons(0)!= 0){ 
  								if(verbose_) cout << "not all partons are matched"<< endl;									
 								QuarksMatchedUnmatchedTopRadiation++;
 						
 								//find parton which is not matched -> check eta/pT/DR ---> count different possibilities
 								for(unsigned int i = 0; i<NfirstpTradiation.size(); i++){
  									if(verbose_) cout << "find partons which are not matched and categorize"<< endl;									
-									int Idx = GenMatchRadiation->getMatchForParton(i,0);
+									int Idx = GenMatchRadiation.getMatchForParton(i,0);
 									if(Idx<0){
 										QuarksMatchedUnmatchedTopRadiationtotal++;
 										smallestDRRadi = 1000.;
@@ -1039,7 +1039,7 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
  								if(verbose_) cout << "store the ranks of the jets which are matched with the partons"<< endl;									
  								//store the rank of the jet for later use (if parton is unmatched ---> rank is negative)
  								for(unsigned int i = 0; i < NfirstpTradiation.size(); i++){			
-									int IdxRadJets = GenMatchRadiation->getMatchForParton(i,0);
+									int IdxRadJets = GenMatchRadiation.getMatchForParton(i,0);
 									matchRadiationjetidx.push_back(IdxRadJets);
 									if(IdxRadJets>=0)originalrankjetsradiation.push_back(originalrankjetsradiationinput[IdxRadJets]);
 									else originalrankjetsradiation.push_back(IdxRadJets);
@@ -1049,17 +1049,17 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 				  	///////////////////// #top radiation <= myselectedjetsradiation.size() /////////////////////
           	}else if( NumberRadiation <= myselectedjetsradiation.size()){
  							if(verbose_) cout << "less or equal number of partons compared to the number of jets"<< endl;									
-							JetPartonMatching *GenMatchRadiation = new JetPartonMatching(TopRadiation, myselectedjetsradiation, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
+							JetPartonMatching GenMatchRadiation(TopRadiation, myselectedjetsradiation, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
 							
 							//check if unmatched top radiation  ---> if so, categorize, store jet ranks 
-							if(GenMatchRadiation->getNumberOfUnmatchedPartons(0)!= 0){
+							if(GenMatchRadiation.getNumberOfUnmatchedPartons(0)!= 0){
  								if(verbose_) cout << "there are partons which are not matched"<< endl;									
 								QuarksMatchedUnmatchedTopRadiation++;
 
 								//find parton which is not matched -> check eta/pT/DR ---> count different possibilities
 								for(unsigned int i = 0; i<NumberRadiation; i++){
  									if(verbose_) cout << "check which partons not matched and categorize"<< endl;									
-									int Idx = GenMatchRadiation->getMatchForParton(i,0);
+									int Idx = GenMatchRadiation.getMatchForParton(i,0);
 									if(Idx<0){
 										QuarksMatchedUnmatchedTopRadiationtotal++;
 										smallestDRRadi = 1000.;
@@ -1085,19 +1085,19 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
  								if(verbose_) cout << "store the ranks of the jets matched with the partons"<< endl;									
 								//store the rank of the jet for later use (if parton is unmatched ---> rank is negative)
  								for(unsigned int i = 0; i < NumberRadiation; i++){			
-									int IdxRadJets = GenMatchRadiation->getMatchForParton(i,0);
+									int IdxRadJets = GenMatchRadiation.getMatchForParton(i,0);
 									matchRadiationjetidx.push_back(IdxRadJets);
 									if(IdxRadJets>=0)originalrankjetsradiation.push_back(originalrankjetsradiationinput[IdxRadJets]);
 									else originalrankjetsradiation.push_back(IdxRadJets);
 								}
 						
 							//check if all top radiation partons are matched ---> if so, store jet ranks
-							}else if(GenMatchRadiation->getNumberOfUnmatchedPartons(0)== 0){
+							}else if(GenMatchRadiation.getNumberOfUnmatchedPartons(0)== 0){
  								if(verbose_) cout << "all partons are matched"<< endl;									
 								QuarksMatchedMatchedTopRadiation++;
 								
 								for(unsigned int i = 0; i < NumberRadiation; i++){			
-									int IdxRadJets = GenMatchRadiation->getMatchForParton(i,0);
+									int IdxRadJets = GenMatchRadiation.getMatchForParton(i,0);
 									matchRadiationjetidx.push_back(IdxRadJets);
 									if(IdxRadJets>=0)originalrankjetsradiation.push_back(originalrankjetsradiationinput[IdxRadJets]);
 									else originalrankjetsradiation.push_back(IdxRadJets);
@@ -1242,7 +1242,7 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 				int unmatchedquarkmultiplicity = 0;
 				for(unsigned int i = 0; i<quarks.size(); i++){
 					if(verbose_) cout << "check which quarks not matched and categorize unmatched quarks"<< endl;		
-					int Idx = GenMatchQuarks->getMatchForParton(i,0);
+					int Idx = GenMatchQuarks.getMatchForParton(i,0);
 					if(Idx<0){
 						unmatchedquarkmultiplicity++;
 						smallestDRquarki = 1000.;
@@ -1271,7 +1271,7 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 				bool only1 = true;
 				for(unsigned int i = 0; i<quarks.size(); i++){
 					if(verbose_) cout << "check which quarks not matched and categorize unmatched quarks"<< endl;		
-					int Idx = GenMatchQuarks->getMatchForParton(i,0);
+					int Idx = GenMatchQuarks.getMatchForParton(i,0);
 					if(Idx<0)countnumberunmatched++;
 					if(only1 && Idx<0){
 						only1 = false;
@@ -1298,7 +1298,7 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 					Only1UnmatchedQuarks++;
 					for(unsigned int i = 0; i<quarks.size(); i++){
 						if(verbose_) cout << "check which quarks not matched and categorize unmatched quarks"<< endl;		
-						int Idx = GenMatchQuarks->getMatchForParton(i,0);
+						int Idx = GenMatchQuarks.getMatchForParton(i,0);
 						if(Idx<0){
 							smallestDRquarki = 1000.;
 							for(unsigned int j = 0; j<quarks.size(); j++){
@@ -1324,7 +1324,7 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 				//store the rank of the jet (if parton is unmatched ---> rank is negative)
 				if(verbose_) cout << "store the rank of the jets which are matched"<< endl;		
 				for(unsigned int i = 0; i < quarks.size(); i++){			
-					int IdxQuarkJets = GenMatchQuarks->getMatchForParton(i,0);
+					int IdxQuarkJets = GenMatchQuarks.getMatchForParton(i,0);
 					matchquarkjetidx.push_back(IdxQuarkJets); 
 				}
 				
@@ -1369,31 +1369,31 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 						}
 						// 3. do JetPartonMatching using only the highest pT ISR partons						
 						if(verbose_) cout << "do matching"<< endl;							
-						JetPartonMatching *GenMatchISR = new JetPartonMatching(NfirstpTISR, myselectedjetsISR, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
+						JetPartonMatching GenMatchISR(NfirstpTISR, myselectedjetsISR, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
 					
 						//check if all partons are matched ---> if so, just store jet ranks, nothing else (no jets left)
-						if(GenMatchISR->getNumberOfUnmatchedPartons(0)== 0){
+						if(GenMatchISR.getNumberOfUnmatchedPartons(0)== 0){
 							MatchedISR++;				
 							if(verbose_) cout << "all partons coming from ISR are matched"<< endl;							
 							
 							//store the rank of the jet for later use (if parton is unmatched ---> rank is negative)
 							if(verbose_) cout << "store the rank of the jets matched with the partons"<< endl;							
  							for(unsigned int i = 0; i < NfirstpTISR.size(); i++){			
-								int IdxISRJets = GenMatchISR->getMatchForParton(i,0);
+								int IdxISRJets = GenMatchISR.getMatchForParton(i,0);
 								matchISRjetidx.push_back(IdxISRJets);
 								if(IdxISRJets>=0) originalrankjetsISR.push_back(originalrankjetsISRinput[IdxISRJets]);
 								else originalrankjetsISR.push_back(IdxISRJets);
 							}
 							
 						//check if unmatched partons ---> if so, categorize, store jet ranks, nothing else (no jets left)
-						}else if(GenMatchISR->getNumberOfUnmatchedPartons(0)!= 0){ //unmatched quarks
+						}else if(GenMatchISR.getNumberOfUnmatchedPartons(0)!= 0){ //unmatched quarks
 							UnmatchedISR++;
 							if(verbose_) cout << "not all partons coming from ISR are matched"<< endl;							
 						
 							//find parton which is not matched -> check eta/pT/DR ---> count different possibilities
 							for(unsigned int i = 0; i<NfirstpTISR.size(); i++){
 								if(verbose_) cout << "check which ISR partons are not matched and categorize"<< endl;							
-								int Idx = GenMatchISR->getMatchForParton(i,0);
+								int Idx = GenMatchISR.getMatchForParton(i,0);
 								if(Idx<0){
 									smallestDRISRi = 1000.;
 									for(unsigned int j = 0; j<NfirstpTISR.size(); j++){
@@ -1418,7 +1418,7 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
  							//store the rank of the jet for later use (if parton is unmatched ---> rank is negative)
 							if(verbose_) cout << "store the rank of the jets matched with the partons"<< endl;							
  							for(unsigned int i = 0; i < NfirstpTISR.size(); i++){			
-								int IdxISRJets = GenMatchISR->getMatchForParton(i,0);
+								int IdxISRJets = GenMatchISR.getMatchForParton(i,0);
 								matchISRjetidx.push_back(IdxISRJets);
 								if(IdxISRJets>=0) originalrankjetsISR.push_back(originalrankjetsISRinput[IdxISRJets]);
 								else originalrankjetsISR.push_back(IdxISRJets);
@@ -1428,17 +1428,17 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 				  ///////////////////// #ISR <= myselectedjetsISR.size() /////////////////////					
           }else if( NumberISR <= myselectedjetsISR.size()){
 						if(verbose_) cout << "less or as much partons from ISR compared to the number of jets"<< endl;							
-						JetPartonMatching *GenMatchISR = new JetPartonMatching(vectorISR, myselectedjetsISR, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
+						JetPartonMatching GenMatchISR (vectorISR, myselectedjetsISR, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
 						
 						//check if unmatched ISR  ---> if so, categorize, store jet ranks, look at radiation (still jets left)
-						if(GenMatchISR->getNumberOfUnmatchedPartons(0)!= 0){
+						if(GenMatchISR.getNumberOfUnmatchedPartons(0)!= 0){
 							if(verbose_) cout << "not all partons are matched"<< endl;							
 							UnmatchedISR++; 
 
 							//find parton which is not matched -> check eta/pT/DR ---> count different possibilities
 							for(unsigned int i = 0; i<NumberISR; i++){
 								if(verbose_) cout << "check which ISR partons are not matched and categorize"<< endl;							
-								int Idx = GenMatchISR->getMatchForParton(i,0);
+								int Idx = GenMatchISR.getMatchForParton(i,0);
 								if(Idx<0){
 									smallestDRISRi = 1000.;
 									for(unsigned int j = 0; j<NumberISR; j++){
@@ -1464,7 +1464,7 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 							//store the rank of the jet for later use (if parton is unmatched ---> rank is negative)
 							if(verbose_) cout << "store the rank of the jets matched with the partons"<< endl;							
  							for(unsigned int i = 0; i < NumberISR; i++){			
-								int IdxISRJets = GenMatchISR->getMatchForParton(i,0);
+								int IdxISRJets = GenMatchISR.getMatchForParton(i,0);
 								matchISRjetidx.push_back(IdxISRJets);
 								if(IdxISRJets >=0) originalrankjetsISR.push_back(originalrankjetsISRinput[IdxISRJets]);
 								else originalrankjetsISR.push_back(IdxISRJets);
@@ -1514,31 +1514,31 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 									}
 									// 3. do JetPartonMatching using only the highest pT top radiation partons						
 									if(verbose_) cout << "do matching"<< endl;		
-									JetPartonMatching *GenMatchRadiation = new JetPartonMatching(NfirstpTradiation, myselectedjetsradiation, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
+									JetPartonMatching GenMatchRadiation(NfirstpTradiation, myselectedjetsradiation, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
 
 									//check if all partons are matched ---> if so, just store jet ranks, nothing else (no jets left)
-									if(GenMatchRadiation->getNumberOfUnmatchedPartons(0)== 0){
+									if(GenMatchRadiation.getNumberOfUnmatchedPartons(0)== 0){
 										if(verbose_) cout << "all partons are matched"<< endl;		
 										MatchedTopRadiation++;				
 						
 										//store the rank of the jet for later use (if parton is unmatched ---> rank is negative)
 										if(verbose_) cout << "store the ranks of the jets matched to the partons"<< endl;		
  										for(unsigned int i = 0; i < NfirstpTradiation.size(); i++){			
-											int IdxRadJets = GenMatchRadiation->getMatchForParton(i,0);
+											int IdxRadJets = GenMatchRadiation.getMatchForParton(i,0);
 											matchRadiationjetidx.push_back(IdxRadJets);
 											if(IdxRadJets>=0) originalrankjetsradiation.push_back(originalrankjetsradiationinput[IdxRadJets]);
 											else originalrankjetsradiation.push_back(IdxRadJets);
 										}
 							
 									//check if unmatched partons ---> if so, categorize, store jet ranks, nothing else (no jets left)
-									}else if(GenMatchRadiation->getNumberOfUnmatchedPartons(0)!= 0){ 
+									}else if(GenMatchRadiation.getNumberOfUnmatchedPartons(0)!= 0){ 
 										if(verbose_) cout << "not all partons matched"<< endl;		
 										UnmatchedTopRadiation++;
 					
 										//find parton which is not matched -> check eta/pT/DR ---> count different possibilities
 										for(unsigned int i = 0; i<NfirstpTradiation.size(); i++){
 											if(verbose_) cout << "find the partons which are not matched and categorize"<< endl;		
-											int Idx = GenMatchRadiation->getMatchForParton(i,0);
+											int Idx = GenMatchRadiation.getMatchForParton(i,0);
 											if(Idx<0){
 												smallestDRRadi = 1000.;
 												for(unsigned int j = 0; j<NfirstpTradiation.size(); j++){
@@ -1563,7 +1563,7 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
  										//store the rank of the jet for later use (if parton is unmatched ---> rank is negative)
  										if(verbose_) cout << "store the ranks of the jets matched top the partons"<< endl;		
 										for(unsigned int i = 0; i < NfirstpTradiation.size(); i++){			
-											int IdxRadJets = GenMatchRadiation->getMatchForParton(i,0);
+											int IdxRadJets = GenMatchRadiation.getMatchForParton(i,0);
 											matchRadiationjetidx.push_back(IdxRadJets);
 											if(IdxRadJets>=0)originalrankjetsradiation.push_back(originalrankjetsradiationinput[IdxRadJets]);
 											else originalrankjetsradiation.push_back(IdxRadJets);
@@ -1573,17 +1573,17 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 				  			///////////////////// #top radiation <= myselectedjetsradiation.size() /////////////////////
           			}else if( NumberRadiation <= myselectedjetsradiation.size()){
  									if(verbose_) cout << "less or equal number of partons compared to the number of jets"<< endl;		
-									JetPartonMatching *GenMatchRadiation = new JetPartonMatching(TopRadiation, myselectedjetsradiation, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
+									JetPartonMatching GenMatchRadiation(TopRadiation, myselectedjetsradiation, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
 									
 									//check if unmatched top radiation  ---> if so, categorize, store jet ranks 
-									if(GenMatchRadiation->getNumberOfUnmatchedPartons(0)!= 0){
+									if(GenMatchRadiation.getNumberOfUnmatchedPartons(0)!= 0){
  										if(verbose_) cout << "not all partons matched"<< endl;		
 										UnmatchedTopRadiation++;
 
 										//find parton which is not matched -> check eta/pT/DR ---> count different possibilities
 										for(unsigned int i = 0; i<NumberRadiation; i++){
  											if(verbose_) cout << "check which partons are not matched and categorize"<< endl;		
-											int Idx = GenMatchRadiation->getMatchForParton(i,0);
+											int Idx = GenMatchRadiation.getMatchForParton(i,0);
 											if(Idx<0){
 												smallestDRRadi = 1000.;
 												for(unsigned int j = 0; j<NumberRadiation; j++){
@@ -1608,19 +1608,19 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 										//store the rank of the jet for later use (if parton is unmatched ---> rank is negative)
  										if(verbose_) cout << "store the rank of the jets matched with the partons"<< endl;		
  										for(unsigned int i = 0; i < NumberRadiation; i++){			
-											int IdxRadJets = GenMatchRadiation->getMatchForParton(i,0);
+											int IdxRadJets = GenMatchRadiation.getMatchForParton(i,0);
 											matchRadiationjetidx.push_back(IdxRadJets);
 											if(IdxRadJets>=0)originalrankjetsradiation.push_back(originalrankjetsradiationinput[IdxRadJets]);
 											else originalrankjetsradiation.push_back(IdxRadJets);
 										}
 							
 									//check if all top radiation partons are matched ---> if so, store jet ranks 
-									}else if(GenMatchRadiation->getNumberOfUnmatchedPartons(0)== 0){
+									}else if(GenMatchRadiation.getNumberOfUnmatchedPartons(0)== 0){
  										if(verbose_) cout << "all partons matched"<< endl;		
 										MatchedTopRadiation++;
 										
 										for(unsigned int i = 0; i < NumberRadiation; i++){			
-											int IdxRadJets = GenMatchRadiation->getMatchForParton(i,0);
+											int IdxRadJets = GenMatchRadiation.getMatchForParton(i,0);
 											matchRadiationjetidx.push_back(IdxRadJets);
 											if(IdxRadJets>=0)originalrankjetsradiation.push_back(originalrankjetsradiationinput[IdxRadJets]);
 											else originalrankjetsradiation.push_back(IdxRadJets);
@@ -1634,12 +1634,12 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 							}
 			
 						//check if all ISR partons are matched ---> if so, store jet ranks, look at radiation (still jets left)
-						}else if(GenMatchISR->getNumberOfUnmatchedPartons(0)== 0){ 
+						}else if(GenMatchISR.getNumberOfUnmatchedPartons(0)== 0){ 
  							if(verbose_) cout << "all ISR partons are matched"<< endl;									
 							MatchedISR++;
 
 							for(unsigned int i = 0; i < NumberISR; i++){			
-								int IdxISRjets = GenMatchISR->getMatchForParton(i,0);
+								int IdxISRjets = GenMatchISR.getMatchForParton(i,0);
 								matchISRjetidx.push_back(IdxISRjets);
 								if(IdxISRjets>=0) originalrankjetsISR.push_back(originalrankjetsISRinput[IdxISRjets]);
 								else originalrankjetsISR.push_back(IdxISRjets);
@@ -1688,16 +1688,16 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 									}
 									// 3. do JetPartonMatching using only the highest pT top radiation partons						
  									if(verbose_) cout << "do matching"<< endl;									
-									JetPartonMatching *GenMatchRadiation = new JetPartonMatching(NfirstpTradiation, myselectedjetsradiation, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
+									JetPartonMatching GenMatchRadiation(NfirstpTradiation, myselectedjetsradiation, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
 
 									//check if all partons are matched ---> if so, just store jet ranks, nothing else (no jets left)
-									if(GenMatchRadiation->getNumberOfUnmatchedPartons(0)== 0){
+									if(GenMatchRadiation.getNumberOfUnmatchedPartons(0)== 0){
 										MatchedTopRadiation++;				
 							
  										if(verbose_) cout << "store the rank of the jets matched to the partons"<< endl;									
 										//store the rank of the jet for later use (if parton is unmatched ---> rank is negative)
  										for(unsigned int i = 0; i < NfirstpTradiation.size(); i++){			
-											int IdxRadJets = GenMatchRadiation->getMatchForParton(i,0);
+											int IdxRadJets = GenMatchRadiation.getMatchForParton(i,0);
 											matchRadiationjetidx.push_back(IdxRadJets);
 											if(IdxRadJets>=0)originalrankjetsradiation.push_back(originalrankjetsradiationinput[IdxRadJets]);
 											else originalrankjetsradiation.push_back(IdxRadJets);
@@ -1705,14 +1705,14 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 							
  									if(verbose_) cout << "check if all partons are matched to the jets"<< endl;									
 									//check if unmatched partons ---> if so, categorize, store jet ranks, nothing else (no jets left)
-									}else if(GenMatchRadiation->getNumberOfUnmatchedPartons(0)!= 0){ 
+									}else if(GenMatchRadiation.getNumberOfUnmatchedPartons(0)!= 0){ 
  										if(verbose_) cout << "not all partons are matched to the quarks"<< endl;									
 										UnmatchedTopRadiation++;
 						
 										//find parton which is not matched -> check eta/pT/DR ---> count different possibilities
 										for(unsigned int i = 0; i<NfirstpTradiation.size(); i++){
  											if(verbose_) cout << "check which partons are not matched and categorize"<< endl;									
-											int Idx = GenMatchRadiation->getMatchForParton(i,0);
+											int Idx = GenMatchRadiation.getMatchForParton(i,0);
 											if(Idx<0){
 												smallestDRRadi = 1000.;
 												for(unsigned int j = 0; j<NfirstpTradiation.size(); j++){
@@ -1737,7 +1737,7 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
  										if(verbose_) cout << "store the rank of the jets matched with the partons"<< endl;									
  										//store the rank of the jet for later use (if parton is unmatched ---> rank is negative)
  										for(unsigned int i = 0; i < NfirstpTradiation.size(); i++){			
-											int IdxRadJets = GenMatchRadiation->getMatchForParton(i,0);
+											int IdxRadJets = GenMatchRadiation.getMatchForParton(i,0);
 											matchRadiationjetidx.push_back(IdxRadJets);
 											if(IdxRadJets>=0)originalrankjetsradiation.push_back(originalrankjetsradiationinput[IdxRadJets]);
 											else originalrankjetsradiation.push_back(IdxRadJets);
@@ -1747,17 +1747,17 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 				  			///////////////////// #top radiation <= myselectedjetsradiation.size() /////////////////////
           			}else if( NumberRadiation <= myselectedjetsradiation.size()){
  									if(verbose_) cout << "less or equal number of partons compared to the number of jets"<< endl;									
-									JetPartonMatching *GenMatchRadiation = new JetPartonMatching(TopRadiation, myselectedjetsradiation, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
+									JetPartonMatching GenMatchRadiation(TopRadiation, myselectedjetsradiation, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
 									
 									//check if unmatched top radiation  ---> if so, categorize, store jet ranks 
-									if(GenMatchRadiation->getNumberOfUnmatchedPartons(0)!= 0){
+									if(GenMatchRadiation.getNumberOfUnmatchedPartons(0)!= 0){
  										if(verbose_) cout << "not all partons are matched"<< endl;									
 										UnmatchedTopRadiation++;
 
 										//find parton which is not matched -> check eta/pT/DR ---> count different possibilities
 										for(unsigned int i = 0; i<NumberRadiation; i++){
  											if(verbose_) cout << "find partons which are not matched and categorize"<< endl;									
-											int Idx = GenMatchRadiation->getMatchForParton(i,0);
+											int Idx = GenMatchRadiation.getMatchForParton(i,0);
 											if(Idx<0){
 												smallestDRRadi = 1000.;
 												for(unsigned int j = 0; j<NumberRadiation; j++){
@@ -1782,19 +1782,19 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
  										if(verbose_) cout << "store the ranks of the jets matched to the partons"<< endl;									
 										//store the rank of the jet for later use (if parton is unmatched ---> rank is negative)
  										for(unsigned int i = 0; i < NumberRadiation; i++){			
-											int IdxRadJets = GenMatchRadiation->getMatchForParton(i,0);
+											int IdxRadJets = GenMatchRadiation.getMatchForParton(i,0);
 											matchRadiationjetidx.push_back(IdxRadJets);
 											if(IdxRadJets>=0)originalrankjetsradiation.push_back(originalrankjetsradiationinput[IdxRadJets]);
 											else originalrankjetsradiation.push_back(IdxRadJets);
 										}
 							
 									//check if all top radiation partons are matched ---> if so, store jet ranks 
-									}else if(GenMatchRadiation->getNumberOfUnmatchedPartons(0)== 0){
+									}else if(GenMatchRadiation.getNumberOfUnmatchedPartons(0)== 0){
  										if(verbose_) cout << "all partons are matched"<< endl;									
 										MatchedTopRadiation++;
 										
 										for(unsigned int i = 0; i < NumberRadiation; i++){			
-											int IdxRadJets = GenMatchRadiation->getMatchForParton(i,0);
+											int IdxRadJets = GenMatchRadiation.getMatchForParton(i,0);
 											matchRadiationjetidx.push_back(IdxRadJets);
 											if(IdxRadJets>=0)originalrankjetsradiation.push_back(originalrankjetsradiationinput[IdxRadJets]);
 											else originalrankjetsradiation.push_back(IdxRadJets);
@@ -1855,31 +1855,31 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 							}
  							if(verbose_) cout << "do matching"<< endl;									
 							// 3. do JetPartonMatching using only the highest pT top radiation partons						
-							JetPartonMatching *GenMatchRadiation = new JetPartonMatching(NfirstpTradiation, myselectedjetsradiation, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
+							JetPartonMatching GenMatchRadiation(NfirstpTradiation, myselectedjetsradiation, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
 
 							//check if all partons are matched ---> if so, just store jet ranks, nothing else (no jets left)
-							if(GenMatchRadiation->getNumberOfUnmatchedPartons(0)== 0){
+							if(GenMatchRadiation.getNumberOfUnmatchedPartons(0)== 0){
  								if(verbose_) cout << "all partons are matched"<< endl;									
 								MatchedTopRadiation++;				
 						
  								if(verbose_) cout << "store the ranks of the jets matched with the partons"<< endl;									
 								//store the rank of the jet for later use (if parton is unmatched ---> rank is negative)
  								for(unsigned int i = 0; i < NfirstpTradiation.size(); i++){			
-									int IdxRadJets = GenMatchRadiation->getMatchForParton(i,0);
+									int IdxRadJets = GenMatchRadiation.getMatchForParton(i,0);
 									matchRadiationjetidx.push_back(IdxRadJets);
 									if(IdxRadJets>=0)originalrankjetsradiation.push_back(originalrankjetsradiationinput[IdxRadJets]);
 									else originalrankjetsradiation.push_back(IdxRadJets);
 								}
 							
 							//check if unmatched partons ---> if so, categorize, store jet ranks, nothing else (no jets left)
-							}else if(GenMatchRadiation->getNumberOfUnmatchedPartons(0)!= 0){ 
+							}else if(GenMatchRadiation.getNumberOfUnmatchedPartons(0)!= 0){ 
  								if(verbose_) cout << "not all partons are matched"<< endl;									
 								UnmatchedTopRadiation++;
 						
 								//find parton which is not matched -> check eta/pT/DR ---> count different possibilities
 								for(unsigned int i = 0; i<NfirstpTradiation.size(); i++){
  									if(verbose_) cout << "find partons which are not matched and categorize"<< endl;									
-									int Idx = GenMatchRadiation->getMatchForParton(i,0);
+									int Idx = GenMatchRadiation.getMatchForParton(i,0);
 									if(Idx<0){
 										smallestDRRadi = 1000.;
 										for(unsigned int j = 0; j<NfirstpTradiation.size(); j++){
@@ -1904,7 +1904,7 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
  								if(verbose_) cout << "store the ranks of the jets which are matched with the partons"<< endl;									
  								//store the rank of the jet for later use (if parton is unmatched ---> rank is negative)
  								for(unsigned int i = 0; i < NfirstpTradiation.size(); i++){			
-									int IdxRadJets = GenMatchRadiation->getMatchForParton(i,0);
+									int IdxRadJets = GenMatchRadiation.getMatchForParton(i,0);
 									matchRadiationjetidx.push_back(IdxRadJets);
 									if(IdxRadJets>=0)originalrankjetsradiation.push_back(originalrankjetsradiationinput[IdxRadJets]);
 									else originalrankjetsradiation.push_back(IdxRadJets);
@@ -1914,17 +1914,17 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 				  	///////////////////// #top radiation <= myselectedjetsradiation.size() /////////////////////
           	}else if( NumberRadiation <= myselectedjetsradiation.size()){
  							if(verbose_) cout << "less or equal number of partons compared to the number of jets"<< endl;									
-							JetPartonMatching *GenMatchRadiation = new JetPartonMatching(TopRadiation, myselectedjetsradiation, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
+							JetPartonMatching GenMatchRadiation(TopRadiation, myselectedjetsradiation, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
 							
 							//check if unmatched top radiation  ---> if so, categorize, store jet ranks 
-							if(GenMatchRadiation->getNumberOfUnmatchedPartons(0)!= 0){
+							if(GenMatchRadiation.getNumberOfUnmatchedPartons(0)!= 0){
  								if(verbose_) cout << "there are partons which are not matched"<< endl;									
 								UnmatchedTopRadiation++;
 
 								//find parton which is not matched -> check eta/pT/DR ---> count different possibilities
 								for(unsigned int i = 0; i<NumberRadiation; i++){
  									if(verbose_) cout << "check which partons not matched and categorize"<< endl;									
-									int Idx = GenMatchRadiation->getMatchForParton(i,0);
+									int Idx = GenMatchRadiation.getMatchForParton(i,0);
 									if(Idx<0){
 										smallestDRRadi = 1000.;
 										for(unsigned int j = 0; j<NumberRadiation; j++){
@@ -1949,19 +1949,19 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
  								if(verbose_) cout << "store the ranks of the jets matched with the partons"<< endl;									
 								//store the rank of the jet for later use (if parton is unmatched ---> rank is negative)
  								for(unsigned int i = 0; i < NumberRadiation; i++){			
-									int IdxRadJets = GenMatchRadiation->getMatchForParton(i,0);
+									int IdxRadJets = GenMatchRadiation.getMatchForParton(i,0);
 									matchRadiationjetidx.push_back(IdxRadJets);
 									if(IdxRadJets>=0)originalrankjetsradiation.push_back(originalrankjetsradiationinput[IdxRadJets]);
 									else originalrankjetsradiation.push_back(IdxRadJets);
 								}
 						
 							//check if all top radiation partons are matched ---> if so, store jet ranks
-							}else if(GenMatchRadiation->getNumberOfUnmatchedPartons(0)== 0){
+							}else if(GenMatchRadiation.getNumberOfUnmatchedPartons(0)== 0){
  								if(verbose_) cout << "all partons are matched"<< endl;									
 								MatchedTopRadiation++;
 								
 								for(unsigned int i = 0; i < NumberRadiation; i++){			
-									int IdxRadJets = GenMatchRadiation->getMatchForParton(i,0);
+									int IdxRadJets = GenMatchRadiation.getMatchForParton(i,0);
 									matchRadiationjetidx.push_back(IdxRadJets);
 									if(IdxRadJets>=0)originalrankjetsradiation.push_back(originalrankjetsradiationinput[IdxRadJets]);
 									else originalrankjetsradiation.push_back(IdxRadJets);
@@ -1975,7 +1975,7 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 						bool only1 = true;
 						for(unsigned int i = 0; i<quarks.size(); i++){
 							if(verbose_) cout << "check which quarks not matched and categorize unmatched quarks"<< endl;		
-							int Idx = GenMatchQuarks->getMatchForParton(i,0);
+							int Idx = GenMatchQuarks.getMatchForParton(i,0);
 							if(only1 && Idx<0){
 								only1 = false;
 								smallestDRquarki = 1000.;
@@ -2120,13 +2120,33 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 					edm::LogInfo("NoDataFound_NoRadiation2") << "no radiation, so no related plots are filled \n";
 				}
 			}
+		
+			matchjetpt.clear();
+			vectorISR.clear(); TopRadiation.clear();
+			patJetsMatchedWithRadiation.clear();
+			matchquarkjetidx.clear();matchISRjetidx.clear();matchRadiationjetidx.clear();originalrankjetsISR.clear();originalrankjetsradiation.clear();
+			originalrankjetsISRinput.clear();originalrankjetsradiationinput.clear();rankjetsmatchedtorad.clear();
+			myselectedjetsISR.clear();myselectedjetsradiation.clear();myselectedjetsradiationNoISR.clear();FourHighestPtJets.clear();
+			ISRpT.clear();TopRadiationpT.clear();TopRadiationpTNoISR.clear();ptjetsmatchedtorad.clear();
+			NfirstpTISR.clear();NfirstpTradiation.clear();NfirstpTradiationNoISR.clear();
+		
 		}else{
 			genObjectsNULL++;
 		}
 
+	//delete muon;
+	//delete neutrino;
+	quarks.clear();
 	}else if(useMatchingFromPAT_ && allok){
 		edm::LogError ("NoDataFound_usePATMatching") << "useMatchingFromPAT_ = true, but unfortunately this part of the code is not implemented \n";
 	}
+
+
+  
+   //delete ecalIsoDep;
+   //delete hcalIsoDep;
+   myjetsetagood.clear();
+   myselectedjets.clear();
 }
 
 

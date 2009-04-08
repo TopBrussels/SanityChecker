@@ -13,7 +13,7 @@ Implementation:
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: KinematicsChecker.cc,v 1.8 2009/03/20 19:23:49 jmmaes Exp $
+// $Id: KinematicsChecker.cc,v 1.9 2009/03/24 14:09:21 jmmaes Exp $
 //
 //
 
@@ -316,11 +316,11 @@ KinematicsChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 	  }
 	  if(verbose_){std::cout << " ISRquarksSorted.size(): " << ISRquarksSorted.size() << std::endl;}
 	  
-	  JetPartonMatching *GenMatchISRquarks = new JetPartonMatching(ISRquarksSorted, jets_clone, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_); 
+	  JetPartonMatching GenMatchISRquarks(ISRquarksSorted, jets_clone, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_); 
 	 
 	  if(verbose_){std::cout << " jets_clone.size(): " << jets_clone.size() << std::endl;}
 	  for(unsigned int i=0; i<ISRquarksSorted.size(); i++){
-	    Int_t Idx = GenMatchISRquarks->getMatchForParton(i,0);
+	    Int_t Idx = GenMatchISRquarks.getMatchForParton(i,0);
 	    if(Idx>=0){
 	      ObjectP4s[0].push_back((jets_clone[Idx]).p4()); 
 	      //drop jets from collection

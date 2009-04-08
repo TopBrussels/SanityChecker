@@ -85,12 +85,12 @@ process.MessageLogger = cms.Service("MessageLogger",
     #Statistics_SC = cms.untracked.PSet(threshold = cms.untracked.string("DEBUG"))
 )
 
-#process.load("TopBrussels.SanityChecker.PATLayer1_Ttjets_MG_input_cfi")
+process.load("TopBrussels.SanityChecker.PATLayer1_Ttjets_MG_input_cfi")
 #process.load("TopBrussels.SanityChecker.PATLayer1_Ttjets_MG_NoSel_input_cfi")
 #process.load("TopBrussels.SanityChecker.PATLayer1_R1_QCD100to250_MG_input_cfi")
 #process.load("TopBrussels.SanityChecker.PATLayer1_R1_TTJets_MG_input_cfi")
 #process.load("TopBrussels.SanityChecker.PATLayer1_R1_TauolaTTbar_input_cfi")
-#process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(2000) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10000) )
 
 ## std sequence to produce the ttGenEvt
 process.load("TopQuarkAnalysis.TopEventProducers.sequences.ttGenEvent_cff")

@@ -13,7 +13,7 @@
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: TtGenEvenChecker.cc,v 1.7 2009/03/24 13:16:17 echabert Exp $
+// $Id: TtGenEvenChecker.cc,v 1.8 2009/03/25 09:17:35 villella Exp $
 //
 //
 
@@ -508,6 +508,8 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
    for(unsigned int x=0;x<PtRad.size();x++)
      if(vec.size()>0 && PtRad[x]>vec[0].pt()) nof++;
    TH1Dcontainer_["NofTopRadiationWithHighestPtThanQuarks"]->Fill(nof);
+   
+   vec.clear();
    }
   ///////////////////////////////////////////////// 
   //Compare particles with different status      //

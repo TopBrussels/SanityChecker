@@ -260,6 +260,8 @@ MuonChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	histocontainer_[MatchedMuon+"MuonCharge"] ->Fill(muon_iter->charge());
 	(muon_iter->charge()>0 ? Muoncharge[0]++ : Muoncharge[1]++);
    }
+
+   //delete genEvt;
 }
 
 

@@ -13,7 +13,7 @@
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: JetMetChecker.cc,v 1.10 2009/03/24 14:09:21 jmmaes Exp $
+// $Id: JetMetChecker.cc,v 1.11 2009/03/25 11:13:15 ghammad Exp $
 //
 //
 
@@ -383,9 +383,9 @@ JetMetChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  TopQuarks.push_back(genEvt->leptonicDecayB());
 	}
 	if(TopQuarks.size()==4) { 
-	  JetPartonMatching *GenMatchTopQuarks = new JetPartonMatching(TopQuarks, *jets, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
+	  JetPartonMatching GenMatchTopQuarks(TopQuarks, *jets, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
 	  for(unsigned int l=0; l<4; l++){
-	    Int_t Idx = GenMatchTopQuarks->getMatchForParton(l,0);
+	    Int_t Idx = GenMatchTopQuarks.getMatchForParton(l,0);
 	    if(Idx>=0){ jets_clone.push_back((*jets)[Idx]); }  
 	  }
 	}

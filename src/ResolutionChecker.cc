@@ -265,6 +265,8 @@ ResolutionChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
        delete p4rec[m];
      }
 		 
+  p4gen.clear();
+  p4rec.clear();
 }
 
 
@@ -340,7 +342,11 @@ ResolutionChecker::beginJob(const edm::EventSetup&)
 
   delete [] etabins; 
   delete [] ptbins; 
+  //delete [] resObsVsPtFit;
 
+  resObsMin.clear();
+  resObsMax.clear();
+   
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
