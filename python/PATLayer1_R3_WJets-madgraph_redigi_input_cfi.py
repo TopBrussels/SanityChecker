@@ -1,7 +1,9 @@
 import FWCore.ParameterSet.Config as cms
-
-readFiles = cms.untracked.vstring(
-        '/store/user/pvmulder/WJets-madgraph/CMSSW227_R3_WJets-madgraph-new/f3f718855883784a6d2302631bb7cd61/PATLayer1_1.root',
+readFiles = cms.untracked.vstring()
+secFiles = cms.untracked.vstring() 
+source = cms.Source ("PoolSource",fileNames = readFiles)
+readFiles.extend( [
+      '/store/user/pvmulder/WJets-madgraph/CMSSW227_R3_WJets-madgraph-new/f3f718855883784a6d2302631bb7cd61/PATLayer1_1.root',
         '/store/user/pvmulder/WJets-madgraph/CMSSW227_R3_WJets-madgraph-new/f3f718855883784a6d2302631bb7cd61/PATLayer1_10.root',
         '/store/user/pvmulder/WJets-madgraph/CMSSW227_R3_WJets-madgraph-new/f3f718855883784a6d2302631bb7cd61/PATLayer1_100.root',
         '/store/user/pvmulder/WJets-madgraph/CMSSW227_R3_WJets-madgraph-new/f3f718855883784a6d2302631bb7cd61/PATLayer1_101.root',
@@ -493,7 +495,8 @@ readFiles = cms.untracked.vstring(
         '/store/user/pvmulder/WJets-madgraph/CMSSW227_R3_WJets-madgraph-new/f3f718855883784a6d2302631bb7cd61/PATLayer1_97.root',
         '/store/user/pvmulder/WJets-madgraph/CMSSW227_R3_WJets-madgraph-new/f3f718855883784a6d2302631bb7cd61/PATLayer1_98.root',
         '/store/user/pvmulder/WJets-madgraph/CMSSW227_R3_WJets-madgraph-new/f3f718855883784a6d2302631bb7cd61/PATLayer1_99.root'
-				 )
+
+]);
 secFiles = cms.untracked.vstring() 
 source = cms.Source ("PoolSource",duplicateCheckMode = cms.untracked.string('noDuplicateCheck') ,fileNames = readFiles#,
-)
+) 
