@@ -13,7 +13,7 @@
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: TtGenEvenChecker.cc,v 1.8 2009/03/25 09:17:35 villella Exp $
+// $Id: TtGenEvenChecker.cc,v 1.9 2009/04/08 12:34:47 echabert Exp $
 //
 //
 
@@ -100,7 +100,7 @@ private:
   endJob ();
 
   // ----------member data ---------------------------
-  edm::InputTag genEventCollectionName_;
+  edm::InputTag genEvtCollectionName_;
   bool doit_all;
   bool doit_semileptonic;
   bool doit_semileptonicMuon;
@@ -129,7 +129,7 @@ private:
 TtGenEventChecker::TtGenEventChecker (const edm::ParameterSet & iConfig)
 {
   //now do what ever initialization is needed
-  genEventCollectionName_ = iConfig.getParameter < edm::InputTag > ("genEventCollectionName");
+  genEvtCollectionName_ = iConfig.getParameter < edm::InputTag > ("genEvtCollectionName");
   doit_all = iConfig.getUntrackedParameter <bool>("doit_all",true);
   doit_semileptonic = iConfig.getUntrackedParameter <bool>("doit_semileptonic",false);
   doit_semileptonicMuon = iConfig.getUntrackedParameter <bool>("doit_semileptonicMuon",false);
@@ -170,10 +170,11 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
 #endif
   //Here you handle the collection you want to access
   Handle < TtGenEvent > TtGenEvent_;
-  iEvent.getByLabel (genEventCollectionName_, TtGenEvent_);
+  iEvent.getByLabel (genEvtCollectionName_, TtGenEvent_);
   TtGenEvent genEvt = *TtGenEvent_;
 
-  
+ 
+ 
   //tree levels of message
   //no endl needed 
   //use '\n' to go to next line
@@ -202,10 +203,10 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
     if(genEvt.isFullHadronic()) TH1Dcontainer_["BRatio"]->Fill(2);
     if(genEvt.isFullLeptonic()) TH1Dcontainer_["BRatio"]->Fill(3);
     if(genEvt.isSemiLeptonic()) TH1Dcontainer_["BRatio"]->Fill(4);
-    if(genEvt.isSemiLeptonic(TtGenEvent::kMuon)) TH1Dcontainer_["BRatio"]->Fill(5);
-    if(genEvt.isSemiLeptonic(TtGenEvent::kElec)) TH1Dcontainer_["BRatio"]->Fill(6);
-    if(genEvt.isSemiLeptonic(TtGenEvent::kTau)) TH1Dcontainer_["BRatio"]->Fill(7);
-    if(genEvt.isSemiLeptonic() && genEvt.isSemiLeptonic(TtGenEvent::kNone)) TH1Dcontainer_["BRatio"]->Fill(8);
+    if(genEvt.isSemiLeptonic(WDecay::kMuon)) TH1Dcontainer_["BRatio"]->Fill(5);
+    if(genEvt.isSemiLeptonic(WDecay::kElec)) TH1Dcontainer_["BRatio"]->Fill(6);
+    if(genEvt.isSemiLeptonic(WDecay::kTau)) TH1Dcontainer_["BRatio"]->Fill(7);
+    if(genEvt.isSemiLeptonic() && genEvt.isSemiLeptonic(WDecay::kNone)) TH1Dcontainer_["BRatio"]->Fill(8);
     
     
     if(!genEvt.top()) edm::LogWarning ("NoDataFound_top") << "No access to top in ttbar event" ;
@@ -222,80 +223,36 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
   
   
  
-  TH1Dcontainer_["NofTopsRadiation"]->Fill (genEvt.numberOfTopsRadiation ());
-  TH1Dcontainer_["NofISR"]->Fill (genEvt.numberOfISR ());
-  TH1Dcontainer_["NofLepton"]->Fill(genEvt.numberOfLeptons());
-  TH1Dcontainer_["NofLeptonFromW"]->Fill(genEvt.numberOfLeptonsFromW());
-  TH1Dcontainer_["NofB"]->Fill(genEvt.numberOfBQuarks());
-  TH1Dcontainer_["NofBFromTop"]->Fill(genEvt.numberOfBQuarksFromTop());
+  TH1Dcontainer_["NofTopsRadiation"]->Fill (genEvt.radiatedGluons(-6).size()+genEvt.radiatedGluons(6).size());
+  TH1Dcontainer_["NofISR"]->Fill (genEvt.topSisters ().size());
+  TH1Dcontainer_["NofLepton"]->Fill(genEvt.numberOfLeptons(false));
+  TH1Dcontainer_["NofLeptonFromW"]->Fill(genEvt.numberOfLeptons(true));
+  TH1Dcontainer_["NofB"]->Fill(genEvt.numberOfBQuarks(false));
+  TH1Dcontainer_["NofBFromTop"]->Fill(genEvt.numberOfBQuarks(true));
 
   ///////////////////////////////////////////////// 
   // Mass of particles with different status     //
   ///////////////////////////////////////////////// 
 
-  // particles status 2
-  genEvt.setDefaultStatus (2);
-  reco::Particle::LorentzVector ttbarS2;
-  if(genEvt.top () && genEvt.topBar ()){
-    ttbarS2 = genEvt.top ()->p4 ()+ genEvt.topBar ()->p4 ();
-    TH1Fcontainer_["MttS2"]->Fill(ttbarS2.mass());
-    TH1Fcontainer_["PtTtbarS2"]->Fill(ttbarS2.pt());
-    TH1Fcontainer_["EtaTtbarS2"]->Fill(ttbarS2.eta());
-    TH1Fcontainer_["MassTopS2"]->Fill (genEvt.top ()->p4 ().mass ());
-    TH1Fcontainer_["MassTopS2"]->Fill (genEvt.topBar ()->p4 ().mass ());
-  }
-  if(genEvt.wMinus ()) TH1Fcontainer_["MassWS2"]->Fill (genEvt.wMinus ()->p4 ().mass ());
-  if(genEvt.wPlus ()) TH1Fcontainer_["MassWS2"]->Fill (genEvt.wPlus ()->p4 ().mass ());
-  if (genEvt.b ())  TH1Fcontainer_["MassBS2"]->Fill (genEvt.b ()->p4 ().mass ());
-  if (genEvt.bBar ())  TH1Fcontainer_["MassBS2"]->Fill (genEvt.bBar ()->p4 ().mass ());
-  if (genEvt.hadronicDecayQuark ())  TH1Fcontainer_["MasslQuarksS2"]->Fill (genEvt.hadronicDecayQuark ()->p4 ().mass ());
-  if (genEvt.hadronicDecayQuarkBar ())  TH1Fcontainer_["MasslQuarksS2"]->Fill (genEvt.hadronicDecayQuarkBar ()->p4 ().mass ());
-  
-  // particles status 3
-  genEvt.setDefaultStatus (3);
-  reco::Particle::LorentzVector ttbarS3;
-  if(genEvt.top () && genEvt.topBar ()){
-    ttbarS3 = genEvt.top ()->p4 ()+ genEvt.topBar ()->p4 ();
-    TH1Fcontainer_["MttS3"]->Fill(ttbarS3.mass());
-    TH1Fcontainer_["PtTtbarS3"]->Fill(ttbarS3.pt());
-    TH1Fcontainer_["EtaTtbarS3"]->Fill(ttbarS3.eta());
-    TH1Fcontainer_["MassTopS2"]->Fill (genEvt.top ()->p4 ().mass ());
-    TH1Fcontainer_["MassTopS3"]->Fill (genEvt.top ()->p4 ().mass ());
-    TH1Fcontainer_["MassTopS3"]->Fill (genEvt.topBar ()->p4 ().mass ());
-  }
-  if(genEvt.wMinus () ) TH1Fcontainer_["MassWS3"]->Fill (genEvt.wMinus ()->p4 ().mass ());
-  if(genEvt.wPlus () ) TH1Fcontainer_["MassWS3"]->Fill (genEvt.wPlus ()->p4 ().mass ());
-  if (genEvt.b ()) TH1Fcontainer_["MassBS3"]->Fill (genEvt.b ()->p4 ().mass ());
-  if (genEvt.bBar ())  TH1Fcontainer_["MassBS3"]->Fill (genEvt.bBar ()->p4 ().mass ());
-  if (genEvt.hadronicDecayQuark ())  TH1Fcontainer_["MasslQuarksS3"]->Fill (genEvt.hadronicDecayQuark ()->p4 ().mass ());
-  if (genEvt.hadronicDecayQuarkBar ())  TH1Fcontainer_["MasslQuarksS3"]->Fill (genEvt.hadronicDecayQuarkBar ()->p4 ().mass ());
-
   // particles status 4
-  genEvt.setDefaultStatus (4);
-  reco::Particle::LorentzVector ttbarS4;
+  //genEvt.setDefaultStatus (4);
+  reco::Particle::LorentzVector ttbar;
   if(genEvt.top () && genEvt.topBar ()){
-    ttbarS4 = genEvt.top ()->p4 ()+ genEvt.topBar ()->p4 ();
-    TH1Fcontainer_["MttS4"]->Fill(ttbarS4.mass());
-    TH1Fcontainer_["PtTtbarS4"]->Fill(ttbarS4.pt());
-    TH1Fcontainer_["EtaTtbarS4"]->Fill(ttbarS4.eta());
-    TH1Fcontainer_["MassTopS2"]->Fill (genEvt.top ()->p4 ().mass ());
-    TH1Fcontainer_["MassTopS4"]->Fill(genEvt.top()->p4().mass());
-    TH1Fcontainer_["MassTopS4"]->Fill(genEvt.topBar()->p4().mass());
+    ttbar = genEvt.top ()->p4 ()+ genEvt.topBar ()->p4 ();
+    TH1Fcontainer_["Mtt"]->Fill(ttbar.mass());
+    TH1Fcontainer_["PtTtbar"]->Fill(ttbar.pt());
+    TH1Fcontainer_["EtaTtbar"]->Fill(ttbar.eta());
+    TH1Fcontainer_["MassTop"]->Fill (genEvt.top ()->p4 ().mass ());
+    TH1Fcontainer_["MassTop"]->Fill(genEvt.top()->p4().mass());
+    TH1Fcontainer_["MassTop"]->Fill(genEvt.topBar()->p4().mass());
   }
-  if(genEvt.wMinus ()) TH1Fcontainer_["MassWS4"]->Fill (genEvt.wMinus ()->p4 ().mass ());
-  if(genEvt.wPlus ()) TH1Fcontainer_["MassWS4"]->Fill (genEvt.wPlus ()->p4 ().mass ());
-  if (genEvt.b ()) TH1Fcontainer_["MassBS4"]->Fill (genEvt.b ()->p4 ().mass ());
-  if (genEvt.bBar ()) TH1Fcontainer_["MassBS4"]->Fill (genEvt.bBar ()->p4 ().mass ());
-  if (genEvt.hadronicDecayQuark ()) TH1Fcontainer_["MasslQuarksS4"]->Fill (genEvt.hadronicDecayQuark ()->p4 ().mass ());
-  if (genEvt.hadronicDecayQuarkBar ())TH1Fcontainer_["MasslQuarksS4"]->Fill (genEvt.hadronicDecayQuarkBar ()->p4 ().mass ());
+  if(genEvt.wMinus ()) TH1Fcontainer_["MassW"]->Fill (genEvt.wMinus ()->p4 ().mass ());
+  if(genEvt.wPlus ()) TH1Fcontainer_["MassW"]->Fill (genEvt.wPlus ()->p4 ().mass ());
+  if (genEvt.b ()) TH1Fcontainer_["MassB"]->Fill (genEvt.b ()->p4 ().mass ());
+  if (genEvt.bBar ()) TH1Fcontainer_["MassB"]->Fill (genEvt.bBar ()->p4 ().mass ());
+  if (genEvt.hadronicDecayQuark ()) TH1Fcontainer_["MasslQuarks"]->Fill (genEvt.hadronicDecayQuark ()->p4 ().mass ());
+  if (genEvt.hadronicDecayQuarkBar ())TH1Fcontainer_["MasslQuarks"]->Fill (genEvt.hadronicDecayQuarkBar ()->p4 ().mass ());
   
-  // topComposite ->  check if Top Status 4 is well computed
-  reco::Particle::LorentzVector topComposite;
-  if (genEvt.hadronicDecayQuark () && genEvt.hadronicDecayQuarkBar () && genEvt.hadronicDecayB ())
-    {
-      topComposite = genEvt.hadronicDecayQuark ()->p4 () + genEvt.hadronicDecayQuarkBar ()->p4 () + genEvt.hadronicDecayB ()->p4 ();
-      TH1Fcontainer_["MassCompositeTopS4"]->Fill (topComposite.mass ());
-    }
 
   ///////////////////////////////////////////////// 
   // For semiLep                                 //
@@ -307,8 +264,8 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
   // Debug                                       //
   ///////////////////////////////////////////////// 
   
-  if(genEvt.numberOfBQuarksFromTop()!=2) edm::LogWarning ("NoDataFound_Not2B") << genEvt.numberOfBQuarksFromTop()<< " b-quarks coming from Top instead of 1 in semileptonic event" ;
-  if(genEvt.numberOfLeptonsFromW()!=1) edm::LogWarning ("NoDataFound_Not1LepFromW") << genEvt.numberOfLeptonsFromW()<< " leptons coming from W instead of 1 in semileptonic event" ;
+  if(genEvt.numberOfBQuarks()!=2) edm::LogWarning ("NoDataFound_Not2B") << genEvt.numberOfBQuarks()<< " b-quarks coming from Top instead of 1 in semileptonic event" ;
+  if(genEvt.numberOfLeptons()!=1) edm::LogWarning ("NoDataFound_Not1LepFromW") << genEvt.numberOfLeptons()<< " leptons coming from W instead of 1 in semileptonic event" ;
   if(!genEvt.singleLepton()) edm::LogWarning ("NoDataFound_Lepton") << "No access to singleLepton in semileptonic event" ;
   if(!genEvt.singleNeutrino()) edm::LogWarning ("NoDataFound_Neutrino") << "No access to singleNeutrino in semileptonic event" ;
 
@@ -319,9 +276,9 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
   if(!genEvt.hadronicDecayQuarkBar()) edm::LogWarning ("NoDataFound_HadQBar") << "No access to hadronicDecayQuarkBar in semileptonic event" ;
   if(!genEvt.leptonicDecayB()) edm::LogWarning ("NoDataFound_LepB") << "No access to leptonicDecayB in semileptonic event" ;
 
-  if(genEvt.ISR().size()>0 && !genEvt.ISR()[0]) edm::LogWarning ("NoAcess_ISR") << " No access to ISR in semileptonic event" ;
-  if(genEvt.leptonicDecayTopRadiation().size()>0 && !genEvt.leptonicDecayTopRadiation()[0]) edm::LogWarning ("NoAccess_LepRad") << " No access to leptonicDecayTopRadiation in semileptonic event"<<endl;
-  if(genEvt.hadronicDecayTopRadiation().size()>0 && !genEvt.hadronicDecayTopRadiation()[0]) edm::LogWarning ("NoAccess_HadRad") << " No access to hadronicDecayTopRadiation in semileptonic event"<<endl;
+  if(genEvt.topSisters().size()>0 && !genEvt.topSisters()[0]) edm::LogWarning ("NoAcess_ISR") << " No access to ISR in semileptonic event" ;
+  if(genEvt.radiatedGluons(genEvt.leptonicDecayTop()->pdgId()).size()>0 && !genEvt.radiatedGluons(genEvt.leptonicDecayTop()->pdgId())[0]) edm::LogWarning ("NoAccess_LepRad") << " No access to leptonicDecayTopRadiation in semileptonic event"<<endl;
+  if(genEvt.radiatedGluons(genEvt.hadronicDecayTop()->pdgId()).size()>0 && !genEvt.radiatedGluons(genEvt.hadronicDecayTop()->pdgId())[0]) edm::LogWarning ("NoAccess_HadRad") << " No access to hadronicDecayTopRadiation in semileptonic event"<<endl;
 
   
   ///////////////////////////////////////////////// 
@@ -329,8 +286,6 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
   ///////////////////////////////////////////////// 
 
  
-   //status 4 particles 
-   genEvt.setDefaultStatus (4);
   
    if(genEvt.top()){
     TH1Fcontainer_["TopPt"]->Fill(genEvt.top()->pt());
@@ -426,18 +381,18 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
 
    DeltaR.clear(); 
    vector<float> PtRad;
-   if(genEvt.ISR().size()==0){
+   if(genEvt.topSisters().size()==0){
     TH1Fcontainer_["ISRPt"]->Fill(-1);
    }
-   for(unsigned int x=0;x<genEvt.ISR().size();x++){
-     TH1Fcontainer_["ISRPt"]->Fill(genEvt.ISR()[x]->pt());
-     TH1Fcontainer_["ISREta"]->Fill(genEvt.ISR()[x]->eta());
-     PtRad.push_back(genEvt.ISR()[x]->pt());
+   for(unsigned int x=0;x<genEvt.topSisters().size();x++){
+     TH1Fcontainer_["ISRPt"]->Fill(genEvt.topSisters()[x]->pt());
+     TH1Fcontainer_["ISREta"]->Fill(genEvt.topSisters()[x]->eta());
+     PtRad.push_back(genEvt.topSisters()[x]->pt());
      if(allquarks){
-      DeltaR.push_back(ROOT::Math::VectorUtil::DeltaR(genEvt.ISR()[x]->p4(),genEvt.hadronicDecayQuark()->p4()));
-      DeltaR.push_back(ROOT::Math::VectorUtil::DeltaR(genEvt.ISR()[x]->p4(),genEvt.hadronicDecayQuarkBar()->p4()));
-      DeltaR.push_back(ROOT::Math::VectorUtil::DeltaR(genEvt.ISR()[x]->p4(),genEvt.hadronicDecayB()->p4()));
-      DeltaR.push_back(ROOT::Math::VectorUtil::DeltaR(genEvt.ISR()[x]->p4(),genEvt.leptonicDecayB()->p4()));
+      DeltaR.push_back(ROOT::Math::VectorUtil::DeltaR(genEvt.topSisters()[x]->p4(),genEvt.hadronicDecayQuark()->p4()));
+      DeltaR.push_back(ROOT::Math::VectorUtil::DeltaR(genEvt.topSisters()[x]->p4(),genEvt.hadronicDecayQuarkBar()->p4()));
+      DeltaR.push_back(ROOT::Math::VectorUtil::DeltaR(genEvt.topSisters()[x]->p4(),genEvt.hadronicDecayB()->p4()));
+      DeltaR.push_back(ROOT::Math::VectorUtil::DeltaR(genEvt.topSisters()[x]->p4(),genEvt.leptonicDecayB()->p4()));
     }
    }
 
@@ -459,31 +414,34 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
 
    std::sort(vec.begin(),vec.end(),LowestPt());
    int nof = 0;
+   if(vec.size()>0)
    for(unsigned int x=0;x<PtRad.size();x++)
      if(PtRad[x]>vec[0].pt()) nof++;
    TH1Dcontainer_["NofISRWithHighestPtThanQuarks"]->Fill(nof);
    DeltaR.clear();
    PtRad.clear();
-   for(unsigned int x=0;x<genEvt.leptonicDecayTopRadiation().size();x++){
-     TH1Fcontainer_["TopRadiationPt"]->Fill(genEvt.leptonicDecayTopRadiation()[x]->pt());
-     TH1Fcontainer_["TopRadiationEta"]->Fill(genEvt.leptonicDecayTopRadiation()[x]->eta()); 
-     PtRad.push_back(genEvt.leptonicDecayTopRadiation()[x]->pt());
+   if(genEvt.isSemiLeptonic() && genEvt.leptonicDecayTop())
+   for(unsigned int x=0;x<genEvt.radiatedGluons(genEvt.leptonicDecayTop()->pdgId()).size();x++){
+     TH1Fcontainer_["TopRadiationPt"]->Fill(genEvt.radiatedGluons(genEvt.leptonicDecayTop()->pdgId())[x]->pt());
+     TH1Fcontainer_["TopRadiationEta"]->Fill(genEvt.radiatedGluons(genEvt.leptonicDecayTop()->pdgId())[x]->eta()); 
+     PtRad.push_back(genEvt.radiatedGluons(genEvt.leptonicDecayTop()->pdgId())[x]->pt());
      if(allquarks){
-      DeltaR.push_back(ROOT::Math::VectorUtil::DeltaR(genEvt.leptonicDecayTopRadiation()[x]->p4(),genEvt.hadronicDecayQuark()->p4()));
-      DeltaR.push_back(ROOT::Math::VectorUtil::DeltaR(genEvt.leptonicDecayTopRadiation()[x]->p4(),genEvt.hadronicDecayQuarkBar()->p4()));
-      DeltaR.push_back(ROOT::Math::VectorUtil::DeltaR(genEvt.leptonicDecayTopRadiation()[x]->p4(),genEvt.hadronicDecayB()->p4()));
-      DeltaR.push_back(ROOT::Math::VectorUtil::DeltaR(genEvt.leptonicDecayTopRadiation()[x]->p4(),genEvt.leptonicDecayB()->p4()));
+      DeltaR.push_back(ROOT::Math::VectorUtil::DeltaR(genEvt.radiatedGluons(genEvt.leptonicDecayTop()->pdgId())[x]->p4(),genEvt.hadronicDecayQuark()->p4()));
+      DeltaR.push_back(ROOT::Math::VectorUtil::DeltaR(genEvt.radiatedGluons(genEvt.leptonicDecayTop()->pdgId())[x]->p4(),genEvt.hadronicDecayQuarkBar()->p4()));
+      DeltaR.push_back(ROOT::Math::VectorUtil::DeltaR(genEvt.radiatedGluons(genEvt.leptonicDecayTop()->pdgId())[x]->p4(),genEvt.hadronicDecayB()->p4()));
+      DeltaR.push_back(ROOT::Math::VectorUtil::DeltaR(genEvt.radiatedGluons(genEvt.leptonicDecayTop()->pdgId())[x]->p4(),genEvt.leptonicDecayB()->p4()));
      }
    }
-   for(unsigned int x=0;x<genEvt.hadronicDecayTopRadiation().size();x++){
-     TH1Fcontainer_["TopRadiationPt"]->Fill(genEvt.hadronicDecayTopRadiation()[x]->pt());
-     TH1Fcontainer_["TopRadiationEta"]->Fill(genEvt.hadronicDecayTopRadiation()[x]->eta()); 
-     PtRad.push_back(genEvt.hadronicDecayTopRadiation()[x]->pt());
+   if(genEvt.isSemiLeptonic() && genEvt.hadronicDecayTop())
+   for(unsigned int x=0;x<genEvt.radiatedGluons(genEvt.hadronicDecayTop()->pdgId()).size();x++){
+     TH1Fcontainer_["TopRadiationPt"]->Fill(genEvt.radiatedGluons(genEvt.hadronicDecayTop()->pdgId())[x]->pt());
+     TH1Fcontainer_["TopRadiationEta"]->Fill(genEvt.radiatedGluons(genEvt.hadronicDecayTop()->pdgId())[x]->eta()); 
+     PtRad.push_back(genEvt.radiatedGluons(genEvt.hadronicDecayTop()->pdgId())[x]->pt());
      if(allquarks){
-      DeltaR.push_back(ROOT::Math::VectorUtil::DeltaR(genEvt.hadronicDecayTopRadiation()[x]->p4(),genEvt.hadronicDecayQuark()->p4()));
-      DeltaR.push_back(ROOT::Math::VectorUtil::DeltaR(genEvt.hadronicDecayTopRadiation()[x]->p4(),genEvt.hadronicDecayQuarkBar()->p4()));
-      DeltaR.push_back(ROOT::Math::VectorUtil::DeltaR(genEvt.hadronicDecayTopRadiation()[x]->p4(),genEvt.hadronicDecayB()->p4()));
-      DeltaR.push_back(ROOT::Math::VectorUtil::DeltaR(genEvt.hadronicDecayTopRadiation()[x]->p4(),genEvt.hadronicDecayB()->p4()));
+      DeltaR.push_back(ROOT::Math::VectorUtil::DeltaR(genEvt.radiatedGluons(genEvt.hadronicDecayTop()->pdgId())[x]->p4(),genEvt.hadronicDecayQuark()->p4()));
+      DeltaR.push_back(ROOT::Math::VectorUtil::DeltaR(genEvt.radiatedGluons(genEvt.hadronicDecayTop()->pdgId())[x]->p4(),genEvt.hadronicDecayQuarkBar()->p4()));
+      DeltaR.push_back(ROOT::Math::VectorUtil::DeltaR(genEvt.radiatedGluons(genEvt.hadronicDecayTop()->pdgId())[x]->p4(),genEvt.hadronicDecayB()->p4()));
+      DeltaR.push_back(ROOT::Math::VectorUtil::DeltaR(genEvt.radiatedGluons(genEvt.hadronicDecayTop()->pdgId())[x]->p4(),genEvt.hadronicDecayB()->p4()));
      }
    }
 
@@ -511,88 +469,6 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
    
    vec.clear();
    }
-  ///////////////////////////////////////////////// 
-  //Compare particles with different status      //
-  ///////////////////////////////////////////////// 
-
-  reco::Particle::LorentzVector top2, top3, top4, topBar2, topBar3, topBar4;
-  reco::Particle::LorentzVector Wm2, Wm3, Wm4, Wp2, Wp3, Wp4;
-  reco::Particle::LorentzVector b2, b3, b4, bBar2, bBar3, bBar4;
-  reco::Particle::LorentzVector q2, q3, q4, qBar2, qBar3, qBar4;
-  reco::Particle::LorentzVector l2, l3, l4;
-  //Fill particles status 2
-  genEvt.setDefaultStatus (2);
-  if(genEvt.top ()) top2 = genEvt.top ()->p4 ();
-  if(genEvt.topBar ()) topBar2 = genEvt.topBar ()->p4 ();
-  if(genEvt.wMinus ()) Wm2 = genEvt.wMinus ()->p4 ();
-  if(genEvt.wPlus ()) Wp2 = genEvt.wPlus ()->p4 ();
-  if (genEvt.b ()) q2 = genEvt.b ()->p4 ();
-  if (genEvt.bBar ()) qBar2 = genEvt.bBar ()->p4 ();
-  if (genEvt.hadronicDecayQuark ()) b2 = genEvt.hadronicDecayQuark ()->p4 ();
-  if (genEvt.hadronicDecayQuarkBar ()) bBar2 = genEvt.hadronicDecayQuarkBar ()->p4 ();
-  if (genEvt.singleLepton ()) l2 = genEvt.singleLepton ()->p4 ();
-  //Fill particles status 3
-  genEvt.setDefaultStatus (3);
-  if(genEvt.top ())top3 = genEvt.top ()->p4 ();
-  if(genEvt.topBar ())topBar3 = genEvt.topBar ()->p4 ();
-  if(genEvt.wMinus ())Wm3 = genEvt.wMinus ()->p4 ();
-  if(genEvt.wPlus ())Wp3 = genEvt.wPlus ()->p4 ();
-  if (genEvt.b ())  b3 = genEvt.b ()->p4 ();
-  if (genEvt.bBar ())  bBar3 = genEvt.bBar ()->p4 ();
-  if (genEvt.hadronicDecayQuark ()) q3 = genEvt.hadronicDecayQuark ()->p4 ();
-  if (genEvt.hadronicDecayQuarkBar ()) qBar3 = genEvt.hadronicDecayQuarkBar ()->p4 ();
-  if (genEvt.singleLepton ())    l3 = genEvt.singleLepton ()->p4 ();
-  //Fill particles status 4
-  genEvt.setDefaultStatus (4);
-  if(genEvt.top ())top4 = genEvt.top ()->p4 ();
-  if(genEvt.topBar ())topBar4 = genEvt.topBar ()->p4 ();
-  if(genEvt.wMinus ())Wm4 = genEvt.wMinus ()->p4 ();
-  if(genEvt.wPlus ())Wp4 = genEvt.wPlus ()->p4 ();
-  if (genEvt.b ()) b4 = genEvt.b ()->p4 ();
-  if (genEvt.bBar ())  bBar4 = genEvt.bBar ()->p4 ();
-  if (genEvt.hadronicDecayQuark ())  q4 = genEvt.hadronicDecayQuark ()->p4 ();
-  if (genEvt.hadronicDecayQuarkBar ()) qBar4 = genEvt.hadronicDecayQuarkBar ()->p4 ();
-  if (genEvt.singleLepton ()) l4 = genEvt.singleLepton ()->p4 ();
-  TH1Fcontainer_["DeltaPTopsS2S3"]->Fill (top3.P() - top2.P());
-  TH1Fcontainer_["DeltaPTopsS2S3"]->Fill (topBar3.P() - topBar2.P());
-  TH1Fcontainer_["DeltaPWsS2S3"]->Fill (Wm3.P() - Wm2.P());
-  TH1Fcontainer_["DeltaPWsS2S3"]->Fill (Wp3.P() - Wp2.P());
-  TH1Fcontainer_["DeltaPTopsS3S4"]->Fill (top4.P() - top3.P());
-  TH1Fcontainer_["DeltaPTopsS3S4"]->Fill (topBar4.P() - topBar3.P());
-  TH1Fcontainer_["DeltaPWsS3S4"]->Fill (Wm4.P() - Wm3.P());
-  TH1Fcontainer_["DeltaPWsS3S4"]->Fill (Wp4.P() - Wp3.P());
-  TH1Fcontainer_["DeltaRTopsS2S3"]->Fill (ROOT::Math::VectorUtil::DeltaR (top3, top2));
-  TH1Fcontainer_["DeltaRTopsS2S3"]->Fill (ROOT::Math::VectorUtil::DeltaR (topBar3, topBar2));
-  TH1Fcontainer_["DeltaRWsS2S3"]->Fill (ROOT::Math::VectorUtil::DeltaR (Wm3, Wm2));
-  TH1Fcontainer_["DeltaRWsS2S3"]->Fill (ROOT::Math::VectorUtil::DeltaR (Wp3, Wp2));
-  if (genEvt.b ()) TH1Fcontainer_["DeltaRQuarksS2S3"]->Fill (ROOT::Math::VectorUtil::DeltaR (b3, b2));
-  if (genEvt.bBar ()) TH1Fcontainer_["DeltaRQuarksS2S3"]->Fill (ROOT::Math::VectorUtil::DeltaR (bBar3, bBar2));
-  if (genEvt.hadronicDecayQuark ())  TH1Fcontainer_["DeltaRQuarksS2S3"]->Fill (ROOT::Math::VectorUtil::DeltaR (q3, q2));
-  if (genEvt.hadronicDecayQuarkBar ())  TH1Fcontainer_["DeltaRQuarksS2S3"]->Fill (ROOT::Math::VectorUtil::DeltaR (qBar3, qBar2));
-  if (genEvt.b ())  TH1Fcontainer_["DeltaPQuarksS2S3"]->Fill (b3.P () - b2.P ());
-  if (genEvt.bBar ())  TH1Fcontainer_["DeltaPQuarksS2S3"]->Fill (bBar3.P () - bBar2.P ());
-  if (genEvt.hadronicDecayQuark ())  TH1Fcontainer_["DeltaPQuarksS2S3"]->Fill (q3.P () - q2.P ());
-  if (genEvt.hadronicDecayQuarkBar ())  TH1Fcontainer_["DeltaPQuarksS2S3"]->Fill (qBar3.P () - qBar2.P ());
-  if (genEvt.singleLepton ())
-    {
-      TH1Fcontainer_["DeltaPLeptonS2S3"]->Fill (l3.P () - l2.P ());
-      TH1Fcontainer_["DeltaPLeptonS3S4"]->Fill (l4.P () - l3.P ());
-      TH1Fcontainer_["DeltaRLeptonS2S3"]->Fill (ROOT::Math::VectorUtil::DeltaR (l3, l2));
-      TH1Fcontainer_["DeltaRLeptonS3S4"]->Fill (ROOT::Math::VectorUtil::DeltaR (l4, l3));
-    }
-  TH1Fcontainer_["DeltaRTopsS3S4"]->Fill (ROOT::Math::VectorUtil::DeltaR (top4, top3));
-  TH1Fcontainer_["DeltaRTopsS3S4"]->Fill (ROOT::Math::VectorUtil::DeltaR (topBar4, topBar3));
-  TH1Fcontainer_["DeltaRWsS3S4"]->Fill (ROOT::Math::VectorUtil::DeltaR (Wm4, Wm3));
-  TH1Fcontainer_["DeltaRWsS3S4"]->Fill (ROOT::Math::VectorUtil::DeltaR (Wp4, Wp3));
-  if (genEvt.b ())  TH1Fcontainer_["DeltaRQuarksS3S4"]->Fill (ROOT::Math::VectorUtil::DeltaR (b4, b3));
-  if (genEvt.bBar ())  TH1Fcontainer_["DeltaRQuarksS3S4"]->Fill (ROOT::Math::VectorUtil::DeltaR (bBar4, bBar3));
-  if (genEvt.hadronicDecayQuark ())  TH1Fcontainer_["DeltaRQuarksS3S4"]->Fill (ROOT::Math::VectorUtil::DeltaR (q4, q3));
-  if (genEvt.hadronicDecayQuarkBar ())  TH1Fcontainer_["DeltaRQuarksS3S4"]->Fill (ROOT::Math::VectorUtil::DeltaR (qBar4, qBar3));
-  if (genEvt.b ())  TH1Fcontainer_["DeltaPQuarksS3S4"]->Fill (b4.P () - b3.P ());
-  if (genEvt.bBar ())  TH1Fcontainer_["DeltaPQuarksS3S4"]->Fill (bBar4.P () - bBar3.P ());
-  if (genEvt.hadronicDecayQuark ())  TH1Fcontainer_["DeltaPQuarksS3S4"]->Fill (q4.P () - q3.P ());
-  if (genEvt.hadronicDecayQuarkBar ())  TH1Fcontainer_["DeltaPQuarksS3S4"]->Fill (qBar4.P () - qBar3.P ());
-
   
   ///////////////////////////////////////////////// 
   // Spin Correlations                           //
@@ -600,7 +476,7 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
  
   //Helicity basis
 // build CM sytems
-  if(genEvt.isSemiLeptonic(TtGenEvent::kMuon)){
+  if(genEvt.isSemiLeptonic(WDecay::kMuon)){
     reco::Particle::LorentzVector topsZMF(genEvt.top()->p4()+genEvt.topBar()->p4());
   
   // boost particle 4-vectors to tt ZMF
@@ -731,49 +607,17 @@ TtGenEventChecker::beginJob (const edm::EventSetup &)
 
   //Mtt
   
-  TH1Fcontainer_["MttS2"] = subDirComp.make <TH1F>("MttS2","Mttbar status 2",150,0,1500);
-  TH1Fcontainer_["MttS3"] = subDirComp.make <TH1F>("MttS3","Mttbar status 3",150,0,1500);
-  TH1Fcontainer_["MttS4"] = subDirComp.make <TH1F>("MttS4","Mttbar status 4",150,0,1500);
-  TH1Fcontainer_["PtTtbarS2"] = subDirComp.make <TH1F>("PtTtbarS2","PtTtbar status 2",100,0,500);
-  TH1Fcontainer_["PtTtbarS3"] = subDirComp.make <TH1F>("PtTtbarS3","PtTtbar status 2",100,0,500);
-  TH1Fcontainer_["PtTtbarS4"] = subDirComp.make <TH1F>("PtTtbarS4","PtTtbar status 2",100,0,500);
-  TH1Fcontainer_["EtaTtbarS2"] = subDirComp.make <TH1F>("EtaTtbarS2","EtaTtbar status 2",100,-5,5);
-  TH1Fcontainer_["EtaTtbarS3"] = subDirComp.make <TH1F>("EtaTtbarS3","EtaTtbar status 2",100,-5,5);
-  TH1Fcontainer_["EtaTtbarS4"] = subDirComp.make <TH1F>("EtaTtbarS4","EtaTtbar status 2",100,-5,5);
+  TH1Fcontainer_["Mtt"] = subDirComp.make <TH1F>("Mtt","Mttbar status 4",150,0,1500);
+  TH1Fcontainer_["PtTtbar"] = subDirComp.make <TH1F>("PtTtbar","PtTtbar status 2",100,0,500);
+  TH1Fcontainer_["EtaTtbar"] = subDirComp.make <TH1F>("EtaTtbar","EtaTtbar status 2",100,-5,5);
 
 
  
   //masses
-  TH1Fcontainer_["MassTopS2"] = subDirComp.make < TH1F > ("MassTopS2", "Mass of Top Status 2", 100, 0, 300);
-  TH1Fcontainer_["MassTopS3"] = subDirComp.make < TH1F > ("MassTopS3", "Mass of Top Status 3", 100, 0, 300);
-  TH1Fcontainer_["MassTopS4"] = subDirComp.make < TH1F > ("MassTopS4", "Mass of Top Status 4", 100, 0, 300);
-  TH1Fcontainer_["MassWS2"] = subDirComp.make < TH1F > ("MassWS2", "Mass of W Status 2", 60, 0, 120);
-  TH1Fcontainer_["MassWS3"] = subDirComp.make < TH1F > ("MassWS3", "Mass of W Status 3", 60, 0, 120);
-  TH1Fcontainer_["MassWS4"] = subDirComp.make < TH1F > ("MassWS4", "Mass of W Status 4", 60, 0, 120);
-  TH1Fcontainer_["MassBS2"] = subDirComp.make < TH1F > ("MassBS2", "Mass of B Status 2", 240, 0, 120);
-  TH1Fcontainer_["MassBS3"] = subDirComp.make < TH1F > ("MassBS3", "Mass of B Status 3", 240, 0, 120);
-  TH1Fcontainer_["MassBS4"] = subDirComp.make < TH1F > ("MassBS4", "Mass of B Status 4", 240, 0, 120);
-  TH1Fcontainer_["MasslQuarksS2"] = subDirComp.make < TH1F > ("MasslQuarksS2", "Mass of light quarks Status 2", 120, 0, 30);
-  TH1Fcontainer_["MasslQuarksS3"] = subDirComp.make < TH1F > ("MasslQuarksS3", "Mass of light quarks Status 3", 120, 0, 30);
-  TH1Fcontainer_["MasslQuarksS4"] = subDirComp.make < TH1F > ("MasslQuarksS4", "Mass of light quarks Status 4", 120, 0, 30);
-  TH1Fcontainer_["MassCompositeTopS4"] = subDirComp.make < TH1F > ("MassCompositeTopS4", "Mass of CompositeTop Status 4", 100, 0, 300);
-  //DeltaX
-  TH1Fcontainer_["DeltaPLeptonS2S3"] = subDirComp.make < TH1F > ("DeltaPLeptonS2S3", "#Delta(P) Lepton S2S3 ", 80, -10, 10);
-  TH1Fcontainer_["DeltaPQuarksS2S3"] = subDirComp.make < TH1F > ("DeltaPQuarksS2S3", "#Delta(P) Quarks S2S3", 400, -100, 100);
-  TH1Fcontainer_["DeltaPWsS2S3"] = subDirComp.make < TH1F > ("DeltaPWsS2S3", "#Delta(P) W S2S3", 400, -100, 100);
-  TH1Fcontainer_["DeltaPTopsS2S3"] = subDirComp.make < TH1F > ("DeltaPTopsS2S3", "#Delta(P) Top S2S3", 400, -100, 100);
-  TH1Fcontainer_["DeltaPLeptonS3S4"] = subDirComp.make < TH1F > ("DeltaPLeptonS3S4", "#Delta(P) Lepton S3S4", 80, -10, 10);
-  TH1Fcontainer_["DeltaPQuarksS3S4"] = subDirComp.make < TH1F > ("DeltaPQuarksS3S4", "#Delta(P) Quarks S3S4", 400, -100, 100);
-  TH1Fcontainer_["DeltaPWsS3S4"] = subDirComp.make < TH1F > ("DeltaPWsS3S4", "#Delta(P) Ws S3S4", 400, -100, 100);
-  TH1Fcontainer_["DeltaPTopsS3S4"] = subDirComp.make < TH1F > ("DeltaPTopsS3S4", "#Delta(P) Tops S3S4", 400, -100, 100);
-  TH1Fcontainer_["DeltaRLeptonS2S3"] = subDirComp.make < TH1F > ("DeltaRLeptonS2S3", "#Delta(R) Lepton S2S3", 60, 0, 0.3);
-  TH1Fcontainer_["DeltaRQuarksS2S3"] = subDirComp.make < TH1F > ("DeltaRQuarksS2S3", "#Delta(R) Quarks S2S3", 100, 0, 1);
-  TH1Fcontainer_["DeltaRWsS2S3"] = subDirComp.make < TH1F > ("DeltaRWsS2S3", "#Delta(R) Ws S2S3", 100, 0, 1);
-  TH1Fcontainer_["DeltaRTopsS2S3"] = subDirComp.make < TH1F > ("DeltaRTopsS2S3", "#Delta(R) Tops S2S3", 100, 0, 1);
-  TH1Fcontainer_["DeltaRQuarksS3S4"] = subDirComp.make < TH1F > ("DeltaRQuarksS3S4", "#Delta(R) Quarks S3S4", 100, 0, 1);
-  TH1Fcontainer_["DeltaRLeptonS3S4"] = subDirComp.make < TH1F > ("DeltaRLeptonS3S4", "#Delta(R) Lepton S3S4", 100, 0, 1);
-  TH1Fcontainer_["DeltaRWsS3S4"] = subDirComp.make < TH1F > ("DeltaRWsS3S4", "#Delta(R) Ws S3S4", 100, 0, 1);
-  TH1Fcontainer_["DeltaRTopsS3S4"] = subDirComp.make < TH1F > ("DeltaRTopsS3S4", "#Delta(R) Tops S3S4", 100, 0, 1);
+  TH1Fcontainer_["MassTop"] = subDirComp.make < TH1F > ("MassTop", "Mass of Top Status 4", 100, 0, 300);
+  TH1Fcontainer_["MassW"] = subDirComp.make < TH1F > ("MassW", "Mass of W Status 4", 60, 0, 120);
+  TH1Fcontainer_["MassB"] = subDirComp.make < TH1F > ("MassB", "Mass of B Status 4", 240, 0, 120);
+  TH1Fcontainer_["MasslQuarks"] = subDirComp.make < TH1F > ("MasslQuarks", "Mass of light quarks Status 4", 120, 0, 30);
 
   //Spin Correlations
   TH1Dcontainer_["cosThetaTLHel"] = subDirSpinCorr.make < TH1D > ("cosThetaTLHel", "Pseudo-angle between t-quark and lepton", 10, -1, 1);

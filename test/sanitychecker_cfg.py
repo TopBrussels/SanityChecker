@@ -9,7 +9,7 @@ process.MessageLogger = cms.Service("MessageLogger",
     statistics = cms.untracked.vstring("Statistics_SC"),
     debugModules = cms.untracked.vstring('*'), #for all modules
 
-    categories = cms.untracked.vstring("inputChain","decayChain","NoDataFound",
+    categories = cms.untracked.vstring("inputChain","decayChain","selection","NoDataFound",
                                        "NoDataFound_NotSemiMu","NoDataFound_LessThen4SelJets","NoDataFound_LessThen1SelMuon",
                                        "NoDataFound_LessThen1IsoMuon","NoDataFound_MuonUnmatched","NoDataFound_NoRadiation",
                                        "NoDataFound_NoRadiation2","NoDataFound_usePATMatching","LinkBroken_noJetsFound",
@@ -60,7 +60,8 @@ process.MessageLogger = cms.Service("MessageLogger",
 				     NoAccess_LepRad = cms.untracked.PSet(limit = cms.untracked.int32(5)),
 				     NoAccess_HadRad = cms.untracked.PSet(limit = cms.untracked.int32(5)),
 				     inputChain = cms.untracked.PSet(limit = cms.untracked.int32(0)),
-                                     decayChain = cms.untracked.PSet(limit = cms.untracked.int32(0))
+                                     decayChain = cms.untracked.PSet(limit = cms.untracked.int32(0)),
+                                     selection = cms.untracked.PSet(limit = cms.untracked.int32(0))
 				     ),
     ErrorSummary_SC = cms.untracked.PSet( threshold = cms.untracked.string("ERROR"), categories = cms.untracked.vstring("SummaryError") ),
     InfoSummary_SC = cms.untracked.PSet( 	threshold = cms.untracked.string("INFO"), categories = cms.untracked.vstring("MainResults"),
@@ -82,16 +83,18 @@ process.MessageLogger = cms.Service("MessageLogger",
                                                 LinkBroken_MC_noGenMuon = cms.untracked.PSet(limit = cms.untracked.int32(5)),
                                          	inputChain = cms.untracked.PSet(limit = cms.untracked.int32(0)),
                                          	decayChain = cms.untracked.PSet(limit = cms.untracked.int32(0))),
+                                                selection = cms.untracked.PSet(limit = cms.untracked.int32(0))
     #Statistics_SC = cms.untracked.PSet(threshold = cms.untracked.string("DEBUG"))
 )
 
+#process.source = cms.Source("PoolSource",fileNames = cms.untracked.vstring('file:/user/echabert/TopTree/CMSSW_2_2_7/src/TopBrussels/TopTreeProducer/test/PATLayer1.root'))
 process.load("TopBrussels.SanityChecker.PATLayer1_Ttjets_MG_input_cfi")
 #process.load("TopBrussels.SanityChecker.PATLayer1_Ttjets_MG_NoSel_input_cfi")
 #process.load("TopBrussels.SanityChecker.PATLayer1_R1_QCD100to250_MG_input_cfi")
 #process.load("TopBrussels.SanityChecker.PATLayer1_R1_TTJets_MG_input_cfi")
 #process.load("TopBrussels.SanityChecker.PATLayer1_R1_TauolaTTbar_input_cfi")
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10000) )
-
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1000))
+				
 ## std sequence to produce the ttGenEvt
 process.load("TopQuarkAnalysis.TopEventProducers.sequences.ttGenEvent_cff")
 
@@ -100,7 +103,8 @@ process.load("TopBrussels.SanityChecker.ResolutionChecker_cfi")
 process.load("TopBrussels.SanityChecker.KinematicsChecker_cfi")
 process.load("TopBrussels.SanityChecker.JetMetChecker_cfi")
 process.load("TopQuarkAnalysis.TopEventProducers.producers.TtDecaySelection_cfi")
-process.ttDecaySelection.channel_1 = [0, 1, 0]
+#process.ttDecaySelection.channel_1 = [0, 1, 0]
+process.ttDecaySelection.allowedTopDecays.decayBranchA.muon  = True
 process.load("TopBrussels.SanityChecker.TruthRecoChecker_cfi")
 process.load("TopBrussels.SanityChecker.MuonChecker_cfi")
 process.load("TopBrussels.SanityChecker.VertexChecker_cfi")

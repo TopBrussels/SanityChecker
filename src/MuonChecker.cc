@@ -196,7 +196,7 @@ MuonChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 					histocontainer_["GenMuonMotherPid"]->Fill(MesonsPdgId[0],1);MuonsOrigin[0]++;
 					if(genEvtHandle.isValid())//->isNonnull())
 					{
-						if( genEvt->isSemiLeptonic(genEvt->kMuon) && muon_iter->genParticle()->mother(0)->mother(0)->numberOfMothers() != 0 )
+						if( genEvt->isSemiLeptonic(WDecay::kMuon) && muon_iter->genParticle()->mother(0)->mother(0)->numberOfMothers() != 0 )
 						{
 							NbOfSemiMuEvents++;
 							if(fabs(muon_iter->genParticle()->mother(0)->mother(0)->mother(0)->pdgId()) == 6) GenLeplMatch = true;

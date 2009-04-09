@@ -181,7 +181,7 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 	if(verbose_) cout << "analyzing event number " << NrAnalyzed << endl;
 	
-	if(genEvt.isSemiLeptonic(genEvt.kMuon)) NbSemiMuGenEvents++;
+	if(genEvt.isSemiLeptonic(WDecay::kMuon)) NbSemiMuGenEvents++;
 	if(jets.size()>3 && muons.size()>0 && mets.size()>0) NbSemiMuRecoEvents++;
 
 	if(verbose_) cout << "counters done " << endl;
@@ -190,7 +190,7 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	bool muonselected = true;
 	bool jetsselected = true;
 	
-	if(!genEvt.isSemiLeptonic(genEvt.kMuon)) {
+	if(!genEvt.isSemiLeptonic(WDecay::kMuon)) {
 		edm::LogWarning  ("NoDataFound_NotSemiMu") << "Not a semi-muonic event..."; 
 		NrNotSemiMu++;
 		allok = false;		
@@ -305,10 +305,10 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 			std::vector<const reco::Candidate *> NfirstpTISR,NfirstpTradiation,NfirstpTradiationNoISR;
 
 			///check number additional ISR partons
-			unsigned int NumberISR = genEvt.ISR().size();		
+			unsigned int NumberISR = genEvt.topSisters().size();		
 			///check number additional radiation partons
-			unsigned int NumberRadiationLep = genEvt.leptonicDecayTopRadiation().size();		
-			unsigned int NumberRadiationHad = genEvt.hadronicDecayTopRadiation().size();		
+			unsigned int NumberRadiationLep = genEvt.radiatedGluons(genEvt.leptonicDecayTop()->pdgId()).size();		
+			unsigned int NumberRadiationHad = genEvt.radiatedGluons(genEvt.hadronicDecayTop()->pdgId()).size();		
 			unsigned int NumberRadiation = NumberRadiationLep+NumberRadiationHad;		
 	 		if(verbose_){
 				cout << "#quarks "<<quarks.size() << endl;
@@ -318,17 +318,17 @@ TruthReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 		
 			if(NumberISR!=0) {
 				for(unsigned int i=0; i<NumberISR; i++){
-					vectorISR.push_back((genEvt.ISR())[i]);
+					vectorISR.push_back((genEvt.topSisters())[i]);
 				}
 			}
 			if(NumberRadiationLep!=0 ) {
 				for(unsigned int i=0;i<NumberRadiationLep; i++){
-					TopRadiation.push_back((genEvt.leptonicDecayTopRadiation())[i]);
+					TopRadiation.push_back((genEvt.radiatedGluons(genEvt.leptonicDecayTop()->pdgId()))[i]);
 				}
 			}
 			if(NumberRadiationHad!=0 ) {
 				for(unsigned int i=0; i<NumberRadiationHad; i++){
-					TopRadiation.push_back((genEvt.hadronicDecayTopRadiation())[i]);
+					TopRadiation.push_back((genEvt.radiatedGluons(genEvt.hadronicDecayTop()->pdgId()))[i]);
 				}
 			}
 		

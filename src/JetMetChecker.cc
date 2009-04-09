@@ -13,7 +13,7 @@
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: JetMetChecker.cc,v 1.11 2009/03/25 11:13:15 ghammad Exp $
+// $Id: JetMetChecker.cc,v 1.12 2009/04/08 12:34:47 echabert Exp $
 //
 //
 
@@ -369,7 +369,7 @@ JetMetChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   
   if(  jets->size() >= 4){  
     if (genEvt.isValid()){
-      if(genEvt->isSemiLeptonic(genEvt->kMuon)) {
+      if(genEvt->isSemiLeptonic(WDecay::kMuon)) {
 	//make a copy of the jet collection to add the matched jets
 	///////	  std::vector<pat::Jet> jets_clone;
 	

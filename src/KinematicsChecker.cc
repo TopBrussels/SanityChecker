@@ -13,7 +13,7 @@ Implementation:
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: KinematicsChecker.cc,v 1.9 2009/03/24 14:09:21 jmmaes Exp $
+// $Id: KinematicsChecker.cc,v 1.10 2009/04/08 12:34:47 echabert Exp $
 //
 //
 
@@ -223,7 +223,7 @@ KinematicsChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   if(  jets->size() >= 4){  
     if (genEvt.isValid()){
      
-      if(genEvt->isSemiLeptonic(genEvt->kMuon)) {
+      if(genEvt->isSemiLeptonic(WDecay::kMuon)) {
 
 	//make a copy of the jet collection to be able to drop jets from it
 	std::vector<pat::Jet> jets_clone;
@@ -278,14 +278,14 @@ KinematicsChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 	std::vector<const reco::Candidate *> ISRquarksSorted;
 	std::vector<double> IRSquarksPt;
 
-	unsigned int NumberISR = genEvt->ISR().size();	
+	unsigned int NumberISR = genEvt->topSisters().size();	
 	if(NumberISR>0) {
 	  if(verbose_){std::cout << " NumberISR: " <<NumberISR << std::endl;}
 
 	  //Fill vector with ISR quarks
 	  for(unsigned int i=0; i<NumberISR; i++){
-	    ISRquarks.push_back((genEvt->ISR())[i]);
-	    IRSquarksPt.push_back((genEvt->ISR())[i]->p4().pt());
+	    ISRquarks.push_back((genEvt->topSisters())[i]);
+	    IRSquarksPt.push_back((genEvt->topSisters())[i]->p4().pt());
 	  }
 	 
 	  //sort vector
