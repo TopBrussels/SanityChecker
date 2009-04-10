@@ -13,7 +13,7 @@ Implementation:
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: KinematicsChecker.cc,v 1.10 2009/04/08 12:34:47 echabert Exp $
+// $Id: KinematicsChecker.cc,v 1.11 2009/04/09 12:54:15 echabert Exp $
 //
 //
 
@@ -245,10 +245,10 @@ KinematicsChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 	}
 	if(TopQuarks.size()==4) { 
 
-	  JetPartonMatching *GenMatchTopQuarks = new JetPartonMatching(TopQuarks, jets_clone, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
+	  JetPartonMatching GenMatchTopQuarks(TopQuarks, jets_clone, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
 
 	  for(unsigned int i=0; i<4; i++){
-	    Int_t Idx = GenMatchTopQuarks->getMatchForParton(i,0);
+	    Int_t Idx = GenMatchTopQuarks.getMatchForParton(i,0);
 	    if(Idx>=0){
 	      ObjectP4s[0].push_back((jets_clone[Idx]).p4());
 	      //drop jets from collection
@@ -391,10 +391,10 @@ KinematicsChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 	    }
 	  }
 	
-	  JetPartonMatching *GenMatchTopRadQuarks = new JetPartonMatching(TopRadQuarksSorted, jets_clone, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_); 
+	  JetPartonMatching GenMatchTopRadQuarks(TopRadQuarksSorted, jets_clone, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_); 
 
 	  for(unsigned int i=0; i<TopRadQuarksSorted.size(); i++){
-	    Int_t Idx = GenMatchTopRadQuarks->getMatchForParton(i,0);
+	    Int_t Idx = GenMatchTopRadQuarks.getMatchForParton(i,0);
 	    if(Idx>=0) ObjectP4s[0].push_back((jets_clone[Idx]).p4());
 	  }
 
