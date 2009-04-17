@@ -13,7 +13,7 @@ Implementation:
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: KinematicsChecker.cc,v 1.11 2009/04/09 12:54:15 echabert Exp $
+// $Id: KinematicsChecker.cc,v 1.12 2009/04/10 13:43:05 jmmaes Exp $
 //
 //
 
@@ -455,11 +455,13 @@ KinematicsChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 	for(unsigned int i=0;i<3;i++){
 	  ObjectP4s[i].clear();
 	}
+	
        
 	if(mets->size()>0){
 
 	  double ClosestDelPhi=999.;
-	  ClosestDelPhi=fabs(ROOT::Math::VectorUtil::DeltaPhi(genEvt->singleNeutrino()->p4(),(*mets)[0].p4()));
+	  if(genEvt->singleNeutrino())
+	    ClosestDelPhi=fabs(ROOT::Math::VectorUtil::DeltaPhi(genEvt->singleNeutrino()->p4(),(*mets)[0].p4()));
 	 
 
 	  ObjectP4s[2].push_back(((*mets)[0].p4()));
