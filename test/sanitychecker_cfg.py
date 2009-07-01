@@ -87,45 +87,48 @@ process.MessageLogger = cms.Service("MessageLogger",
     #Statistics_SC = cms.untracked.PSet(threshold = cms.untracked.string("DEBUG"))
 )
 
-#process.source = cms.Source("PoolSource",fileNames = cms.untracked.vstring('file:/user/echabert/TopTree/CMSSW_2_2_7/src/TopBrussels/TopTreeProducer/test/PATLayer1.root'))
-process.load("TopBrussels.SanityChecker.PATLayer1_Ttjets_MG_input_cfi")
-#process.load("TopBrussels.SanityChecker.PATLayer1_Ttjets_MG_NoSel_input_cfi")
-#process.load("TopBrussels.SanityChecker.PATLayer1_R1_QCD100to250_MG_input_cfi")
-#process.load("TopBrussels.SanityChecker.PATLayer1_R1_TTJets_MG_input_cfi")
-#process.load("TopBrussels.SanityChecker.PATLayer1_R1_TauolaTTbar_input_cfi")
+#process.source = cms.Source("PoolSource",fileNames = cms.untracked.vstring('/pnfs/iihe/cms/ph/sc4/store/mc/Winter09/TTbar-madgraph/GEN-SIM-DIGI-RECO/IDEAL_V11_FastSim_v1/0060/BA04AC07-68E1-DD11-B844-00163691DF32.root')
+process.source = cms.Source("PoolSource",fileNames = cms.untracked.vstring('/store/mc/Winter09/TTbar-madgraph/GEN-SIM-DIGI-RECO/IDEAL_V11_FastSim_v1/0060/BA04AC07-68E1-DD11-B844-00163691DF32.root'))
+#process.load("UserCode.TopMCValidation.PATLayer1_Ttjets_MG_input_cfi")
+#process.load("UserCode.TopMCValidation.PATLayer1_Ttjets_MG_NoSel_input_cfi")
+#process.load("UserCode.TopMCValidation.PATLayer1_R1_QCD100to250_MG_input_cfi")
+#process.load("UserCode.TopMCValidation.PATLayer1_R1_TTJets_MG_input_cfi")
+#process.load("UserCode.TopMCValidation.PATLayer1_R1_TauolaTTbar_input_cfi")
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1000))
 				
 ## std sequence to produce the ttGenEvt
-process.load("TopQuarkAnalysis.TopEventProducers.sequences.ttGenEvent_cff")
+#process.load("TopQuarkAnalysis.TopEventProducers.sequences.ttGenEvent_cff")
 
-process.load("TopBrussels.SanityChecker.TtGenEventChecker_cfi")
-process.load("TopBrussels.SanityChecker.ResolutionChecker_cfi")
-process.load("TopBrussels.SanityChecker.KinematicsChecker_cfi")
-process.load("TopBrussels.SanityChecker.JetMetChecker_cfi")
-process.load("TopQuarkAnalysis.TopEventProducers.producers.TtDecaySelection_cfi")
+#process.load("UserCode.TopMCValidation.TtGenEventChecker_cfi")
+process.load("UserCode.TopMCValidation.ResolutionChecker_cfi")
+process.load("UserCode.TopMCValidation.KinematicsChecker_cfi")
+#process.load("UserCode.TopMCValidation.JetMetChecker_cfi")
+#process.load("TopQuarkAnalysis.TopEventProducers.producers.TtDecaySelection_cfi")
 #process.ttDecaySelection.channel_1 = [0, 1, 0]
-process.ttDecaySelection.allowedTopDecays.decayBranchA.muon  = True
-process.load("TopBrussels.SanityChecker.TruthRecoChecker_cfi")
-process.load("TopBrussels.SanityChecker.MuonChecker_cfi")
-process.load("TopBrussels.SanityChecker.VertexChecker_cfi")
+#process.ttDecaySelection.allowedTopDecays.decayBranchA.muon  = True
+#process.load("UserCode.TopMCValidation.TruthRecoChecker_cfi")
+#process.load("UserCode.TopMCValidation.MuonChecker_cfi")
+process.load("UserCode.TopMCValidation.VertexChecker_cfi")
+
+#Modules of channels
+process.load("UserCode.TopMCValidation.LeptonJetsChecker_cfi")
 
 process.TFileService = cms.Service("TFileService",
         fileName = cms.string('SanityChecker_test.root')
 	)
 	
 process.p = cms.Path(
-    process.makeGenEvt  
-    + process.TtGenEventChecker 		#this line should be commented when not running over ttbar
-    + process.Resolutions_lJets 		#this line should be commented when not running over ttbar
-    + process.Resolutions_bJets 		#this line should be commented when not running over ttbar
-    + process.Resolutions_muons  		#this line should be commented when not running over ttbar  
-    + process.Resolutions_electrons    		#this line should be commented when not running over ttbar
-    + process.Resolutions_met   		#this line should be commented when not running over ttbar 
-    + process.jetmet 
-    + process.muonchecker 
-    + process.vertex 
-    + process.kinematics 
-    + (process.ttDecaySelection + process.TruthReco) # This line should be commented in case of not running on ttbar events
+    process.vertex+ 
+    process.leptonJetsChecker
+    #process.makeGenEvt*(  
+    #+ process.TtGenEventChecker 		#this line should be commented when not running over ttbar
+    #process.Resolutions_lJets 		#this line should be commented when not running over ttbar
+    #+ process.Resolutions_bJets 		#this line should be commented when not running over ttbar
+    #+ process.Resolutions_muons  		#this line should be commented when not running over ttbar  
+    #+ process.Resolutions_electrons    		#this line should be commented when not running over ttbar
+    #+ process.Resolutions_met   		#this line should be commented when not running over ttbar 
+    #+ (process.ttDecaySelection + process.TruthReco) # This line should be commented in case of not running on ttbar events
                                                      # because the ttDecaySelection will throw an edm exception thrown if no genevent is there
+    #)
 )
 

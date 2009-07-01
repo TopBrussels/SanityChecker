@@ -16,13 +16,12 @@
 //needed for MessageLogger
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 
-#include "AnalysisDataFormats/TopObjects/interface/TtGenEvent.h"
+#include "DataFormats/JetReco/interface/CaloJet.h"
+#include "DataFormats/METReco/interface/CaloMET.h"
+#include "DataFormats/EgammaCandidates/interface/GsfElectron.h"
+#include "DataFormats/MuonReco/interface/Muon.h"
 
-#include "DataFormats/PatCandidates/interface/Muon.h"
-#include "DataFormats/PatCandidates/interface/Jet.h"
-#include "DataFormats/PatCandidates/interface/MET.h"
-#include "DataFormats/PatCandidates/interface/Tau.h"
-#include "DataFormats/PatCandidates/interface/Electron.h"
+#include "AnalysisDataFormats/TopObjects/interface/TtGenEvent.h"
 
 #include "TDirectory.h"
 #include "TH1F.h"
@@ -99,7 +98,6 @@ ResolutionChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 {
    using namespace edm;
    using namespace std;
-   using namespace pat;
    
 	 // Get the gen and cal object fourvector
    vector<reco::Particle *> p4gen, p4rec;
@@ -110,31 +108,31 @@ ResolutionChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
    if(genEvt->particles().size()<10) return;
 
    if(objectType_ == "electron"){ 
-     Handle<std::vector<pat::Electron> >  electrons; //to calculate the ResolutionChecker for the electrons, i used the TopElectron instead of the AOD information
+     Handle<std::vector<reco::GsfElectron> >  electrons; //to calculate the ResolutionChecker for the electrons, i used the TopElectron instead of the AOD information
      iEvent.getByLabel(labelName_,electrons);
      for(size_t e=0; e<electrons->size(); e++) { 
        for(size_t p=0; p<genEvt->particles().size(); p++){
          if( (abs(genEvt->particles()[p].pdgId()) == 11) && (ROOT::Math::VectorUtil::DeltaR(genEvt->particles()[p].p4(), (*electrons)[e].p4()) < minDR_) ) {
            p4gen.push_back(new reco::Particle(genEvt->particles()[p]));
-	   			 p4rec.push_back(new reco::Particle((pat::Electron)((*electrons)[e])));
+	   			 p4rec.push_back(new reco::Particle((reco::GsfElectron)((*electrons)[e])));
 	 			 }
        }
      }
    }
    else if(objectType_ == "muon"){
-     Handle<std::vector<pat::Muon> >  muons;
+     Handle<std::vector<reco::Muon> >  muons;
      iEvent.getByLabel(labelName_,muons);
      for(size_t m=0; m<muons->size(); m++) {      
        for(size_t p=0; p<genEvt->particles().size(); p++){
          if( (abs(genEvt->particles()[p].pdgId()) == 13) && (ROOT::Math::VectorUtil::DeltaR(genEvt->particles()[p].p4(), (*muons)[m].p4()) < minDR_) ) {
            p4gen.push_back(new reco::Particle(genEvt->particles()[p]));
-           p4rec.push_back(new reco::Particle((pat::Muon)((*muons)[m])));
+           p4rec.push_back(new reco::Particle((reco::Muon)((*muons)[m])));
 	 			 }
        }
      }
    }
    else if(objectType_ == "lJets" ){
-     Handle<std::vector<pat::Jet> > jets;
+     Handle<std::vector<reco::CaloJet> > jets;
      iEvent.getByLabel(labelName_,jets);
 		 if(jets->size()>=4) { 
        for(unsigned int j = 0; j<4; j++){      
@@ -144,14 +142,14 @@ ResolutionChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 						// const reco::Candidate *mom = genEvt->particles()[p].mother();
 						// std::cout <<"id mother particle "<<mom->pdgId()<< " status mother particle "<< mom->status()<< std::endl;
 	     			 p4gen.push_back(new reco::Particle(genEvt->particles()[p]));
-	     			 p4rec.push_back(new reco::Particle((pat::Jet)(*jets)[j]));
+	     			 p4rec.push_back(new reco::Particle((reco::CaloJet)(*jets)[j]));
 	   			 }
 	 			 }
 	 		 }
 	 	 }
 	 }
 	 else if(objectType_ == "bJets" ){
-     Handle<std::vector<pat::Jet> > jets;
+     Handle<std::vector<reco::CaloJet> > jets;
      iEvent.getByLabel(labelName_,jets);
 		 if(jets->size()>=4) { 
        for(unsigned int j = 0; j<4; j++){      
@@ -161,37 +159,20 @@ ResolutionChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 						// const reco::Candidate *mom = genEvt->particles()[p].mother();
 						// std::cout <<"id mother particle "<<mom->pdgId()<< " status mother particle "<< mom->status()<< std::endl;
 						 p4gen.push_back(new reco::Particle(genEvt->particles()[p]));
-	     			 p4rec.push_back(new reco::Particle((pat::Jet)(*jets)[j]));
+	     			 p4rec.push_back(new reco::Particle((reco::CaloJet)(*jets)[j]));
 	   			 }
 	 			 }
        }
      }
    }
    else if(objectType_ == "met"){
-     Handle<std::vector<pat::MET> >  mets;
+     Handle<std::vector<reco::CaloMET> >  mets;
      iEvent.getByLabel(labelName_,mets);
      if(mets->size()>=1) { 
        if( genEvt->isSemiLeptonic() && genEvt->singleNeutrino() != 0 && ROOT::Math::VectorUtil::DeltaR(genEvt->singleNeutrino()->p4(), (*mets)[0].p4()) < minDR_) {
          p4gen.push_back(new reco::Particle(0,genEvt->singleNeutrino()->p4(),math::XYZPoint()));
-         p4rec.push_back(new reco::Particle((pat::MET)((*mets)[0])));
+         p4rec.push_back(new reco::Particle((reco::CaloMET)((*mets)[0])));
        }
-     }
-   } 
-   else if(objectType_ == "tau"){
-     Handle<std::vector<pat::Tau> > taus; 
-     iEvent.getByLabel(labelName_,taus);
-     for(std::vector<pat::Tau>::const_iterator tau = taus->begin(); tau != taus->end(); ++tau) {
-       // find the tau (if any) that matches a MC tau from W
-       reco::GenParticle genLepton = *(tau->genLepton());
-       if( abs(genLepton.pdgId())==15 && genLepton.status()==2 &&
-           genLepton.numberOfMothers()>0 &&
-           abs(genLepton.mother(0)->pdgId())==15 &&
-           genLepton.mother(0)->numberOfMothers()>0 &&
-           abs(genLepton.mother(0)->mother(0)->pdgId())==24 &&
-	   			 ROOT::Math::VectorUtil::DeltaR(genLepton.p4(), tau->p4()) < minDR_  ) {
-       }
-       p4gen.push_back(new reco::Particle(genLepton));
-       p4rec.push_back(new reco::Particle(*tau));
      }
    }
    // Fill the object's value
@@ -288,9 +269,6 @@ ResolutionChecker::beginJob(const edm::EventSetup&)
   } else if(objectType_ == "muon"){
     resObsMin.push_back(-0.15);  resObsMin.push_back(-0.1);  resObsMin.push_back(-0.05);  resObsMin.push_back(-0.15);  resObsMin.push_back(-0.004);  resObsMin.push_back(-0.003);  resObsMin.push_back(-8);    resObsMin.push_back(-0.004);   
     resObsMax.push_back( 0.15);  resObsMax.push_back( 0.1);  resObsMax.push_back( 0.05);  resObsMax.push_back( 0.15);  resObsMax.push_back( 0.004);  resObsMax.push_back( 0.003);  resObsMax.push_back( 8);    resObsMax.push_back( 0.004);
-  } else if(objectType_ == "tau"){ 
-    resObsMin.push_back(-1.);    resObsMin.push_back(-10.);  resObsMin.push_back(-10);   resObsMin.push_back(-1.);   resObsMin.push_back(-0.1);    resObsMin.push_back(-0.1);    resObsMin.push_back(-80);   resObsMin.push_back(-0.1);   
-    resObsMax.push_back( 1.);    resObsMax.push_back( 10.);  resObsMax.push_back( 10);   resObsMax.push_back( 1.);   resObsMax.push_back( 0.1);    resObsMax.push_back( 0.1);    resObsMax.push_back( 50);   resObsMax.push_back( 0.1);
   } else if(objectType_ == "lJets" || objectType_ == "bJets"){
     resObsMin.push_back(-1.);    resObsMin.push_back(-10.);  resObsMin.push_back(-10.);  resObsMin.push_back(-1.);   resObsMin.push_back(-0.4);    resObsMin.push_back(-0.6);    resObsMin.push_back( -80);  resObsMin.push_back(-0.6);   
     resObsMax.push_back( 1.);    resObsMax.push_back( 10.);  resObsMax.push_back( 10.);  resObsMax.push_back( 1.);   resObsMax.push_back( 0.4);    resObsMax.push_back( 0.6);    resObsMax.push_back( 80);   resObsMax.push_back( 0.6);
@@ -407,7 +385,6 @@ ResolutionChecker::endJob() {
   if(objectType_ == "bJets" && nrFilled == 0) edm::LogProblem  ("SummaryError") << "No plots filled for bjets \n";    
   if(objectType_ == "muon" && nrFilled == 0) edm::LogProblem  ("SummaryError") << "No plots filled for muons \n";    
   if(objectType_ == "electron" && nrFilled == 0) edm::LogProblem  ("SummaryError") << "No plots filled for electrons \n";    
-  if(objectType_ == "tau" && nrFilled == 0) edm::LogProblem  ("SummaryError") << "No plots filled for taus \n";    
   if(objectType_ == "met" && nrFilled == 0) edm::LogProblem  ("SummaryError") << "No plots filled for met \n";    
 	
   edm::LogVerbatim ("MainResults") << " \n\n";	
