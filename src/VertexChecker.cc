@@ -35,8 +35,8 @@
 //needed for MessageLogger
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 
-#include "DataFormats/VertexReco/interface/Vertex.h"
 
+#include "DataFormats/VertexReco/interface/Vertex.h"
 
 #include "TDirectory.h"
 #include "TH1D.h"
