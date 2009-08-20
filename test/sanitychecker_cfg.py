@@ -12,7 +12,7 @@ process.MessageLogger = cms.Service("MessageLogger",
     categories = cms.untracked.vstring("inputChain","decayChain","selection","NoDataFound",
                                        "NoDataFound_NotSemiMu","NoDataFound_LessThen4SelJets","NoDataFound_LessThen1SelMuon",
                                        "NoDataFound_LessThen1IsoMuon","NoDataFound_MuonUnmatched","NoDataFound_NoRadiation",
-                                       "NoDataFound_NoRadiation2","NoDataFound_usePATMatching","LinkBroken_noJetsFound",
+                                       "NoDataFound_NoRadiation2","NoDataFound_usePATMatching","LinkBroken","LinkBroken_noJetsFound",
                                        "LinkBroken_noMuonsFound","LinkBroken_noMetsFound","LinkBroken_noGenEvtFound",
                                        "NoDataFound_MC_noMuon","NoDataFound_MC_noGenEvt","LinkBroken_MC_noGenMuon",
                                        "LinkBroken_ISRJets","LinkBroken_TopRadJets","SummaryError","MainResults",
@@ -28,7 +28,7 @@ process.MessageLogger = cms.Service("MessageLogger",
                                      NoDataFound = cms.untracked.PSet(reportEvery = cms.untracked.int32(10)), 
                                      #LinkBroken = cms.untracked.PSet(reportEvery = cms.untracked.int32(2)),
                                      LinkBroken = cms.untracked.PSet(limit = cms.untracked.int32(5)),
-                                     LinkBroken_noGenEvt = cms.untracked.PSet(limit = cms.untracked.int32(5)),
+                                     LinkBroken_noGenEvtFound = cms.untracked.PSet(limit = cms.untracked.int32(5)),
                                      LinkBroken_ISRJets = cms.untracked.PSet(limit = cms.untracked.int32(5)),
                                      LinkBroken_TopRadJets = cms.untracked.PSet(limit = cms.untracked.int32(5)),
                                      NoDataFound_NotSemiMu = cms.untracked.PSet(limit = cms.untracked.int32(5)),
@@ -67,7 +67,7 @@ process.MessageLogger = cms.Service("MessageLogger",
     InfoSummary_SC = cms.untracked.PSet( 	threshold = cms.untracked.string("INFO"), categories = cms.untracked.vstring("MainResults"),
                                                 NoDataFound = cms.untracked.PSet(reportEvery = cms.untracked.int32(10)),
                                                 LinkBroken = cms.untracked.PSet(limit = cms.untracked.int32(5)),
-                                         	LinkBroken_noGenEvt = cms.untracked.PSet(limit = cms.untracked.int32(5)),
+                                         	LinkBroken_noGenEvtFound = cms.untracked.PSet(limit = cms.untracked.int32(5)),
                                          	LinkBroken_ISRJets = cms.untracked.PSet(limit = cms.untracked.int32(5)),
                                          	LinkBroken_TopRadJets = cms.untracked.PSet(limit = cms.untracked.int32(5)),
                                                 NoDataFound_NotSemiMu = cms.untracked.PSet(limit = cms.untracked.int32(5)),
@@ -87,45 +87,49 @@ process.MessageLogger = cms.Service("MessageLogger",
     #Statistics_SC = cms.untracked.PSet(threshold = cms.untracked.string("DEBUG"))
 )
 
-#process.source = cms.Source("PoolSource",fileNames = cms.untracked.vstring('file:/user/echabert/TopTree/CMSSW_2_2_7/src/TopBrussels/TopTreeProducer/test/PATLayer1.root'))
-process.load("TopBrussels.SanityChecker.PATLayer1_Ttjets_MG_input_cfi")
-#process.load("TopBrussels.SanityChecker.PATLayer1_Ttjets_MG_NoSel_input_cfi")
-#process.load("TopBrussels.SanityChecker.PATLayer1_R1_QCD100to250_MG_input_cfi")
-#process.load("TopBrussels.SanityChecker.PATLayer1_R1_TTJets_MG_input_cfi")
-#process.load("TopBrussels.SanityChecker.PATLayer1_R1_TauolaTTbar_input_cfi")
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1000))
+#process.source = cms.Source("PoolSource",fileNames = cms.untracked.vstring('file:/user_mnt/user/ghammad/CMSSW_3_1_1/src/PhysicsTools/PatAlgos/test/PATLayer1_Output.fromAOD_full.root'))
+process.load("TopBrussels.SanityChecker.PATLayer1_CMSSW312_PreProd_TTbar_redigi_input_cfi")
+#process.load("TopBrussels.SanityChecker.PATLayer1_CMSSW31X_PreProd_InclusiveMuPt15_redigi_input_cfi")
+#process.load("TopBrussels.SanityChecker.PATLayer1_CMSSW31X_PreProd_WW_redigi_input_cfi")
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1))
+
+#process.source.skipEvents   = cms.untracked.uint32(5431)
+#process.source.eventsToSkip = cms.untracked.VEventRange(381)
+
+process.TFileService = cms.Service("TFileService",
+        fileName = cms.string('SanityChecker_PreProd_312_TTbar_test.root')
+	)
 				
-## std sequence to produce the ttGenEvt
-process.load("TopQuarkAnalysis.TopEventProducers.sequences.ttGenEvent_cff")
+# std sequence to produce the ttGenEvt
+#process.load("TopQuarkAnalysis.TopEventProducers.sequences.ttGenEvent_cff")
 
 process.load("TopBrussels.SanityChecker.TtGenEventChecker_cfi")
 process.load("TopBrussels.SanityChecker.ResolutionChecker_cfi")
+
 process.load("TopBrussels.SanityChecker.KinematicsChecker_cfi")
 process.load("TopBrussels.SanityChecker.JetMetChecker_cfi")
+
 process.load("TopQuarkAnalysis.TopEventProducers.producers.TtDecaySelection_cfi")
-#process.ttDecaySelection.channel_1 = [0, 1, 0]
+##process.ttDecaySelection.channel_1 = [0, 1, 0]
 process.ttDecaySelection.allowedTopDecays.decayBranchA.muon  = True
 process.load("TopBrussels.SanityChecker.TruthRecoChecker_cfi")
+
 process.load("TopBrussels.SanityChecker.MuonChecker_cfi")
 process.load("TopBrussels.SanityChecker.VertexChecker_cfi")
 
-process.TFileService = cms.Service("TFileService",
-        fileName = cms.string('SanityChecker_test.root')
-	)
-	
 process.p = cms.Path(
-    process.makeGenEvt  
-    + process.TtGenEventChecker 		#this line should be commented when not running over ttbar
-    + process.Resolutions_lJets 		#this line should be commented when not running over ttbar
-    + process.Resolutions_bJets 		#this line should be commented when not running over ttbar
-    + process.Resolutions_muons  		#this line should be commented when not running over ttbar  
-    + process.Resolutions_electrons    		#this line should be commented when not running over ttbar
-    + process.Resolutions_met   		#this line should be commented when not running over ttbar 
+      #process.makeGenEvt  
+      process.TtGenEventChecker 		#this line should be commented when not running over ttbar
+#    + process.Resolutions_lJets 		#this line should be commented when not running over ttbar
+#    + process.Resolutions_bJets 		#this line should be commented when not running over ttbar
+#    + process.Resolutions_muons  		#this line should be commented when not running over ttbar  
+#    + process.Resolutions_electrons    	#this line should be commented when not running over ttbar
+#    + process.Resolutions_met   		#this line should be commented when not running over ttbar 
     + process.jetmet 
     + process.muonchecker 
     + process.vertex 
     + process.kinematics 
-    + (process.ttDecaySelection + process.TruthReco) # This line should be commented in case of not running on ttbar events
+    +(process.ttDecaySelection + process.TruthReco) # This line should be commented in case of not running on ttbar events
                                                      # because the ttDecaySelection will throw an edm exception thrown if no genevent is there
 )
 

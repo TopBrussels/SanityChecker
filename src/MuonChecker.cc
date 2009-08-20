@@ -225,10 +225,12 @@ MuonChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 	(GenLeplMatch ? MatchedMuon = "TopMuonMatch_" : MatchedMuon = "");
 
+	/*
 	for(Int_t i=0;i<NbOfMuonId;i++)
 	{
 		if(muon_iter->isGood(reco::Muon::SelectionType(i))) histocontainer_["MuonId"]->Fill(MuonID[i],1);
 	}
+	*/
 
 	if(muon_iter->isGlobalMuon())
 	{
@@ -246,7 +248,7 @@ MuonChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	}
 	
 	histocontainer_[MatchedMuon+"MuonCaloCompatibility"] ->Fill(muon_iter->caloCompatibility());
-	histocontainer_[MatchedMuon+"MuonSegmCompatibility"] ->Fill(muon_iter->segmentCompatibility());
+	//histocontainer_[MatchedMuon+"MuonSegmCompatibility"] ->Fill(muon_iter->segmentCompatibility());
 
 	histocontainer_[MatchedMuon+"MuonIsoR03SumPt"] ->Fill(muon_iter->isolationR03().sumPt);
 	histocontainer_[MatchedMuon+"MuonIsoR03emEt"]  ->Fill(muon_iter->isolationR03().emEt);

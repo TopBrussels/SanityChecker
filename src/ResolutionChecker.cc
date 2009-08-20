@@ -115,8 +115,8 @@ ResolutionChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
      for(size_t e=0; e<electrons->size(); e++) { 
        for(size_t p=0; p<genEvt->particles().size(); p++){
          if( (abs(genEvt->particles()[p].pdgId()) == 11) && (ROOT::Math::VectorUtil::DeltaR(genEvt->particles()[p].p4(), (*electrons)[e].p4()) < minDR_) ) {
-           p4gen.push_back(new reco::Particle(genEvt->particles()[p]));
-	   			 p4rec.push_back(new reco::Particle((pat::Electron)((*electrons)[e])));
+           p4gen.push_back(new reco::Particle((const reco::Particle&)  (const reco::Particle&) genEvt->particles()[p]));
+	   			 p4rec.push_back(new reco::Particle((const reco::Particle&) ((*electrons)[e])));
 	 			 }
        }
      }
@@ -127,8 +127,8 @@ ResolutionChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
      for(size_t m=0; m<muons->size(); m++) {      
        for(size_t p=0; p<genEvt->particles().size(); p++){
          if( (abs(genEvt->particles()[p].pdgId()) == 13) && (ROOT::Math::VectorUtil::DeltaR(genEvt->particles()[p].p4(), (*muons)[m].p4()) < minDR_) ) {
-           p4gen.push_back(new reco::Particle(genEvt->particles()[p]));
-           p4rec.push_back(new reco::Particle((pat::Muon)((*muons)[m])));
+           p4gen.push_back(new reco::Particle((const reco::Particle&) genEvt->particles()[p]));
+           p4rec.push_back(new reco::Particle((const reco::Particle&) (pat::Muon)((*muons)[m])));
 	 			 }
        }
      }
@@ -143,8 +143,8 @@ ResolutionChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 	          // std::cout <<"genEvt->particles()[p].status() "<<genEvt->particles()[p].status() << std::endl;
 						// const reco::Candidate *mom = genEvt->particles()[p].mother();
 						// std::cout <<"id mother particle "<<mom->pdgId()<< " status mother particle "<< mom->status()<< std::endl;
-	     			 p4gen.push_back(new reco::Particle(genEvt->particles()[p]));
-	     			 p4rec.push_back(new reco::Particle((pat::Jet)(*jets)[j]));
+	     			 p4gen.push_back(new reco::Particle((const reco::Particle&) genEvt->particles()[p]));
+	     			 p4rec.push_back(new reco::Particle((const reco::Particle&) (pat::Jet)(*jets)[j]));
 	   			 }
 	 			 }
 	 		 }
@@ -160,8 +160,8 @@ ResolutionChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 	          // std::cout <<"genEvt->particles()[p].status() "<<genEvt->particles()[p].status() << std::endl;
 						// const reco::Candidate *mom = genEvt->particles()[p].mother();
 						// std::cout <<"id mother particle "<<mom->pdgId()<< " status mother particle "<< mom->status()<< std::endl;
-						 p4gen.push_back(new reco::Particle(genEvt->particles()[p]));
-	     			 p4rec.push_back(new reco::Particle((pat::Jet)(*jets)[j]));
+						 p4gen.push_back(new reco::Particle((const reco::Particle&) genEvt->particles()[p]));
+	     			 p4rec.push_back(new reco::Particle((const reco::Particle&) (pat::Jet)(*jets)[j]));
 	   			 }
 	 			 }
        }
@@ -172,8 +172,8 @@ ResolutionChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
      iEvent.getByLabel(labelName_,mets);
      if(mets->size()>=1) { 
        if( genEvt->isSemiLeptonic() && genEvt->singleNeutrino() != 0 && ROOT::Math::VectorUtil::DeltaR(genEvt->singleNeutrino()->p4(), (*mets)[0].p4()) < minDR_) {
-         p4gen.push_back(new reco::Particle(0,genEvt->singleNeutrino()->p4(),math::XYZPoint()));
-         p4rec.push_back(new reco::Particle((pat::MET)((*mets)[0])));
+         p4gen.push_back(new reco::Particle((const reco::Particle&) genEvt->singleNeutrino()->p4()));
+         p4rec.push_back(new reco::Particle((const reco::Particle&) (pat::MET)((*mets)[0])));
        }
      }
    } 
@@ -190,8 +190,8 @@ ResolutionChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
            abs(genLepton.mother(0)->mother(0)->pdgId())==24 &&
 	   			 ROOT::Math::VectorUtil::DeltaR(genLepton.p4(), tau->p4()) < minDR_  ) {
        }
-       p4gen.push_back(new reco::Particle(genLepton));
-       p4rec.push_back(new reco::Particle(*tau));
+       p4gen.push_back(new reco::Particle((const reco::Particle&) genLepton));
+       p4rec.push_back(new reco::Particle((const reco::Particle&) *tau));
      }
    }
    // Fill the object's value

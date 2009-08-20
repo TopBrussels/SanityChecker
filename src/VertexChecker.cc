@@ -13,7 +13,7 @@
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: VertexChecker.cc,v 1.2 2009/03/09 15:08:19 jmmaes Exp $
+// $Id: VertexChecker.cc,v 1.6 2009/07/01 13:51:58 echabert Exp $
 //
 //
 
@@ -36,9 +36,7 @@
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 
 
-#include "AnalysisDataFormats/TopObjects/interface/TtGenEvent.h"
-#include "DataFormats/PatCandidates/interface/Jet.h"
-
+#include "DataFormats/VertexReco/interface/Vertex.h"
 
 #include "TDirectory.h"
 #include "TH1D.h"

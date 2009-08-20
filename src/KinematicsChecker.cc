@@ -13,7 +13,7 @@ Implementation:
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: KinematicsChecker.cc,v 1.10 2009/04/08 12:34:47 echabert Exp $
+// $Id: KinematicsChecker.cc,v 1.15 2009/07/01 13:51:58 echabert Exp $
 //
 //
 
@@ -36,6 +36,7 @@ Implementation:
 #include "DataFormats/PatCandidates/interface/MET.h"
 
 #include "TDirectory.h"
+#include "TString.h"
 #include "TH1D.h"
 #include "TH1F.h"
 #include "TH2F.h"
@@ -227,13 +228,15 @@ KinematicsChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 
 	//make a copy of the jet collection to be able to drop jets from it
 	std::vector<pat::Jet> jets_clone;
+	std::vector<pat::Jet> jets_clone_bis;
+/*
 	for(unsigned int i=0; i<jets->size(); i++){
 	  jets_clone.push_back((*jets)[i]);
 	}
       
 	if(verbose_){std::cout << " jets->size(): " << jets->size() << std::endl;}
 	if(verbose_){std::cout << " jets_clone.size(): " << jets_clone.size() << std::endl;}
-
+*/
 	// Make plots only with jets from ttbar events (matched with a certain algo)
 	// Matching index : Hadronic Q  = 0, Hadronic Q' = 1, Hadronic b  = 2, Leptonic b  = 3;
 	std::vector<const reco::Candidate *> TopQuarks;
@@ -243,28 +246,47 @@ KinematicsChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 	  TopQuarks.push_back(genEvt->hadronicDecayB());
 	  TopQuarks.push_back(genEvt->leptonicDecayB());
 	}
+	
 	if(TopQuarks.size()==4) { 
 
-	  JetPartonMatching *GenMatchTopQuarks = new JetPartonMatching(TopQuarks, jets_clone, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
+	  if(verbose_){std::cout << " Entering the genparton matching " << std::endl;}
+	  JetPartonMatching GenMatchTopQuarks(TopQuarks, jets_clone, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_);
+	  if(verbose_){std::cout << " Genparton matching done" << std::endl;}
+	  
+	  std::vector<int> matches = GenMatchTopQuarks.getMatchesForPartons();
 
-	  for(unsigned int i=0; i<4; i++){
-	    Int_t Idx = GenMatchTopQuarks->getMatchForParton(i,0);
-	    if(Idx>=0){
-	      ObjectP4s[0].push_back((jets_clone[Idx]).p4());
-	      //drop jets from collection
-	      jets_clone.erase(jets_clone.begin()+Idx);
+	for(unsigned int i=0; i<jets->size(); i++){
+	    if( std::find(matches.begin(), matches.end(), i) != matches.end() ){
+	      // jet was matched to one of the four partons
+	      ObjectP4s[0].push_back(((*jets)[i]).p4());
+	    }
+	    else{
+	      // jet was not matched
+	      jets_clone.push_back((*jets)[i]);
 	    }
 	  }
-	  
+/*	  
+	for(unsigned int i=0; i<4; i++){
+	    Int_t Idx = GenMatchTopQuarks.getMatchForParton(i,0);
+	    if(verbose_){std::cout << " Index of the jet matching parton " << i << " = " << Idx << std::endl;}
+	    if(Idx>=0){
+	      ObjectP4s[0].push_back((jets_clone[Idx]).p4());
+	      if(verbose_){std::cout << " P4 of the jet with index " << Idx << " pushed back " << std::endl;}
+	      //drop jets from collection
+	      jets_clone.erase(jets_clone.begin()+Idx);
+	      if(verbose_){std::cout << " Jet with index " << Idx << " erased from the list" << std::endl;}
+	    }
+	  }
+*/	  
 	  if(verbose_){std::cout << " jets_clone.size(): " << jets_clone.size() << std::endl;}
 
 	  TH1Dcontainer_[3]["number"]->Fill(ObjectP4s[0].size()); 
-	  for(unsigned int j=0; j<ObjectP4s[0].size(); j++) TH1Dcontainer_[3]["pt"]->Fill(ObjectP4s[0][j].Pt());  
-	  for(unsigned int j=0;j<ObjectP4s[0].size();j++) TH1Dcontainer_[3]["eta"]->Fill(ObjectP4s[0][j].Eta()); 
-	  for(unsigned int j=0;j<ObjectP4s[0].size();j++) TH1Dcontainer_[3]["et"]->Fill(ObjectP4s[0][j].Et());
+	  for(unsigned int j=0;j<ObjectP4s[0].size();j++) TH1Dcontainer_[3]["pt"]    ->Fill(ObjectP4s[0][j].Pt());  
+	  for(unsigned int j=0;j<ObjectP4s[0].size();j++) TH1Dcontainer_[3]["eta"]   ->Fill(ObjectP4s[0][j].Eta()); 
+	  for(unsigned int j=0;j<ObjectP4s[0].size();j++) TH1Dcontainer_[3]["et"]    ->Fill(ObjectP4s[0][j].Et());
 	  for(unsigned int j=0;j<ObjectP4s[0].size();j++) TH1Dcontainer_[3]["energy"]->Fill(ObjectP4s[0][j].E());
-	  for(unsigned int j=0;j<ObjectP4s[0].size();j++) TH1Dcontainer_[3]["theta"]->Fill(ObjectP4s[0][j].Theta());
-	  for(unsigned int j=0;j<ObjectP4s[0].size();j++) TH1Dcontainer_[3]["phi"]->Fill(ObjectP4s[0][j].Phi());
+	  for(unsigned int j=0;j<ObjectP4s[0].size();j++) TH1Dcontainer_[3]["theta"] ->Fill(ObjectP4s[0][j].Theta());
+	  for(unsigned int j=0;j<ObjectP4s[0].size();j++) TH1Dcontainer_[3]["phi"]   ->Fill(ObjectP4s[0][j].Phi());
 
 	}
        
@@ -317,8 +339,25 @@ KinematicsChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 	  if(verbose_){std::cout << " ISRquarksSorted.size(): " << ISRquarksSorted.size() << std::endl;}
 	  
 	  JetPartonMatching GenMatchISRquarks(ISRquarksSorted, jets_clone, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_); 
-	 
+	  
+	  jets_clone_bis = jets_clone;
+	  jets_clone.clear();
+	  
 	  if(verbose_){std::cout << " jets_clone.size(): " << jets_clone.size() << std::endl;}
+
+	  std::vector<int> matchesISR = GenMatchISRquarks.getMatchesForPartons();
+
+	for(unsigned int i=0; i<ISRquarksSorted.size(); i++){
+	    if( std::find(matchesISR.begin(), matchesISR.end(), i) != matchesISR.end() ){
+	      // jet was matched to one of the four partons
+	      ObjectP4s[0].push_back((jets_clone_bis[i]).p4());
+	    }
+	    else{
+	      // jet was not matched
+	      jets_clone.push_back(jets_clone_bis[i]);
+	    }
+	  }
+	/*
 	  for(unsigned int i=0; i<ISRquarksSorted.size(); i++){
 	    Int_t Idx = GenMatchISRquarks.getMatchForParton(i,0);
 	    if(Idx>=0){
@@ -327,6 +366,7 @@ KinematicsChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 	      jets_clone.erase(jets_clone.begin()+Idx);
 	    }
 	  }
+	*/
 	  if(verbose_){std::cout << " jets_clone.size(): " << jets_clone.size() << std::endl;}
 
 	  TH1Dcontainer_[4]["number"]->Fill(ObjectP4s[0].size()); 
@@ -391,10 +431,10 @@ KinematicsChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 	    }
 	  }
 	
-	  JetPartonMatching *GenMatchTopRadQuarks = new JetPartonMatching(TopRadQuarksSorted, jets_clone, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_); 
+	  JetPartonMatching GenMatchTopRadQuarks(TopRadQuarksSorted, jets_clone, matchingAlgo_, useMaxDist_, useDeltaR_, maxDist_); 
 
 	  for(unsigned int i=0; i<TopRadQuarksSorted.size(); i++){
-	    Int_t Idx = GenMatchTopRadQuarks->getMatchForParton(i,0);
+	    Int_t Idx = GenMatchTopRadQuarks.getMatchForParton(i,0);
 	    if(Idx>=0) ObjectP4s[0].push_back((jets_clone[Idx]).p4());
 	  }
 
@@ -455,11 +495,13 @@ KinematicsChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 	for(unsigned int i=0;i<3;i++){
 	  ObjectP4s[i].clear();
 	}
+	
        
 	if(mets->size()>0){
 
 	  double ClosestDelPhi=999.;
-	  ClosestDelPhi=fabs(ROOT::Math::VectorUtil::DeltaPhi(genEvt->singleNeutrino()->p4(),(*mets)[0].p4()));
+	  if(genEvt->singleNeutrino())
+	    ClosestDelPhi=fabs(ROOT::Math::VectorUtil::DeltaPhi(genEvt->singleNeutrino()->p4(),(*mets)[0].p4()));
 	 
 
 	  ObjectP4s[2].push_back(((*mets)[0].p4()));
@@ -496,36 +538,38 @@ KinematicsChecker::beginJob(const edm::EventSetup&)
   edm::Service<TFileService> fs;
   if (!fs) throw edm::Exception(edm::errors::Configuration, "TFileService missing from configuration!");
  
+  //std::string ObjectNames[8] = {"Jets","Muons","METs","MatchedTopJets","MatchedISRjets","MatchedTopRadJets","MatchedMuons","MatchedMets"};
   std::string ObjectNames[8] = {"Jets","Muons","METs","MatchedTopJets","MatchedISRjets","MatchedTopRadJets","MatchedMuons","MatchedMets"};
+  TString ObjectPrefix[8] = {"Jets","Muons","METs","MatchedTopJets","MatchedISRjets","MatchedTopRadJets","MatchedMuons","MatchedMets"};
 
   std::vector< TFileDirectory > subDirs;
   for(unsigned int i=0;i<8;i++) subDirs.push_back(fs->mkdir( ObjectNames[i] ));
 
   for(unsigned int i=0;i<8;i++){  
-    TH1Dcontainer_[i]["number"] = subDirs[i].make<TH1D>("number" ,"number of objects",50,0,30);
-    TH1Dcontainer_[i]["pt"] = subDirs[i].make<TH1D>("pt" ,"pt",50,0,200);
-    TH1Dcontainer_[i]["et"] = subDirs[i].make<TH1D>("et" ,"et",50,0,200);
-    TH1Dcontainer_[i]["eta"] = subDirs[i].make<TH1D>("eta" ,"eta",50,-6,6);
-    TH1Dcontainer_[i]["energy"] = subDirs[i].make<TH1D>("energy" ,"energy",50,0,400);
-    TH1Dcontainer_[i]["theta"] = subDirs[i].make<TH1D>("theta" ,"theta",50,0,3.2);
-    TH1Dcontainer_[i]["phi"] = subDirs[i].make<TH1D>("phi" ,"phi",50,-3.2,3.2);
+    TH1Dcontainer_[i]["number"] = subDirs[i].make<TH1D>("number" ,"number of "+ObjectPrefix[i],50,0,50);
+    TH1Dcontainer_[i]["pt"] = subDirs[i].make<TH1D>("pt" ,ObjectPrefix[i]+" pt",50,0,200);
+    TH1Dcontainer_[i]["et"] = subDirs[i].make<TH1D>("et" ,ObjectPrefix[i]+" et",50,0,200);
+    TH1Dcontainer_[i]["eta"] = subDirs[i].make<TH1D>("eta" ,ObjectPrefix[i]+" eta",50,-6,6);
+    TH1Dcontainer_[i]["energy"] = subDirs[i].make<TH1D>("energy" ,ObjectPrefix[i]+" energy",50,0,400);
+    TH1Dcontainer_[i]["theta"] = subDirs[i].make<TH1D>("theta" ,ObjectPrefix[i]+" theta",50,0,3.2);
+    TH1Dcontainer_[i]["phi"] = subDirs[i].make<TH1D>("phi" ,ObjectPrefix[i]+" phi",50,-3.2,3.2);
   }
  
   
   TH1Fcontainer_["deltaRMuons"] = subDirs[6].make<TH1F>("deltaRMuons" ,"deltaR of closest reconstructed muon to generated muon",50,-1,5);
-  TH1Fcontainer_["resEtMuons"] = subDirs[6].make<TH1F>("resEtMuons" ,"resolution Et (gen-rec)/rec",50,-.2,.5);
-  TH1Fcontainer_["resPtMuons"] = subDirs[6].make<TH1F>("resPtMuons" ,"resolution Pt (gen-rec)/rec",50,-.2,.5);
-  TH1Fcontainer_["resPhiMuons"] = subDirs[6].make<TH1F>("resPhiMuons" ,"resolution Phi (gen-rec)/rec",50,-.1,.1);
-  TH1Fcontainer_["resThetaMuons"] = subDirs[6].make<TH1F>("resThetaMuons" ,"resolution Theta (gen-rec)/rec",50,-.1,.1);
-  TH1Fcontainer_["resEtaMuons"] = subDirs[6].make<TH1F>("resEtaMuons" ,"resolution Eta (gen-rec)/rec",50,-.1,.1);
+  TH1Fcontainer_["resEtMuons"] = subDirs[6].make<TH1F>("resEtMuons" ,"Muons resolution Et (gen-rec)/rec",50,-.2,.5);
+  TH1Fcontainer_["resPtMuons"] = subDirs[6].make<TH1F>("resPtMuons" ,"Muons resolution Pt (gen-rec)/rec",50,-.2,.5);
+  TH1Fcontainer_["resPhiMuons"] = subDirs[6].make<TH1F>("resPhiMuons" ,"Muons resolution Phi (gen-rec)/rec",50,-.1,.1);
+  TH1Fcontainer_["resThetaMuons"] = subDirs[6].make<TH1F>("resThetaMuons" ,"Muons resolution Theta (gen-rec)/rec",50,-.1,.1);
+  TH1Fcontainer_["resEtaMuons"] = subDirs[6].make<TH1F>("resEtaMuons" ,"Muons resolution Eta (gen-rec)/rec",50,-.1,.1);
 
 
   TH1Fcontainer_["deltaPhiMets"] = subDirs[7].make<TH1F>("deltaPhiMets" ,"deltaPhi of neutrino and missing transverse energy",50,-1,5);
-  TH1Fcontainer_["resEtMets"] = subDirs[7].make<TH1F>("resEtMets" ,"resolution Et (gen-rec)/rec",50,-1,3);
-  TH1Fcontainer_["resPtMets"] = subDirs[7].make<TH1F>("resPtMets" ,"resolution Pt (gen-rec)/rec",50,-1,3);
-  TH1Fcontainer_["resPhiMets"] = subDirs[7].make<TH1F>("resPhiMets" ,"resolution Phi (gen-rec)/rec",50,-4,2);
-  TH1Fcontainer_["resPxMets"] = subDirs[7].make<TH1F>("resPxMets" ,"resolution Px (gen-rec)/rec",50,-3,3);
-  TH1Fcontainer_["resPyMets"] = subDirs[7].make<TH1F>("resPyMets" ,"resolution Py (gen-rec)/rec",50,-3,3);
+  TH1Fcontainer_["resEtMets"] = subDirs[7].make<TH1F>("resEtMets" ,"Mets resolution Et (gen-rec)/rec",50,-1,3);
+  TH1Fcontainer_["resPtMets"] = subDirs[7].make<TH1F>("resPtMets" ,"Mets resolution Pt (gen-rec)/rec",50,-1,3);
+  TH1Fcontainer_["resPhiMets"] = subDirs[7].make<TH1F>("resPhiMets" ,"Mets resolution Phi (gen-rec)/rec",50,-4,2);
+  TH1Fcontainer_["resPxMets"] = subDirs[7].make<TH1F>("resPxMets" ,"Mets resolution Px (gen-rec)/rec",50,-3,3);
+  TH1Fcontainer_["resPyMets"] = subDirs[7].make<TH1F>("resPyMets" ,"Mets resolution Py (gen-rec)/rec",50,-3,3);
  
 
   nJetsAcceptance.push_back(0);

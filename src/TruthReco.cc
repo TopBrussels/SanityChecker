@@ -107,32 +107,32 @@ class TruthReco : public edm::EDAnalyzer {
 //
 TruthReco::TruthReco(const edm::ParameterSet& iConfig)
 {
-	genEventCollectionName_ = iConfig.getParameter<edm::InputTag>( "genEventCollectionName" );
-	patMuons_								= iConfig.getParameter<edm::InputTag>( "patMuons" );
-	patJets_								= iConfig.getParameter<edm::InputTag>( "patJets" );
-	patMET_									= iConfig.getParameter<edm::InputTag>( "patMET" );
-	useMatchingFromPAT_			= iConfig.getParameter<bool>( "useMatchingFromPAT" );
-  matchingAlgo_						= iConfig.getParameter<int>("matchingAlgo");
-  useMaxDist_							=	iConfig.getParameter<bool>("useMaxDist");
-  useDeltaR_							=	iConfig.getParameter<bool>("useDeltaR");
-  maxDist_								=	iConfig.getParameter<double>("maxDist");
-	doMuonIsolation_				=	iConfig.getParameter<bool>("doMuonIsolation");
-	muonRelIso_							= iConfig.getParameter<double>( "muonRelIso" );
-	muonECALVetoConeEt_			= iConfig.getParameter<double>( "muonECALVetoConeEt" );
-	muonHCALVetoConeEt_			= iConfig.getParameter<double>( "muonHCALVetoConeEt" );
-	muonPt_									= iConfig.getParameter<double>( "muonPt" );
-	jetPt_									= iConfig.getParameter<double>( "jetPt" );
-	muonEta_								= iConfig.getParameter<double>( "muonEta" );
-	jetEta_									= iConfig.getParameter<double>( "jetEta" );
-	muonMinDR_							= iConfig.getParameter<double>( "muonMinDR" );
+	genEventCollectionName_ 	= iConfig.getParameter<edm::InputTag>( "genEventCollectionName" );
+	patMuons_			= iConfig.getParameter<edm::InputTag>( "patMuons" );
+	patJets_			= iConfig.getParameter<edm::InputTag>( "patJets" );
+	patMET_				= iConfig.getParameter<edm::InputTag>( "patMET" );
+	useMatchingFromPAT_		= iConfig.getParameter<bool>( "useMatchingFromPAT" );
+ 	matchingAlgo_			= iConfig.getParameter<int>("matchingAlgo");
+ 	useMaxDist_			= iConfig.getParameter<bool>("useMaxDist");
+ 	useDeltaR_			= iConfig.getParameter<bool>("useDeltaR");
+ 	maxDist_			= iConfig.getParameter<double>("maxDist");
+	doMuonIsolation_		= iConfig.getParameter<bool>("doMuonIsolation");
+	muonRelIso_			= iConfig.getParameter<double>( "muonRelIso" );
+	muonECALVetoConeEt_		= iConfig.getParameter<double>( "muonECALVetoConeEt" );
+	muonHCALVetoConeEt_		= iConfig.getParameter<double>( "muonHCALVetoConeEt" );
+	muonPt_				= iConfig.getParameter<double>( "muonPt" );
+	jetPt_				= iConfig.getParameter<double>( "jetPt" );
+	muonEta_			= iConfig.getParameter<double>( "muonEta" );
+	jetEta_				= iConfig.getParameter<double>( "jetEta" );
+	muonMinDR_			= iConfig.getParameter<double>( "muonMinDR" );
 	doNonOverlappingJets_		= iConfig.getParameter<bool>( "doNonOverlappingJets" );
-	nonOverlappingJetsMinDR_= iConfig.getParameter<double>( "nonOverlappingJetsMinDR" );
-	calculateJECinbins_			= iConfig.getParameter<bool>( "calculateJECinbins" );
-	etabinVals_							= iConfig.getParameter< std::vector<double> > 	("etabinValues");
-  pTbinVals_							= iConfig.getParameter< std::vector<double> > 	("pTbinValues");
-	NJets_									= iConfig.getParameter<int>( "NJets" );
-	minDRunmatchedParton_		=	iConfig.getParameter<double>("minDRunmatchedParton");
-	verbose_								= iConfig.getParameter<bool>("verbose");
+	nonOverlappingJetsMinDR_	= iConfig.getParameter<double>( "nonOverlappingJetsMinDR" );
+	calculateJECinbins_		= iConfig.getParameter<bool>( "calculateJECinbins" );
+	etabinVals_			= iConfig.getParameter< std::vector<double> > 	("etabinValues");
+  pTbinVals_				= iConfig.getParameter< std::vector<double> > 	("pTbinValues");
+	NJets_				= iConfig.getParameter<int>( "NJets" );
+	minDRunmatchedParton_		= iConfig.getParameter<double>("minDRunmatchedParton");
+	verbose_			= iConfig.getParameter<bool>("verbose");
 }
 
 

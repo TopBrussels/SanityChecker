@@ -3,7 +3,7 @@ import FWCore.ParameterSet.Config as cms
 kinematics = cms.EDAnalyzer('KinematicsChecker',
 	jetsName        = cms.InputTag('selectedLayer1Jets'),
 	muonsName       = cms.InputTag('selectedLayer1Muons'),
-        metsName        = cms.InputTag('selectedLayer1METs'),
+        metsName        = cms.InputTag('layer1METs'),
         matchingAlgo    = cms.int32(2),
         useMaxDist      = cms.bool(True),
         useDeltaR       = cms.bool(True),

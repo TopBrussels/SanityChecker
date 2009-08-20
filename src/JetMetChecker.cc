@@ -13,7 +13,7 @@
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: JetMetChecker.cc,v 1.12 2009/04/08 12:34:47 echabert Exp $
+// $Id: JetMetChecker.cc,v 1.13 2009/04/09 12:54:15 echabert Exp $
 //
 //
 
@@ -66,7 +66,6 @@ class JetMetChecker : public edm::EDAnalyzer {
 
       // ----------member data ---------------------------
   edm::InputTag jets_;
-  edm::InputTag vertex_;
   edm::InputTag mets_;
   int matchingAlgo_;
   bool useMaxDist_;
@@ -87,6 +86,7 @@ class JetMetChecker : public edm::EDAnalyzer {
 
   std::string objectNames_[5];
   std::string bTaggerNames_[11]; 
+  TString bTaggerPrefix_[11]; 
   double lowerRanges_[11];
   double upperRanges_[11];
   int nBins;
@@ -104,7 +104,7 @@ class JetMetChecker : public edm::EDAnalyzer {
 //
 // static data member definitions
 //
-std::string UncorrName[4] ={"uncorrALL","uncorrJES","uncorrMUON","uncorrMAXN"};
+std::string UncorrName[5] ={"uncorrALL","uncorrJES","uncorrMUON","uncorrTAU","uncorrMAXN"};
 //
 // constructors and destructor
 //
@@ -113,7 +113,6 @@ JetMetChecker::JetMetChecker(const edm::ParameterSet& iConfig)
 {
    //now do what ever initialization is needed
   jets_          =   iConfig.getParameter<edm::InputTag>( "jetsName" );
-  vertex_        =   iConfig.getParameter<edm::InputTag>( "vertexName" );
   mets_          =   iConfig.getParameter<edm::InputTag>( "metsName" );
   matchingAlgo_     =   iConfig.getParameter<int>( "matchingAlgo" );
   useMaxDist_       =   iConfig.getParameter<bool>( "useMaxDist" );
@@ -137,6 +136,18 @@ JetMetChecker::JetMetChecker(const edm::ParameterSet& iConfig)
   bTaggerNames_[8] = "impactParameterMVABJetTags";
   bTaggerNames_[9] = "combinedSecondaryVertexMVABJetTags";
   bTaggerNames_[10] = "combinedSecondaryVertexBJetTags";
+
+  bTaggerPrefix_[0] = "trackCountingHighPurBJetTags";
+  bTaggerPrefix_[1] = "trackCountingHighEffBJetTags";
+  bTaggerPrefix_[2] = "softMuonNoIPBJetTags";
+  bTaggerPrefix_[3] = "softMuonBJetTags";
+  bTaggerPrefix_[4] = "softElectronBJetTags";
+  bTaggerPrefix_[5] = "simpleSecondaryVertexBJetTags";
+  bTaggerPrefix_[6] = "jetProbabilityBJetTags";
+  bTaggerPrefix_[7] = "jetBProbabilityBJetTags";
+  bTaggerPrefix_[8] = "impactParameterMVABJetTags";
+  bTaggerPrefix_[9] = "combinedSecondaryVertexMVABJetTags";
+  bTaggerPrefix_[10] = "combinedSecondaryVertexBJetTags";
   
   lowerRanges_[0]=-10;
   lowerRanges_[1]=-10;
@@ -186,26 +197,14 @@ JetMetChecker::~JetMetChecker()
 void
 JetMetChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
+  //std::cout<<"Entering the jetmet analyze method"<<std::endl;
   using namespace edm;
   using namespace std;
   
-  
-#ifdef THIS_IS_AN_EVENT_EXAMPLE
-  Handle<ExampleData> pIn;
-  iEvent.getByLabel("example",pIn);
-#endif
-  
-#ifdef THIS_IS_AN_EVENTSETUP_EXAMPLE
-  ESHandle<SetupData> pSetup;
-  iSetup.get<SetupRecord>().get(pSetup);
-#endif
   //Here you handle the collection you want to access
   
   Handle< std::vector<pat::Jet> > jets;
   iEvent.getByLabel(jets_, jets);
-  
-  Handle< std::vector<reco::Vertex> > vertex;
-  iEvent.getByLabel(vertex_, vertex);
   
   Handle< std::vector<pat::MET> > mets;
   iEvent.getByLabel(mets_, mets);
@@ -234,7 +233,7 @@ JetMetChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     TH1DcontainerMatchedJets_[0]["maxEInHadTowers"]->Fill((*jets)[i].maxEInHadTowers());
 
    
-    JetCorrName = (*jets)[i].jetCorrName();   
+    JetCorrName = (*jets)[i].corrFactorSetLabel ();
     
     //towers infos
     sumtwrpt   =0;
@@ -266,7 +265,8 @@ JetMetChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     TH1Dcontainer_["JetdiffTrkSumPt"]->Fill( fabs(sumtrkpt- (*jets)[i].pt()));
     
   }
-  
+  //std::cout<<"done with jets"<<std::endl;
+
    string Corrlevel[6] = { "REL","ABS","EMF","HAD", "UE", "PART" };
    string CorrFlav[4] = {"GLU","UDS","C","B" } ;
    string HistoName = "";
@@ -299,6 +299,7 @@ JetMetChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
                TH2Fcontainer_[HistoName]->Fill(jet_iter->genJet()->pt(), jet_iter->correctedJet(Corrlevel[ii-2],CorrFlav[jj]).pt()/jet_iter->genJet()->pt());
        }
   }
+  //std::cout<<"done with jet correction factors"<<std::endl;
   //close for jets
   
   if(mets->size()>0)
@@ -313,9 +314,13 @@ JetMetChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	//uncorrALL      //! uncorrect to bare bones
 	//uncorrJES,     //! uncorrect for JES only
 	//uncorrMUON,    //! uncorrect for MUON only
+	//uncorrTAU      //! uncorrect for TAU only
+	//std::cout<<"entering the SC for met correction factors"<<std::endl;
 	for(pat::MET::UncorrectionType i = (*mets)[0].uncorrALL ; i != (*mets)[0].uncorrMAXN ;i = pat::MET::UncorrectionType(i+1))
   	{
-  		histoname = "CorEx_";histoname += UncorrName[Idx];
+  		//std::cout<<"MET uncorrection level : "<<pat::MET::UncorrectionType(i)<<std::endl;
+		if(pat::MET::UncorrectionType(i) == 3) continue;//{std::cout<<"Skip uncorrection level "<<i<<std::endl; continue;}
+		histoname = "CorEx_";histoname += UncorrName[Idx];
 		TH1Dcontainer_[histoname] 	->Fill((*mets)[0].corEx(i));
  		histoname  = "CorEy_";histoname  += UncorrName[Idx];
   		TH1Dcontainer_[histoname]   	->Fill((*mets)[0].corEy(i));
@@ -327,7 +332,9 @@ JetMetChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   		TH1Dcontainer_[histoname]	->Fill((*mets)[0].uncorrectedPt(i));
 		Idx++;
   	}
-  	TH1Dcontainer_["emEtFraction"]		->Fill((*mets)[0].emEtFraction());
+	//std::cout<<"done with met correction factors"<<std::endl;
+  	
+	TH1Dcontainer_["emEtFraction"]		->Fill((*mets)[0].emEtFraction());
   	TH1Dcontainer_["emEtInEB"] 		->Fill((*mets)[0].emEtInEB());
   	TH1Dcontainer_["emEtInEE"] 		->Fill((*mets)[0].emEtInEE());
   	TH1Dcontainer_["emEtInHF"] 	   	->Fill((*mets)[0].emEtInHF());
@@ -352,7 +359,9 @@ JetMetChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   	TH1Dcontainer_["genMET_mEtSig"] 	->Fill((*mets)[0].genMET()->mEtSig());
   }
   // close for MET
-  
+
+  //std::cout<<"done with MET"<<std::endl;
+
   Handle<TtGenEvent> genEvt;
   iEvent.getByLabel ("genEvt",genEvt);
   
@@ -532,31 +541,31 @@ JetMetChecker::beginJob(const edm::EventSetup&)
   
   //for more on b-tagging validation: http://nippon.fnal.gov:8888/lpc1/cmsroc/yumiceva/validation/ 
   for(unsigned int i=0;i<11;i++){
-    TH1DcontainerForbTagging_[i]["Inclusive"] = subDirsbTagging[i].make<TH1D>("Inclusive" ,"distribution of b discriminant",nBins,lowerRanges_[i],upperRanges_[i]);
-    TH1DcontainerForbTagging_[i]["bjets"] = subDirsbTagging[i].make<TH1D>("bjets" ,"distribution of b discriminant",nBins,lowerRanges_[i],upperRanges_[i]);
-    TH1DcontainerForbTagging_[i]["cjets"] = subDirsbTagging[i].make<TH1D>("cjets" ,"distribution of b discriminant",nBins,lowerRanges_[i],upperRanges_[i]);
-    TH1DcontainerForbTagging_[i]["ljets"] = subDirsbTagging[i].make<TH1D>("ljets" ,"distribution of b discriminant",nBins,lowerRanges_[i],upperRanges_[i]);
-    TH1DcontainerForbTagging_[i]["gjets"] = subDirsbTagging[i].make<TH1D>("gjets" ,"distribution of b discriminant",nBins,lowerRanges_[i],upperRanges_[i]);
-    TH1DcontainerForbTagging_[i]["ijets"] = subDirsbTagging[i].make<TH1D>("ijets" ,"distribution of b discriminant",nBins,lowerRanges_[i],upperRanges_[i]);
+    TH1DcontainerForbTagging_[i]["Inclusive"] = subDirsbTagging[i].make<TH1D>("Inclusive" ,bTaggerPrefix_[i]+" : distribution of b discriminant",nBins,lowerRanges_[i],upperRanges_[i]);
+    TH1DcontainerForbTagging_[i]["bjets"] = subDirsbTagging[i].make<TH1D>("bjets" ,bTaggerPrefix_[i]+" : distribution of b discriminant",nBins,lowerRanges_[i],upperRanges_[i]);
+    TH1DcontainerForbTagging_[i]["cjets"] = subDirsbTagging[i].make<TH1D>("cjets" ,bTaggerPrefix_[i]+" : distribution of b discriminant",nBins,lowerRanges_[i],upperRanges_[i]);
+    TH1DcontainerForbTagging_[i]["ljets"] = subDirsbTagging[i].make<TH1D>("ljets" ,bTaggerPrefix_[i]+" : distribution of b discriminant",nBins,lowerRanges_[i],upperRanges_[i]);
+    TH1DcontainerForbTagging_[i]["gjets"] = subDirsbTagging[i].make<TH1D>("gjets" ,bTaggerPrefix_[i]+" : distribution of b discriminant",nBins,lowerRanges_[i],upperRanges_[i]);
+    TH1DcontainerForbTagging_[i]["ijets"] = subDirsbTagging[i].make<TH1D>("ijets" ,bTaggerPrefix_[i]+" : distribution of b discriminant",nBins,lowerRanges_[i],upperRanges_[i]);
 
-    TH1DcontainerForbTagging_[i]["Effcjets"] = subDirsbTagging[i].make<TH1D>("Effcjets" ,"b tag efficiency versus c mistag rate",1000,0,1);
-    TH1DcontainerForbTagging_[i]["Effljets"] = subDirsbTagging[i].make<TH1D>("Effljets" ,"b tag efficiency versus c mistag rate",1000,0,1);
-    TH1DcontainerForbTagging_[i]["Effgjets"] = subDirsbTagging[i].make<TH1D>("Effgjets" ,"b tag efficiency versus c mistag rate",1000,0,1);
-    TH1DcontainerForbTagging_[i]["Effijets"] = subDirsbTagging[i].make<TH1D>("Effijets" ,"b tag efficiency versus c mistag rate",1000,0,1);
+    TH1DcontainerForbTagging_[i]["Effcjets"] = subDirsbTagging[i].make<TH1D>("Effcjets" ,bTaggerPrefix_[i]+" : b tag efficiency versus c mistag rate",1000,0,1);
+    TH1DcontainerForbTagging_[i]["Effljets"] = subDirsbTagging[i].make<TH1D>("Effljets" ,bTaggerPrefix_[i]+" : b tag efficiency versus c mistag rate",1000,0,1);
+    TH1DcontainerForbTagging_[i]["Effgjets"] = subDirsbTagging[i].make<TH1D>("Effgjets" ,bTaggerPrefix_[i]+" : b tag efficiency versus c mistag rate",1000,0,1);
+    TH1DcontainerForbTagging_[i]["Effijets"] = subDirsbTagging[i].make<TH1D>("Effijets" ,bTaggerPrefix_[i]+" : b tag efficiency versus c mistag rate",1000,0,1);
   }
   
   for(unsigned int i=0;i<11;i++){
-    TH1DcontainerForbTagging_[i]["InclusiveTtSemiMu"] = subDirsbTagging[i].make<TH1D>("InclusiveTtSemiMu" ,"distribution of b discriminant",nBins,lowerRanges_[i],upperRanges_[i]);
-    TH1DcontainerForbTagging_[i]["bjetsTtSemiMu"] = subDirsbTagging[i].make<TH1D>("bjetsTtSemiMu" ,"distribution of b discriminant (TtSemiMu)",nBins,lowerRanges_[i],upperRanges_[i]);
-    TH1DcontainerForbTagging_[i]["cjetsTtSemiMu"] = subDirsbTagging[i].make<TH1D>("cjetsTtSemiMu" ,"distribution of b discriminant (TtSemiMu)",nBins,lowerRanges_[i],upperRanges_[i]);
-    TH1DcontainerForbTagging_[i]["ljetsTtSemiMu"] = subDirsbTagging[i].make<TH1D>("ljetsTtSemiMu" ,"distribution of b discriminant (TtSemiMu)",nBins,lowerRanges_[i],upperRanges_[i]);
-    TH1DcontainerForbTagging_[i]["gjetsTtSemiMu"] = subDirsbTagging[i].make<TH1D>("gjetsTtSemiMu" ,"distribution of b discriminant (TtSemiMu)",nBins,lowerRanges_[i],upperRanges_[i]);
-    TH1DcontainerForbTagging_[i]["ijetsTtSemiMu"] = subDirsbTagging[i].make<TH1D>("ijetsTtSemiMu" ,"distribution of b discriminant (TtSemiMu)",nBins,lowerRanges_[i],upperRanges_[i]);
+    TH1DcontainerForbTagging_[i]["InclusiveTtSemiMu"] = subDirsbTagging[i].make<TH1D>("InclusiveTtSemiMu" ," : distribution of b discriminant",nBins,lowerRanges_[i],upperRanges_[i]);
+    TH1DcontainerForbTagging_[i]["bjetsTtSemiMu"] = subDirsbTagging[i].make<TH1D>("bjetsTtSemiMu" ,bTaggerPrefix_[i]+" : distribution of b discriminant (TtSemiMu)",nBins,lowerRanges_[i],upperRanges_[i]);
+    TH1DcontainerForbTagging_[i]["cjetsTtSemiMu"] = subDirsbTagging[i].make<TH1D>("cjetsTtSemiMu" ,bTaggerPrefix_[i]+" : distribution of b discriminant (TtSemiMu)",nBins,lowerRanges_[i],upperRanges_[i]);
+    TH1DcontainerForbTagging_[i]["ljetsTtSemiMu"] = subDirsbTagging[i].make<TH1D>("ljetsTtSemiMu" ,bTaggerPrefix_[i]+" : distribution of b discriminant (TtSemiMu)",nBins,lowerRanges_[i],upperRanges_[i]);
+    TH1DcontainerForbTagging_[i]["gjetsTtSemiMu"] = subDirsbTagging[i].make<TH1D>("gjetsTtSemiMu" ,bTaggerPrefix_[i]+" : distribution of b discriminant (TtSemiMu)",nBins,lowerRanges_[i],upperRanges_[i]);
+    TH1DcontainerForbTagging_[i]["ijetsTtSemiMu"] = subDirsbTagging[i].make<TH1D>("ijetsTtSemiMu" ,bTaggerPrefix_[i]+" : distribution of b discriminant (TtSemiMu)",nBins,lowerRanges_[i],upperRanges_[i]);
 
-    TH1DcontainerForbTagging_[i]["EffcjetsTtSemiMu"] = subDirsbTagging[i].make<TH1D>("EffcjetsTtSemiMu" ,"b tag efficiency versus c mistag rate (TtSemiMu)",1000,0,1);
-    TH1DcontainerForbTagging_[i]["EffljetsTtSemiMu"] = subDirsbTagging[i].make<TH1D>("EffljetsTtSemiMu" ,"b tag efficiency versus c mistag rate (TtSemiMu)",1000,0,1);
-    TH1DcontainerForbTagging_[i]["EffgjetsTtSemiMu"] = subDirsbTagging[i].make<TH1D>("EffgjetsTtSemiMu" ,"b tag efficiency versus c mistag rate (TtSemiMu)",1000,0,1);
-    TH1DcontainerForbTagging_[i]["EffijetsTtSemiMu"] = subDirsbTagging[i].make<TH1D>("EffijetsTtSemiMu" ,"b tag efficiency versus c mistag rate (TtSemiMu)",1000,0,1);
+    TH1DcontainerForbTagging_[i]["EffcjetsTtSemiMu"] = subDirsbTagging[i].make<TH1D>("EffcjetsTtSemiMu" ,bTaggerPrefix_[i]+" : b tag efficiency versus c mistag rate (TtSemiMu)",1000,0,1);
+    TH1DcontainerForbTagging_[i]["EffljetsTtSemiMu"] = subDirsbTagging[i].make<TH1D>("EffljetsTtSemiMu" ,bTaggerPrefix_[i]+" : b tag efficiency versus c mistag rate (TtSemiMu)",1000,0,1);
+    TH1DcontainerForbTagging_[i]["EffgjetsTtSemiMu"] = subDirsbTagging[i].make<TH1D>("EffgjetsTtSemiMu" ,bTaggerPrefix_[i]+" : b tag efficiency versus c mistag rate (TtSemiMu)",1000,0,1);
+    TH1DcontainerForbTagging_[i]["EffijetsTtSemiMu"] = subDirsbTagging[i].make<TH1D>("EffijetsTtSemiMu" ,bTaggerPrefix_[i]+" : b tag efficiency versus c mistag rate (TtSemiMu)",1000,0,1);
   }
 
   TFileDirectory metsubDir = fs->mkdir( "PatMets" );
@@ -584,11 +593,11 @@ JetMetChecker::beginJob(const edm::EventSetup&)
   	TH1Dcontainer_[histoname] = metsubDir.make<TH1D>(histoname.c_str(),histotitle.c_str(),800,0,400);
   }
 
-  TH1Dcontainer_["emEtFraction"] 	  = metsubDir.make<TH1D>("emEtFraction","Event electromagnetic energy fraction",100,0,1);
+  TH1Dcontainer_["emEtFraction"] 	  = metsubDir.make<TH1D>("emEtFraction","Event electromagnetic energy fraction (emEtFraction)",100,0,1);
   TH1Dcontainer_["emEtInEB"] 		  = metsubDir.make<TH1D>("emEtInEB","Event electromagnetic energy in the ECAL barrel",800,0,400);
   TH1Dcontainer_["emEtInEE"] 		  = metsubDir.make<TH1D>("emEtInEE","Event electromagnetic energy in the ECAL end-cap",800,0,400);
   TH1Dcontainer_["emEtInHF"] 		  = metsubDir.make<TH1D>("emEtInHF","Event electromagnetic energy extracted from the forward HCAL",800,0,400);
-  TH1Dcontainer_["etFractionHadronic"]    = metsubDir.make<TH1D>("etFractionHadronic","Event hadronic energy fraction",100,0,1);
+  TH1Dcontainer_["etFractionHadronic"]    = metsubDir.make<TH1D>("etFractionHadronic","Event hadronic energy fraction (etFractionHadronic)",100,0,1);
   TH1Dcontainer_["hadEtInHB"] 		  = metsubDir.make<TH1D>("hadEtInHB","Event hadronic energy in the HCAL barrel",800,0,400);
   TH1Dcontainer_["hadEtInHE"] 		  = metsubDir.make<TH1D>("hadEtInHE","Event hadronic energy in the HCAL end-cap",800,0,400);
   TH1Dcontainer_["hadEtInHF"] 		  = metsubDir.make<TH1D>("hadEtInHF","Event hadronic energy in the forward HCAL",800,0,400);

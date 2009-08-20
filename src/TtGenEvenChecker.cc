@@ -13,7 +13,7 @@
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: TtGenEvenChecker.cc,v 1.9 2009/04/08 12:34:47 echabert Exp $
+// $Id: TtGenEvenChecker.cc,v 1.10 2009/04/09 12:54:15 echabert Exp $
 //
 //
 
@@ -92,12 +92,9 @@ public:
 
 
 private:
-  virtual void
-  beginJob (const edm::EventSetup &);
-  virtual void
-  analyze (const edm::Event &, const edm::EventSetup &);
-  virtual void
-  endJob ();
+  virtual void  beginJob (const edm::EventSetup &);
+  virtual void  analyze (const edm::Event &, const edm::EventSetup &);
+  virtual void  endJob ();
 
   // ----------member data ---------------------------
   edm::InputTag genEvtCollectionName_;
@@ -157,23 +154,10 @@ TtGenEventChecker::analyze (const edm::Event & iEvent, const edm::EventSetup & i
   using namespace edm;
   using namespace std;
   
-  
-  
-#ifdef THIS_IS_AN_EVENT_EXAMPLE
-  Handle < ExampleData > pIn;
-  iEvent.getByLabel ("example", pIn);
-#endif
-  
-#ifdef THIS_IS_AN_EVENTSETUP_EXAMPLE
-  ESHandle < SetupData > pSetup;
-  iSetup.get < SetupRecord > ().get (pSetup);
-#endif
   //Here you handle the collection you want to access
   Handle < TtGenEvent > TtGenEvent_;
   iEvent.getByLabel (genEvtCollectionName_, TtGenEvent_);
   TtGenEvent genEvt = *TtGenEvent_;
-
- 
  
   //tree levels of message
   //no endl needed 
@@ -601,8 +585,8 @@ TtGenEventChecker::beginJob (const edm::EventSetup &)
   TH1Fcontainer_["TopRadiationEta"] = subDirRad.make <TH1F> ("TopRadiationEta","Eta of Top Radiation",50,-5,5);
   TH1Fcontainer_["DeltaRISRQuark"] = subDirRad.make <TH1F> ("DeltaRISRQuark","#Delta(R) between ISR and closest quark",500,0,5);
   TH1Fcontainer_["DeltaRTopRadiationQuark"] = subDirRad.make <TH1F> ("DeltaRTopRadiationQuark","#Delta(R) between Top radiation and closest quark",500,0,5);
-  TH1Dcontainer_["NofISRWithHighestPtThanQuarks"] = subDirRad.make < TH1D > ("NofISRWithHighestPtThanQuarks", "Nof ISR with Highest Pt than quarks", 10, 0, 10);
-  TH1Dcontainer_["NofTopRadiationWithHighestPtThanQuarks"] = subDirRad.make < TH1D > ("NofTopRadiationWithHighestPtThanQuarks", "Nof Top radiation with Highest Pt than quarks", 10, 0, 10);
+  TH1Dcontainer_["NofISRWithHighestPtThanQuarks"] = subDirRad.make < TH1D > ("NofISRWithHighestPtThanQuarks", "Nof ISR with higher Pt than quarks", 10, 0, 10);
+  TH1Dcontainer_["NofTopRadiationWithHighestPtThanQuarks"] = subDirRad.make < TH1D > ("NofTopRadiationWithHighestPtThanQuarks", "Nof Top radiation with higher Pt than quarks", 10, 0, 10);
    
 
   //Mtt
@@ -640,8 +624,7 @@ TtGenEventChecker::beginJob (const edm::EventSetup &)
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
-void
-TtGenEventChecker::endJob ()
+void TtGenEventChecker::endJob ()
 {
 
   TH2Dcontainer_["hCosTQCosTLHel"]->Fit(&fit2LQ_,"0");
