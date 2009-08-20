@@ -13,7 +13,7 @@ Implementation:
 //
 // Original Author:  local user
 //         Created:  Wed Feb 18 16:39:03 CET 2009
-// $Id: KinematicsChecker.cc,v 1.15 2009/07/01 13:51:58 echabert Exp $
+// $Id: KinematicsChecker.cc,v 1.11.4.1 2009/08/20 12:09:30 echabert Exp $
 //
 //
 
@@ -256,7 +256,8 @@ KinematicsChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 	  std::vector<int> matches = GenMatchTopQuarks.getMatchesForPartons();
 
 	for(unsigned int i=0; i<jets->size(); i++){
-	    if( std::find(matches.begin(), matches.end(), i) != matches.end() ){
+	    int iter = i;
+	    if( std::find(matches.begin(), matches.end(), iter) != matches.end() ){
 	      // jet was matched to one of the four partons
 	      ObjectP4s[0].push_back(((*jets)[i]).p4());
 	    }
@@ -348,7 +349,8 @@ KinematicsChecker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 	  std::vector<int> matchesISR = GenMatchISRquarks.getMatchesForPartons();
 
 	for(unsigned int i=0; i<ISRquarksSorted.size(); i++){
-	    if( std::find(matchesISR.begin(), matchesISR.end(), i) != matchesISR.end() ){
+	    int iter = i;
+	    if( std::find(matchesISR.begin(), matchesISR.end(), iter) != matchesISR.end() ){
 	      // jet was matched to one of the four partons
 	      ObjectP4s[0].push_back((jets_clone_bis[i]).p4());
 	    }
